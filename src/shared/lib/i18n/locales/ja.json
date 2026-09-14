@@ -1,7 +1,8 @@
 {
   "hello": "こんにちは",
   "common": {
-    "appName": "KOBE in Your Pocket"
+    "appName": "KOBE in Your Pocket",
+    "back": "戻る"
   },
   "tabs": {
     "home": "ホーム",
@@ -58,7 +59,12 @@
       "iconLibraryPhoto": "モック写真",
       "iconLibraryClose": "閉じる",
       "notSignedIn": "アカウントを編集するにはログインが必要です。"
-    }
+    },
+    "about": "このアプリについて",
+    "privacyPolicy": "プライバシーポリシー",
+    "credits": "クレジット",
+    "contact": "お問い合わせ",
+    "version": "バージョン"
   },
   "auth": {
     "title": "アカウント",
@@ -166,6 +172,10 @@
       "openDirectionsButton": "経路を開く",
       "linkErrorTitle": "エラー",
       "linkErrorMessage": "ページを開けませんでした。"
+    },
+    "dataset": {
+      "source": "出典: {{source}}（データ基準日: {{asOf}}）",
+      "disclaimer": "避難所の開設状況は災害時に変わります。実際に避難する際は、お住まいの自治体が発表する最新情報を必ず優先してください。"
     }
   },
   "manner": {
@@ -246,6 +256,12 @@
       "readPolicy": "プライバシーポリシーを読む",
       "accept": "同意して開始",
       "saveError": "同意の保存に失敗しました。もう一度お試しください。"
+    },
+    "credits": {
+      "mapAndRouting": "地図・経路",
+      "mapAndRoutingDescription": "徒歩経路は OpenRouteService 経由で OpenStreetMap のデータを利用しています。",
+      "evacuationData": "避難所データ",
+      "evacuationDataDescription": "避難所の情報は公的機関が公開するデータをもとにしています。出典とデータ基準日は避難タブに表示しています。"
     }
   }
 }

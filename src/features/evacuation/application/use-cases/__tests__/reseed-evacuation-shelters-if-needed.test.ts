@@ -1,5 +1,6 @@
 import type { EvacuationShelter } from '../../../domain/evacuation-shelter';
 import type { EvacuationShelterRepository } from '../../../domain/evacuation-shelter-repository';
+import type { ShelterDatasetMetadata } from '../../../domain/shelter-dataset-metadata';
 import { reseedEvacuationSheltersIfNeeded } from '../reseed-evacuation-shelters-if-needed';
 
 const mockShelters: EvacuationShelter[] = [
@@ -14,6 +15,12 @@ const mockShelters: EvacuationShelter[] = [
     accessible: true,
   },
 ];
+
+const mockMetadata: ShelterDatasetMetadata = {
+  source: '神戸市オープンデータ',
+  asOf: '2025-04-02',
+  updatedAt: '2025-04-02T00:00:00Z',
+};
 
 function createRepository(
   overrides: Partial<EvacuationShelterRepository> = {},
@@ -31,10 +38,11 @@ function createDeps(
 ) {
   return {
     repository: createRepository(),
-    fetchShelters: jest.fn().mockResolvedValue(mockShelters),
+    fetchDataset: jest.fn().mockResolvedValue({ shelters: mockShelters, metadata: mockMetadata }),
     language: 'ja' as const,
     getLastSeededLanguage: jest.fn().mockResolvedValue(null),
     setLastSeededLanguage: jest.fn().mockResolvedValue(undefined),
+    setDatasetMetadata: jest.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }
@@ -48,9 +56,22 @@ describe('reseedEvacuationSheltersIfNeeded', () => {
 
     await expect(reseedEvacuationSheltersIfNeeded(deps)).resolves.toBe(true);
 
-    expect(deps.fetchShelters).toHaveBeenCalledWith('ja');
+    expect(deps.fetchDataset).toHaveBeenCalledWith('ja');
     expect(deps.repository.replaceAll).toHaveBeenCalledWith(mockShelters);
     expect(deps.setLastSeededLanguage).toHaveBeenCalledWith('ja');
+    expect(deps.setDatasetMetadata).toHaveBeenCalledWith(mockMetadata);
+  });
+
+  it('meta を返さないレスポンスでも投入は成功し、保存済みの出典を上書きしない', async () => {
+    const deps = createDeps({
+      fetchDataset: jest.fn().mockResolvedValue({ shelters: mockShelters, metadata: null }),
+      getLastSeededLanguage: jest.fn().mockResolvedValue(null),
+    });
+
+    await expect(reseedEvacuationSheltersIfNeeded(deps)).resolves.toBe(true);
+
+    expect(deps.repository.replaceAll).toHaveBeenCalledWith(mockShelters);
+    expect(deps.setDatasetMetadata).not.toHaveBeenCalled();
   });
 
   it('DB にデータがあり、最後にシードした言語が同じときは取得せず投入しない', async () => {
@@ -62,7 +83,7 @@ describe('reseedEvacuationSheltersIfNeeded', () => {
 
     await expect(reseedEvacuationSheltersIfNeeded(deps)).resolves.toBe(false);
 
-    expect(deps.fetchShelters).not.toHaveBeenCalled();
+    expect(deps.fetchDataset).not.toHaveBeenCalled();
     expect(deps.repository.replaceAll).not.toHaveBeenCalled();
     expect(deps.setLastSeededLanguage).not.toHaveBeenCalled();
   });
@@ -76,7 +97,7 @@ describe('reseedEvacuationSheltersIfNeeded', () => {
 
     await expect(reseedEvacuationSheltersIfNeeded(deps)).resolves.toBe(true);
 
-    expect(deps.fetchShelters).toHaveBeenCalledWith('ja');
+    expect(deps.fetchDataset).toHaveBeenCalledWith('ja');
     expect(deps.repository.replaceAll).toHaveBeenCalledWith(mockShelters);
     expect(deps.setLastSeededLanguage).toHaveBeenCalledWith('ja');
   });
@@ -90,14 +111,14 @@ describe('reseedEvacuationSheltersIfNeeded', () => {
 
     await expect(reseedEvacuationSheltersIfNeeded(deps)).resolves.toBe(true);
 
-    expect(deps.fetchShelters).toHaveBeenCalledWith('ja');
+    expect(deps.fetchDataset).toHaveBeenCalledWith('ja');
     expect(deps.repository.replaceAll).toHaveBeenCalledWith(mockShelters);
   });
 
   it('取得に失敗しても DB に既存データがあれば例外を投げず false を返す（オフラインでの言語切替）', async () => {
     const deps = createDeps({
       repository: createRepository({ findAll: jest.fn().mockResolvedValue(mockShelters) }),
-      fetchShelters: jest.fn().mockRejectedValue(new Error('network error')),
+      fetchDataset: jest.fn().mockRejectedValue(new Error('network error')),
       getLastSeededLanguage: jest.fn().mockResolvedValue('en'),
       language: 'ja',
     });
@@ -111,7 +132,7 @@ describe('reseedEvacuationSheltersIfNeeded', () => {
   it('取得に失敗し DB も空のときは例外をそのまま伝播する（表示できるデータが無い）', async () => {
     const deps = createDeps({
       repository: createRepository({ findAll: jest.fn().mockResolvedValue([]) }),
-      fetchShelters: jest.fn().mockRejectedValue(new Error('network error')),
+      fetchDataset: jest.fn().mockRejectedValue(new Error('network error')),
       getLastSeededLanguage: jest.fn().mockResolvedValue(null),
       language: 'ja',
     });

@@ -1,0 +1,6 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "KOBE in Your Pocket",
+    "NSLocationWhenInUseUsageDescription": "現在地を地図に表示し、近くの観光スポットや避難所までの距離と徒歩経路のご案内に利用します。現在地は経路の計算時を除き、端末の外には送信されません。"
+  }
+}

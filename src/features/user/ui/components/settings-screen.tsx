@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import { StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AboutSection } from '@/features/legal';
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/shared/config';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
@@ -13,10 +14,13 @@ export function SettingsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedText type="title">{t('tabs.settings')}</ThemedText>
-        <LanguageSelector />
-        <AccountSection />
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <ScrollView contentContainerStyle={styles.content}>
+          <ThemedText type="title">{t('tabs.settings')}</ThemedText>
+          <LanguageSelector />
+          <AccountSection />
+          <AboutSection />
+        </ScrollView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -31,9 +35,12 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
+  },
+  content: {
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.four,
-    paddingBottom: BottomTabInset + Spacing.three,
+    // 項目が増えてタブバーの下に潜らないようスクロールさせる。
+    paddingBottom: BottomTabInset + Spacing.four,
     gap: Spacing.four,
   },
 });

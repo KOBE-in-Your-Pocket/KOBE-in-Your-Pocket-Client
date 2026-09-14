@@ -1,7 +1,8 @@
 {
   "hello": "Hello",
   "common": {
-    "appName": "KOBE in Your Pocket"
+    "appName": "KOBE in Your Pocket",
+    "back": "Back"
   },
   "tabs": {
     "home": "Home",
@@ -58,7 +59,12 @@
       "iconLibraryPhoto": "Mock photo",
       "iconLibraryClose": "Close",
       "notSignedIn": "Sign in to edit your account."
-    }
+    },
+    "about": "About",
+    "privacyPolicy": "Privacy Policy",
+    "credits": "Credits",
+    "contact": "Contact us",
+    "version": "Version"
   },
   "auth": {
     "title": "Account",
@@ -166,6 +172,10 @@
       "openDirectionsButton": "Open directions",
       "linkErrorTitle": "Error",
       "linkErrorMessage": "Could not open the page."
+    },
+    "dataset": {
+      "source": "Source: {{source}} (as of {{asOf}})",
+      "disclaimer": "Whether a shelter is open changes during a disaster. Always follow the latest announcements from your local government when you actually evacuate."
     }
   },
   "manner": {
@@ -246,6 +256,12 @@
       "readPolicy": "Read the Privacy Policy",
       "accept": "Accept and start",
       "saveError": "We could not save your acceptance. Please try again."
+    },
+    "credits": {
+      "mapAndRouting": "Maps and routing",
+      "mapAndRoutingDescription": "Walking routes use OpenStreetMap data via OpenRouteService.",
+      "evacuationData": "Evacuation shelter data",
+      "evacuationDataDescription": "Shelter information is based on data published by public authorities. The source and the date it reflects are shown on the Evacuation tab."
     }
   }
 }

@@ -31,7 +31,7 @@ import { ReviewLanguageFilter, type ReviewLangFilter } from './review-language-f
 
 import { SpotMannerSection } from '@/features/manner';
 import { useCurrentUser, UserAvatar } from '@/features/user';
-import { Spacing } from '@/shared/config';
+import { IS_USER_CONTENT_ENABLED, Spacing } from '@/shared/config';
 import { confirmOpenDirections } from '@/shared/lib/directions';
 import { useCurrentLocation } from '@/shared/lib/geo';
 import { useTheme } from '@/shared/lib/theme';
@@ -398,7 +398,8 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
               <ReviewCard
                 key={review.id}
                 review={review}
-                isOwn={review.author.id === currentUser?.id}
+                // v1 は閲覧のみ（#306）。投稿できない以上、編集・削除メニューも出さない。
+                isOwn={IS_USER_CONTENT_ENABLED && review.author.id === currentUser?.id}
                 onUpdate={(changes) => updateReview.mutateAsync({ reviewId: review.id, changes })}
                 onDelete={() => deleteReview(review.id)}
               />

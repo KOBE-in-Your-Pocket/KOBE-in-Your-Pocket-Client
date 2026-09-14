@@ -10,6 +10,10 @@ export {
   EVACUATION_SHELTERS_QUERY_KEY,
   useEvacuationShelters,
 } from './application/hooks/use-evacuation-shelters';
+export {
+  EVACUATION_SHELTERS_METADATA_QUERY_KEY,
+  useShelterDatasetMetadata,
+} from './application/hooks/use-shelter-dataset-metadata';
 export type {
   EvacuationShelter,
   ShelterCoordinates,
@@ -17,6 +21,7 @@ export type {
   ShelterMedia,
   ShelterType,
 } from './domain/evacuation-shelter';
+export type { ShelterDataset, ShelterDatasetMetadata } from './domain/shelter-dataset-metadata';
 export { EvacuationList } from './ui/components/evacuation-list';
 export { EvacuationScreen } from './ui/components/evacuation-screen';
 export { EvacuationShelterCard } from './ui/components/evacuation-shelter-card';

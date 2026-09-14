@@ -1,9 +1,10 @@
 import type { SupportedLanguage } from '@/shared/lib/i18n';
 
-import { fetchEvacuationShelters } from '../../infrastructure/api/shelter-api';
+import { fetchEvacuationShelterDataset } from '../../infrastructure/api/shelter-api';
 import { getEvacuationDatabase } from '../../infrastructure/db/client';
 import { runEvacuationMigrations } from '../../infrastructure/db/run-migrations';
 import { createSqliteEvacuationShelterRepository } from '../../infrastructure/db/sqlite-evacuation-shelter-repository';
+import { setShelterDatasetMetadata } from '../../infrastructure/storage/shelter-dataset-metadata-storage';
 import {
   getLastSeededShelterLanguage,
   setLastSeededShelterLanguage,
@@ -21,10 +22,11 @@ async function doBootstrapEvacuationDatabase(language: SupportedLanguage): Promi
   const repository = createSqliteEvacuationShelterRepository(db);
   await reseedEvacuationSheltersIfNeeded({
     repository,
-    fetchShelters: fetchEvacuationShelters,
+    fetchDataset: fetchEvacuationShelterDataset,
     language,
     getLastSeededLanguage: getLastSeededShelterLanguage,
     setLastSeededLanguage: setLastSeededShelterLanguage,
+    setDatasetMetadata: setShelterDatasetMetadata,
   });
 }
 

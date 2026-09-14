@@ -9,6 +9,7 @@ import { useSubmitReview } from '../../application/use-submit-review';
 import { ACTIVE_STAR_COLOR, INACTIVE_STAR_COLOR, styles } from '../styles/review-form.styles';
 
 import { useCurrentUser } from '@/features/user/application/use-current-user';
+import { IS_USER_CONTENT_ENABLED } from '@/shared/config';
 import { useTheme } from '@/shared/lib/theme';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
@@ -83,6 +84,11 @@ export function ReviewForm({ spotId }: { spotId: string }) {
     setRating(0);
     setComment('');
     setExpanded(false);
+  }
+
+  // v1 では投稿機能そのものを出さない（#306）。案内も出さず、レビューは閲覧のみになる。
+  if (!IS_USER_CONTENT_ENABLED) {
+    return null;
   }
 
   // 未ログイン時はレビュー投稿できないため、ログインを促す案内を表示する（#400）。

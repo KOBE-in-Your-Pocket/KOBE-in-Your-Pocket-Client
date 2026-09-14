@@ -11,6 +11,7 @@ import {
 } from '../../application/use-cases/sort-shelters-by-distance';
 import { useEvacuationShelters } from '../../application/hooks/use-evacuation-shelters';
 
+import { ShelterDatasetNotice } from './shelter-dataset-notice';
 import { ShelterImage } from './shelter-image';
 
 import { ACCESSIBLE_COLOR, styles } from '../styles/evacuation-list.styles';
@@ -208,6 +209,7 @@ export function EvacuationList({ showHeader = true }: { showHeader?: boolean } =
           servicesDisabled={servicesDisabled}
         />
       }
+      ListFooterComponent={<ShelterDatasetNotice />}
       contentContainerStyle={styles.listContent}
     />
   );

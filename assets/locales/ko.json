@@ -1,0 +1,6 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "KOBE in Your Pocket",
+    "NSLocationWhenInUseUsageDescription": "지도에 현재 위치를 표시하여 주변 관광 명소와 대피소까지의 거리 및 도보 경로를 안내하는 데 사용합니다. 위치 정보는 경로 계산 시를 제외하고 기기 밖으로 전송되지 않습니다."
+  }
+}

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Spacing } from '@/shared/config';
+import { IS_USER_CONTENT_ENABLED, Spacing } from '@/shared/config';
 import { useTheme } from '@/shared/lib/theme';
 import { ThemedText } from '@/shared/ui';
 
@@ -17,6 +17,10 @@ import { UserAvatar } from './user-avatar';
  * 設定画面のアカウント欄。
  * 未ログイン時はサインインモーダル（Google / メール + パスワード）を開くボタン、
  * ログイン中はアカウント行（タップでアカウント編集画面へ遷移）とログアウトボタンを表示する。
+ *
+ * v1 では {@link IS_USER_CONTENT_ENABLED} が false のため欄ごと非表示（#306）。
+ * v1 でサインインが担うのはレビュー投稿だけであり、退会機能（Guideline 5.1.1(v)）が
+ * 未実装のままアカウント作成だけを提供するとリジェクト対象になるため。
  */
 export function AccountSection() {
   const { t } = useTranslation();
@@ -24,6 +28,10 @@ export function AccountSection() {
   const currentUser = useCurrentUser();
   const signOut = useSignOut();
   const [signInVisible, setSignInVisible] = useState(false);
+
+  if (!IS_USER_CONTENT_ENABLED) {
+    return null;
+  }
 
   return (
     <View style={styles.container}>
