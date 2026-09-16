@@ -1,15 +1,41 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import { useColorScheme } from 'react-native';
+import { Stack } from 'expo-router';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
-import AppTabs from '@/components/app-tabs';
+import { PrivacyConsentGate } from '@/features/legal';
+import { createApiMannerRepository, MannerRepositoryProvider } from '@/features/manner';
+import { createAuthTokenProvider, useRestoreSession, useSyncCurrentUser } from '@/features/user';
+import { warnIfApiBaseUrlMissing } from '@/shared/config';
+import { setAuthTokenProvider } from '@/shared/lib/api';
+import { AppProviders } from '@/shared/ui';
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+warnIfApiBaseUrlMissing();
+
+// 認証付き API 呼び出しのトークン供給を composition root で注入する（#506）。
+setAuthTokenProvider(createAuthTokenProvider());
+
+const mannerRepository = createApiMannerRepository();
+
+/**
+ * QueryClientProvider（AppProviders 内）を必要とする起動時の副作用をまとめる。
+ * RootLayout 直下では QueryClient がまだ無いため、Provider の内側で実行する。
+ */
+function AppBootstrap() {
+  useSyncCurrentUser();
+
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
-      <AppTabs />
-    </ThemeProvider>
+    <MannerRepositoryProvider repository={mannerRepository}>
+      <Stack screenOptions={{ headerShown: false }} />
+    </MannerRepositoryProvider>
+  );
+}
+
+export default function RootLayout() {
+  useRestoreSession();
+
+  return (
+    <AppProviders>
+      <PrivacyConsentGate>
+        <AppBootstrap />
+      </PrivacyConsentGate>
+    </AppProviders>
   );
 }

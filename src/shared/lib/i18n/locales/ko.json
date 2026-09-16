@@ -1,0 +1,269 @@
+{
+  "hello": "안녕하세요",
+  "common": {
+    "appName": "KOBE in Your Pocket",
+    "back": "뒤로"
+  },
+  "tabs": {
+    "home": "홈",
+    "map": "지도",
+    "tourism": "관광지",
+    "manner": "매너",
+    "evacuation": "대피",
+    "settings": "설정"
+  },
+  "home": {
+    "shortcuts": {
+      "tourism": {
+        "label": "관광 스폿",
+        "description": "인기 스폿 둘러보기"
+      },
+      "map": {
+        "label": "지도",
+        "description": "주변 지도 보기"
+      },
+      "manners": {
+        "label": "매너",
+        "description": "지역 매너 배우기"
+      },
+      "evacuation": {
+        "label": "대피소",
+        "description": "가까운 대피소 찾기"
+      }
+    },
+    "catchphrase": {
+      "line1": "언어의 장벽도",
+      "line2": "매너의 차이도",
+      "line3": "이제 헤매지 않아요",
+      "tagline": "픽토그램으로 이어지는 고베 여행"
+    }
+  },
+  "settings": {
+    "language": "언어",
+    "account": "계정",
+    "signIn": "로그인 / 회원가입",
+    "signInWithGoogle": "Google로 로그인",
+    "signOut": "로그아웃",
+    "signInError": "로그인에 실패했습니다. 잠시 후 다시 시도해 주세요.",
+    "editAccount": "계정 편집",
+    "accountEdit": {
+      "title": "계정 편집",
+      "back": "뒤로",
+      "save": "저장",
+      "displayName": "표시 이름",
+      "displayNamePlaceholder": "표시 이름 입력",
+      "nameInvalid": "표시 이름은 1〜{{max}}자로 입력해 주세요",
+      "changeIcon": "아이콘 변경",
+      "iconLibraryTitle": "사진 선택",
+      "iconLibraryDescription": "아이콘으로 사용할 사진을 선택하세요 (샘플 사진)",
+      "iconLibraryPhoto": "샘플 사진",
+      "iconLibraryClose": "닫기",
+      "notSignedIn": "계정을 편집하려면 로그인이 필요합니다."
+    },
+    "about": "앱 정보",
+    "privacyPolicy": "개인정보 처리방침",
+    "credits": "크레딧",
+    "contact": "문의하기",
+    "version": "버전"
+  },
+  "auth": {
+    "title": "계정",
+    "or": "또는",
+    "signInTab": "로그인",
+    "signUpTab": "회원가입",
+    "namePlaceholder": "표시 이름",
+    "emailPlaceholder": "이메일 주소",
+    "passwordPlaceholder": "비밀번호 (6자 이상)",
+    "submitSignIn": "로그인",
+    "submitSignUp": "가입하기",
+    "close": "닫기",
+    "invalidCredentials": "이메일 주소 또는 비밀번호가 올바르지 않습니다.",
+    "signUpError": "회원가입에 실패했습니다. 입력 내용을 확인한 후 다시 시도해 주세요.",
+    "confirmationEmailSent": "확인 이메일을 보냈습니다. 이메일의 링크로 인증을 완료한 후 로그인해 주세요.",
+    "emailNotConfirmed": "이메일 주소 인증이 완료되지 않았습니다. 확인 이메일의 링크를 열어 주세요.",
+    "emailRateLimited": "확인 이메일 발송 한도에 도달했습니다. 잠시 후 다시 시도해 주세요."
+  },
+  "tourism": {
+    "spotList": {
+      "title": "관광 스폿",
+      "subtitle": "주변 스폿",
+      "loadError": "스폿을 불러올 수 없습니다.",
+      "routeButton": "경로"
+    },
+    "spotDetail": {
+      "back": "뒤로",
+      "reviews": "리뷰",
+      "noReviews": "아직 리뷰가 없습니다.",
+      "addressLabel": "주소",
+      "locationLabel": "위치 정보",
+      "notFound": "스폿을 찾을 수 없습니다.",
+      "loadError": "스폿 상세 정보를 불러올 수 없습니다.",
+      "openDirectionsButton": "내비 시작"
+    },
+    "reviewList": {
+      "heading": "리뷰",
+      "loadError": "리뷰를 불러올 수 없습니다.",
+      "empty": "아직 리뷰가 없습니다."
+    },
+    "reviewCard": {
+      "edit": "편집",
+      "save": "저장",
+      "delete": "삭제",
+      "openMenu": "메뉴 열기",
+      "saving": "저장 중...",
+      "saveError": "리뷰를 수정하지 못했습니다. 잠시 후 다시 시도해 주세요."
+    },
+    "reviewFilter": {
+      "all": "전체"
+    },
+    "reviewForm": {
+      "placeholder": "리뷰를 작성하세요...",
+      "commentPlaceholder": "댓글을 입력하세요",
+      "submit": "게시",
+      "cancel": "취소",
+      "starLabel": "별 {{count}}개",
+      "loginRequired": "리뷰를 작성하려면 로그인이 필요합니다. 설정 화면에서 로그인해 주세요.",
+      "submitting": "게시 중...",
+      "submitError": "리뷰를 게시하지 못했습니다. 잠시 후 다시 시도해 주세요."
+    },
+    "genreFilter": {
+      "all": "전체",
+      "landmark": "랜드마크",
+      "nature": "자연",
+      "history": "역사",
+      "gourmet": "미식",
+      "onsen": "온천"
+    }
+  },
+  "evacuation": {
+    "list": {
+      "title": "대피소",
+      "subtitle": "주변 대피소",
+      "loadError": "대피소를 불러올 수 없습니다.",
+      "empty": "대피소를 찾을 수 없습니다.",
+      "capacity": "수용 {{count}}명",
+      "nearest": "가장 가까운 대피소",
+      "locationServicesDisabled": "위치 정보 서비스가 꺼져 있어 거리를 표시할 수 없습니다.",
+      "category": {
+        "government": "공공시설",
+        "school": "학교",
+        "park": "공원",
+        "gymnasium": "체육관"
+      },
+      "accessible": {
+        "yes": "무장애 시설",
+        "no": "무장애 미지원"
+      },
+      "type": {
+        "emergency": "긴급",
+        "designated": "지정",
+        "both": "겸용"
+      }
+    },
+    "shelterCard": {
+      "detail": "상세 보기",
+      "navigate": "길 안내",
+      "close": "닫기"
+    },
+    "shelterDetail": {
+      "back": "뒤로",
+      "loadError": "대피소 상세 정보를 불러올 수 없습니다.",
+      "externalLink": "개설 상황 확인 (지자체 페이지)",
+      "openDirectionsButton": "경로 열기",
+      "linkErrorTitle": "오류",
+      "linkErrorMessage": "페이지를 열 수 없습니다."
+    },
+    "dataset": {
+      "source": "출처: {{source}} (데이터 기준일: {{asOf}})",
+      "disclaimer": "대피소 개설 상황은 재해 시 변경됩니다. 실제로 대피할 때는 거주 지역 지자체가 발표하는 최신 정보를 반드시 우선하십시오."
+    }
+  },
+  "manner": {
+    "list": {
+      "title": "매너",
+      "loadError": "매너 정보를 불러올 수 없습니다.",
+      "empty": "매너 정보를 찾을 수 없습니다."
+    },
+    "detail": {
+      "back": "뒤로",
+      "loadError": "매너 정보를 불러올 수 없습니다.",
+      "notFound": "매너 정보를 찾을 수 없습니다.",
+      "relatedSpots": "관련 스팟",
+      "relatedSpotsLoading": "관련 스팟을 불러오는 중...",
+      "relatedSpotsError": "관련 스팟을 불러올 수 없습니다.",
+      "relatedSpotsEmpty": "관련 스팟이 없습니다."
+    },
+    "spotSection": {
+      "title": "이 장소의 매너"
+    },
+    "filter": {
+      "category": "카테고리",
+      "target": "대상"
+    },
+    "kind": {
+      "manner": "매너",
+      "rule": "규칙"
+    },
+    "scopeFilter": {
+      "all": "전체",
+      "local": "지역 특유",
+      "japan": "일본 전역"
+    },
+    "kindFilter": {
+      "all": "전체",
+      "manner": "매너",
+      "rule": "규칙"
+    }
+  },
+  "list": {
+    "modeToggle": {
+      "tourism": "관광지",
+      "evacuation": "대피소"
+    }
+  },
+  "map": {
+    "modeToggle": {
+      "tourism": "관광",
+      "evacuation": "대피"
+    },
+    "spotCard": {
+      "detail": "상세 보기",
+      "navigate": "길 안내",
+      "close": "닫기"
+    },
+    "openDirections": {
+      "confirmTitle": "내비게이션 시작",
+      "confirmMessage": "※ {{mapAppName}}(으)로 이동하여 경로 안내를 시작합니다.",
+      "cancel": "취소",
+      "confirm": "이동",
+      "errorTitle": "오류",
+      "errorMessage": "지도 앱을 열 수 없습니다.",
+      "appleMaps": "Apple 지도",
+      "googleMaps": "Google 지도"
+    }
+  },
+  "location": {
+    "permissionDeniedNotice": "위치 정보가 허용되지 않아 현재 위치를 표시할 수 없습니다.",
+    "servicesDisabledTitle": "위치 서비스가 꺼졌습니다",
+    "servicesDisabledMessage": "지도에 현재 위치를 표시하려면 기기 설정에서 위치 서비스를 켜 주세요.",
+    "openSettings": "설정 열기",
+    "close": "닫기"
+  },
+  "legal": {
+    "consent": {
+      "title": "이용 전 안내",
+      "description": "본 앱을 이용하려면 개인정보 처리방침에 동의해야 합니다. 관광지 표시와 도보 경로 안내를 위해 현재 위치를 이용하는 방법, 계정을 만들 경우 이메일 주소와 표시 이름 등을 보관하는 내용이 기재되어 있습니다. 내용을 확인한 후 시작해 주세요.",
+      "ageNotice": "{{age}}세 미만도 이용할 수 있지만 현재 위치 이용, 계정 생성, 리뷰 작성은 이용할 수 없습니다. 관광지와 대피소 열람은 연령과 관계없이 이용할 수 있습니다.",
+      "readPolicy": "개인정보 처리방침 읽기",
+      "acceptAdult": "{{age}}세 이상입니다 · 동의하고 시작",
+      "acceptMinor": "{{age}}세 미만입니다 · 동의하고 시작",
+      "saveError": "동의 내용을 저장하지 못했습니다. 다시 시도해 주세요."
+    },
+    "credits": {
+      "mapAndRouting": "지도 및 경로",
+      "mapAndRoutingDescription": "도보 경로는 OpenRouteService를 통해 OpenStreetMap 데이터를 이용합니다.",
+      "evacuationData": "대피소 데이터",
+      "evacuationDataDescription": "대피소 정보는 공공기관이 공개한 데이터를 기반으로 합니다. 출처와 데이터 기준일은 대피 탭에 표시됩니다."
+    }
+  }
+}

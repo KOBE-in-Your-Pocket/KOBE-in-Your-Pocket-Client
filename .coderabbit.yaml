@@ -1,0 +1,68 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# CodeRabbit 設定: https://docs.coderabbit.ai/reference/configuration
+# GitHub App インストール: https://github.com/apps/coderabbitai
+
+language: ja-JP
+
+tone_instructions: >
+  Expo/React Native のシニアレビュアーとして、簡潔で建設的な日本語フィードバックを提供する。
+  設計・ロジック・仕様妥当性に集中し、lint/format など CI 済みの指摘は避ける。
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  review_status: true
+  poem: false
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - develop
+      - main
+  path_filters:
+    - "!**/*.lock"
+    - "!**/pnpm-lock.yaml"
+    - "!**/node_modules/**"
+    - "!**/*.apk"
+    - "!ios/**"
+    - "!android/**"
+  path_instructions:
+    - path: "**"
+      instructions: |
+        REVIEW.md・AGENTS.md・docs/directory-structure.md の基準に従うこと。
+        神戸市特化の観光・避難・マナー一体化アプリ（Expo SDK 56 / React Native）。
+        ESLint・型チェック・Prettier・Jest は CI で担保済み — これらの指摘は不要。
+        PR は develop 向け。コミット形式は `prefix: summary #issue`。
+    - path: "src/app/**"
+      instructions: |
+        Expo Router のルーティング層。薄いシェルのみ。
+        ビジネスロジック・API 通信・ドメインモデルは features/widgets に置くこと。
+    - path: "src/features/**"
+      instructions: |
+        Modular Monolith × Feature-scoped Clean Architecture。
+        層の依存: ui → application → domain ← infrastructure。
+        他モジュールは index.ts 経由のみ import（内部ファイルの直接 import 禁止）。
+        ユーザー向け文言は i18n 経由。位置情報・地図は権限とエラー状態を確認。
+    - path: "src/shared/**"
+      instructions: |
+        全機能共通の基盤レイヤー。機能固有ロジックを入れない。
+        i18n（src/shared/lib/i18n/）、geo、theme、storage など横断関心事。
+    - path: "src/widgets/**"
+      instructions: |
+        複数 features を合成する画面。features の公開 API（index.ts）のみ利用。
+    - path: "src/**/__tests__/**"
+      instructions: |
+        @testing-library/react-native で主要パスをカバー。
+        権限拒否・オフライン・空データなどのエッジケースを考慮。
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  code_guidelines:
+    enabled: true
+    filePatterns:
+      - REVIEW.md
+      - AGENTS.md
+      - docs/directory-structure.md

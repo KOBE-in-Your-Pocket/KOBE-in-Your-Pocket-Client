@@ -20,17 +20,22 @@ expo-env.d.ts
 
 # Metro
 .metro-health-check*
+metro.log
 
 # debug
 npm-debug.*
 yarn-debug.*
 yarn-error.*
 
+# editor (個人設定はローカル管理)
+.vscode/settings.json
+
 # macOS
 .DS_Store
 *.pem
 
 # local env files
+.env
 .env*.local
 
 # typescript
@@ -41,3 +46,12 @@ example
 # generated native folders
 /ios
 /android
+
+# local build artifacts
+*.apk
+
+# 誤って作成されたローカル pnpm ストア
+.pnpm-store/
+
+# 署名補助スクリプト（個人環境用）
+scripts/unlock-ios-signing.sh

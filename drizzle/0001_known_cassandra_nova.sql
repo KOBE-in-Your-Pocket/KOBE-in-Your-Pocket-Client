@@ -1,0 +1,1 @@
+ALTER TABLE `evacuation_shelters` ADD `external_url` text;

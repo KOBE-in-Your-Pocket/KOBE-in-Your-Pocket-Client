@@ -1,0 +1,269 @@
+{
+  "hello": "Hello",
+  "common": {
+    "appName": "KOBE in Your Pocket",
+    "back": "Back"
+  },
+  "tabs": {
+    "home": "Home",
+    "map": "Map",
+    "tourism": "Spots",
+    "manner": "Manners",
+    "evacuation": "Evacuation",
+    "settings": "Settings"
+  },
+  "home": {
+    "shortcuts": {
+      "tourism": {
+        "label": "Tourist Spots",
+        "description": "Browse popular spots"
+      },
+      "map": {
+        "label": "Map",
+        "description": "Check the area map"
+      },
+      "manners": {
+        "label": "Manners",
+        "description": "Learn local etiquette"
+      },
+      "evacuation": {
+        "label": "Shelters",
+        "description": "Find nearby shelters"
+      }
+    },
+    "catchphrase": {
+      "line1": "Beyond language",
+      "line2": "Beyond customs",
+      "line3": "Never lost again",
+      "tagline": "A Kobe journey connected by pictograms"
+    }
+  },
+  "settings": {
+    "language": "Language",
+    "account": "Account",
+    "signIn": "Log in / Sign up",
+    "signInWithGoogle": "Sign in with Google",
+    "signOut": "Sign out",
+    "signInError": "Sign-in failed. Please try again later.",
+    "editAccount": "Edit account",
+    "accountEdit": {
+      "title": "Edit Account",
+      "back": "Back",
+      "save": "Save",
+      "displayName": "Display name",
+      "displayNamePlaceholder": "Enter display name",
+      "nameInvalid": "Display name must be 1–{{max}} characters",
+      "changeIcon": "Change icon",
+      "iconLibraryTitle": "Choose a Photo",
+      "iconLibraryDescription": "Pick a photo to use as your icon (mock photos)",
+      "iconLibraryPhoto": "Mock photo",
+      "iconLibraryClose": "Close",
+      "notSignedIn": "Sign in to edit your account."
+    },
+    "about": "About",
+    "privacyPolicy": "Privacy Policy",
+    "credits": "Credits",
+    "contact": "Contact us",
+    "version": "Version"
+  },
+  "auth": {
+    "title": "Account",
+    "or": "or",
+    "signInTab": "Log in",
+    "signUpTab": "Sign up",
+    "namePlaceholder": "Display name",
+    "emailPlaceholder": "Email address",
+    "passwordPlaceholder": "Password (6+ characters)",
+    "submitSignIn": "Log in",
+    "submitSignUp": "Create account",
+    "close": "Close",
+    "invalidCredentials": "Incorrect email address or password.",
+    "signUpError": "Sign-up failed. Please check your input and try again.",
+    "confirmationEmailSent": "A confirmation email has been sent. Open the link in the email to verify, then log in.",
+    "emailNotConfirmed": "Your email address is not confirmed yet. Please open the link in the confirmation email.",
+    "emailRateLimited": "The confirmation email limit has been reached. Please wait a while and try again."
+  },
+  "tourism": {
+    "spotList": {
+      "title": "Tourist Spots",
+      "subtitle": "Nearby spots",
+      "loadError": "Could not load spots.",
+      "routeButton": "Route"
+    },
+    "spotDetail": {
+      "back": "Back",
+      "reviews": "Reviews",
+      "noReviews": "No reviews yet.",
+      "addressLabel": "Address",
+      "locationLabel": "Location",
+      "notFound": "Spot not found.",
+      "loadError": "Could not load spot details.",
+      "openDirectionsButton": "Start navigation"
+    },
+    "reviewList": {
+      "heading": "Reviews",
+      "loadError": "Could not load reviews.",
+      "empty": "No reviews yet."
+    },
+    "reviewCard": {
+      "edit": "Edit",
+      "save": "Save",
+      "delete": "Delete",
+      "openMenu": "Open menu",
+      "saving": "Saving...",
+      "saveError": "Could not update your review. Please try again later."
+    },
+    "reviewFilter": {
+      "all": "All"
+    },
+    "reviewForm": {
+      "placeholder": "Write a review...",
+      "commentPlaceholder": "Enter your comment",
+      "submit": "Post",
+      "cancel": "Cancel",
+      "starLabel": "{{count}} stars",
+      "loginRequired": "You need to log in to post a review. Please log in from Settings.",
+      "submitting": "Posting...",
+      "submitError": "Could not post your review. Please try again later."
+    },
+    "genreFilter": {
+      "all": "All",
+      "landmark": "Landmark",
+      "nature": "Nature",
+      "history": "History",
+      "gourmet": "Gourmet",
+      "onsen": "Hot Spring"
+    }
+  },
+  "evacuation": {
+    "list": {
+      "title": "Evacuation Shelters",
+      "subtitle": "Nearby shelters",
+      "loadError": "Could not load shelters.",
+      "empty": "No shelters found.",
+      "capacity": "Capacity: {{count}}",
+      "nearest": "Nearest Shelter",
+      "locationServicesDisabled": "Distance unavailable because location services are off.",
+      "category": {
+        "government": "Government Building",
+        "school": "School",
+        "park": "Park",
+        "gymnasium": "Gymnasium"
+      },
+      "accessible": {
+        "yes": "Accessible",
+        "no": "Not accessible"
+      },
+      "type": {
+        "emergency": "Emergency",
+        "designated": "Designated",
+        "both": "Both"
+      }
+    },
+    "shelterCard": {
+      "detail": "Shelter Detail",
+      "navigate": "Directions",
+      "close": "Close"
+    },
+    "shelterDetail": {
+      "back": "Back",
+      "loadError": "Could not load shelter details.",
+      "externalLink": "Check status (city page)",
+      "openDirectionsButton": "Open directions",
+      "linkErrorTitle": "Error",
+      "linkErrorMessage": "Could not open the page."
+    },
+    "dataset": {
+      "source": "Source: {{source}} (as of {{asOf}})",
+      "disclaimer": "Whether a shelter is open changes during a disaster. Always follow the latest announcements from your local government when you actually evacuate."
+    }
+  },
+  "manner": {
+    "list": {
+      "title": "Manners",
+      "loadError": "Could not load manner information.",
+      "empty": "No manner information found."
+    },
+    "detail": {
+      "back": "Back",
+      "loadError": "Could not load manner information.",
+      "notFound": "No manner information found.",
+      "relatedSpots": "Related Spots",
+      "relatedSpotsLoading": "Loading related spots...",
+      "relatedSpotsError": "Could not load related spots.",
+      "relatedSpotsEmpty": "No related spots."
+    },
+    "spotSection": {
+      "title": "Manners for This Place"
+    },
+    "filter": {
+      "category": "Category",
+      "target": "Target"
+    },
+    "kind": {
+      "manner": "Manner",
+      "rule": "Rule"
+    },
+    "scopeFilter": {
+      "all": "All",
+      "local": "Local",
+      "japan": "Nationwide"
+    },
+    "kindFilter": {
+      "all": "All",
+      "manner": "Manner",
+      "rule": "Rule"
+    }
+  },
+  "list": {
+    "modeToggle": {
+      "tourism": "Spots",
+      "evacuation": "Shelters"
+    }
+  },
+  "map": {
+    "modeToggle": {
+      "tourism": "Tourism",
+      "evacuation": "Evacuation"
+    },
+    "spotCard": {
+      "detail": "Spot Detail",
+      "navigate": "Directions",
+      "close": "Close"
+    },
+    "openDirections": {
+      "confirmTitle": "Start Navigation",
+      "confirmMessage": "You will be redirected to {{mapAppName}} to start turn-by-turn directions.",
+      "cancel": "Cancel",
+      "confirm": "Open",
+      "errorTitle": "Error",
+      "errorMessage": "Could not open the maps app.",
+      "appleMaps": "Apple Maps",
+      "googleMaps": "Google Maps"
+    }
+  },
+  "location": {
+    "permissionDeniedNotice": "Location access is off, so your current location can't be shown.",
+    "servicesDisabledTitle": "Location Services Turned Off",
+    "servicesDisabledMessage": "To show your location on the map, turn on Location Services in your device settings.",
+    "openSettings": "Open Settings",
+    "close": "Close"
+  },
+  "legal": {
+    "consent": {
+      "title": "Before you start",
+      "description": "Using this app requires your acceptance of our Privacy Policy. It explains how we use your location to show tourist spots and walking directions, and what we store if you create an account, such as your email address and display name. Please read it and then continue.",
+      "ageNotice": "If you are under {{age}}, you can still use the app, but location, accounts, and posting reviews are turned off. Browsing sightseeing spots and evacuation shelters is available at any age.",
+      "readPolicy": "Read the Privacy Policy",
+      "acceptAdult": "I am {{age}} or older — accept and start",
+      "acceptMinor": "I am under {{age}} — accept and start",
+      "saveError": "We could not save your acceptance. Please try again."
+    },
+    "credits": {
+      "mapAndRouting": "Maps and routing",
+      "mapAndRoutingDescription": "Walking routes use OpenStreetMap data via OpenRouteService.",
+      "evacuationData": "Evacuation shelter data",
+      "evacuationDataDescription": "Shelter information is based on data published by public authorities. The source and the date it reflects are shown on the Evacuation tab."
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "KOBE in Your Pocket",
+    "NSLocationWhenInUseUsageDescription": "在地图上显示您的位置，用于指引您前往附近的观光景点和避难所，并显示距离。除计算步行路线外，您的位置不会离开本设备。"
+  }
+}

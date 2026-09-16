@@ -4,17 +4,39 @@
 
 ---
 
+## Quick Start (新メンバー向け一括セットアップ)
+
+```bash
+git clone https://github.com/KOBE-in-Your-Pocket/KOBE-in-Your-Poket-Client.git
+cd KOBE-in-Your-Poket-Client
+bash scripts/bootstrap.sh    # Node/pnpm 確認 → 依存インストール まで一括
+pnpm ios                      # iPhone 15 を自動起動 (Mac の場合)
+# または
+pnpm android                  # Pixel_8_API34 を自動起動
+```
+
+`bootstrap.sh` で詰まったら（Corepack 権限エラーなど）スクリプトが対処手順を出します。
+詳細セットアップは [`docs/dev-environment.md`](./docs/dev-environment.md) を参照。
+
+> **WSL2 (Win11) ユーザー**: Android Studio は **Windows 側** にインストール、WSL からは `adb.exe` 経由で動かす方式です。専用手順を [`docs/dev-environment.md §4.5`](./docs/dev-environment.md#45-wsl2-win11-ユーザー専用ガイド) にまとめています。
+
+---
+
 ## 前提環境 (Prerequisites)
 
 このプロジェクトを動かすには、以下が必要です。
 
 - **OS**: macOS、または Windows (WSL2 必須 — Windows ネイティブシェルでは動作確認していません)
-- **Node.js**: `22.16.0` (リポジトリ直下の `.node-version` で固定)
-  - バージョン管理は `nvm` / `mise` / `asdf` のいずれかを使ってください。`.node-version` を自動で読んでくれます。
-  - 例: `mise install` または `nvm install` で `.node-version` に書かれているバージョンをインストールできます。
+- **Node.js**: `22.16.0` (リポジトリ直下の `.node-version` / `.tool-versions` / `.nvmrc` で固定)
+  - バージョン管理ツールは `mise` / `asdf` / `nvm` のいずれかを使ってください。
+  - `mise` / `asdf` を使う場合: `.tool-versions` を読み取り、`mise install` で Node / pnpm / Java を一括導入。
+  - `nvm` を使う場合: `.nvmrc` を読み取る。リポジトリで `nvm install` → `nvm use` で 22.16.0 に切替。
+  - その他のツール (`fnm` 等) も `.node-version` を自動で読み取れます。
 - **Corepack**: Node 22 に同梱されています。後述の手順で有効化します。
-- **iOS シミュレータ**: Xcode (macOS のみ。iOS で動作確認したい場合)
-- **Android エミュレータ**: Android Studio (任意)
+- **iOS Simulator**: Xcode 16+ (macOS のみ、iOS で動作確認する場合)
+- **Android Emulator**: Android Studio Koala 2024.1+ (任意)
+
+> **🎯 iOS / Android のエミュレータバージョンや AVD の作り方は [`docs/dev-environment.md`](./docs/dev-environment.md) に集約しています。チーム全員でバージョンを揃えるため、必ず一読してください。**
 
 > パッケージマネージャは **pnpm 11.7.0** を `package.json` の `packageManager` フィールドで固定しています。`npm install` や `yarn install` は使わないでください。
 
@@ -153,6 +175,77 @@ KOBE-in-Your-Poket-Client/
 ├── .github/workflows/   # GitHub Actions (Lint / Test)
 └── package.json
 ```
+
+---
+
+## 開発環境のチェック・自動化スクリプト
+
+| スクリプト                        | 用途                                                       |
+| --------------------------------- | ---------------------------------------------------------- |
+| `bash scripts/bootstrap.sh`       | **新メンバー向け一括セットアップ** (Node/pnpm/依存) - 冪等 |
+| `bash scripts/doctor.sh`          | 環境チェック（Node / pnpm / Xcode / iOS Runtime / AVD 等） |
+| `bash scripts/setup-emulators.sh` | 標準 Android AVD (Pixel 4a/8/9) を一括作成                 |
+
+詳細は [`docs/dev-environment.md`](./docs/dev-environment.md) を参照。
+
+---
+
+## アプリ起動 (iOS / Android / Web)
+
+### pnpm スクリプト
+
+| コマンド           | 動作                                                                 |
+| ------------------ | -------------------------------------------------------------------- |
+| `pnpm start`       | Metro Bundler のみ起動。`i` / `a` / `w` で切替                       |
+| `pnpm ios`         | **iPhone 15 (iOS 18) を自動起動** → Metro + Expo 起動                |
+| `pnpm android`     | **Pixel_8_API34 (Android 14) を自動起動** → boot完了待ち → Expo 起動 |
+| `pnpm web`         | Metro + ブラウザで起動 (http://localhost:8081)                       |
+| `pnpm ios:raw`     | `expo start --ios` を素で呼ぶ（機種指定なし、デフォルト動作）        |
+| `pnpm android:raw` | `expo start --android` を素で呼ぶ（機種指定なし、デフォルト動作）    |
+
+> **`pnpm ios` / `pnpm android` は `scripts/start-ios.sh` / `start-android.sh` を呼ぶラッパー**です。
+> チーム共通のメイン機種を自動 boot するので、誰がやっても同じ機種で動作確認できます。
+> 別バージョンを試したいときは下記の手動手順、または `pnpm ios:raw` / `pnpm android:raw`。
+
+### 別バージョンで動作確認したいとき (PRレビュー時など)
+
+#### iOS
+
+```bash
+# 下限保証 (PRレビュー時の追加確認)
+xcrun simctl boot "iPhone SE (3rd generation)"
+open -a Simulator
+pnpm ios:raw
+
+# 最新追従 (PRレビュー時の追加確認)
+xcrun simctl boot "iPhone 16 Pro"
+open -a Simulator
+pnpm ios:raw
+```
+
+利用可能な Simulator 一覧:
+
+```bash
+xcrun simctl list devices available
+```
+
+#### Android
+
+```bash
+emulator -avd Pixel_4a_API30 &    # 下限保証 (低スペック検証)
+emulator -avd Pixel_9_API36 &     # 最新追従
+
+# 起動完了後
+pnpm android:raw
+```
+
+### 停止のしかた
+
+| 対象             | 停止コマンド                           |
+| ---------------- | -------------------------------------- |
+| Metro Bundler    | ターミナルで `Ctrl + C`                |
+| iOS Simulator    | `xcrun simctl shutdown all` または ⌘+Q |
+| Android Emulator | `adb -s emulator-5554 emu kill`        |
 
 ---
 

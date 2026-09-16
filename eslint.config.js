@@ -6,4 +6,8 @@ module.exports = defineConfig([
   {
     ignores: ['dist/*', '.expo/*', 'node_modules/*', 'ios/*', 'android/*'],
   },
+  {
+    files: ['jest.setup.js'],
+    languageOptions: { globals: { jest: 'readonly' } },
+  },
 ]);

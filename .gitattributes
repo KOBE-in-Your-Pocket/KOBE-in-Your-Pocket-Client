@@ -1,0 +1,36 @@
+# すべてのテキストファイルを LF 改行に統一
+# Windows 側でクローンしても WSL/Linux/Mac で動くようにする
+* text=auto eol=lf
+
+# シェルスクリプトは絶対 LF（CRLF だと WSL/Linux で実行不能）
+*.sh    text eol=lf
+*.bash  text eol=lf
+
+# Web フロント系
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.js    text eol=lf
+*.jsx   text eol=lf
+*.json  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.md    text eol=lf
+*.toml  text eol=lf
+
+# Windows 専用ファイル（あれば CRLF を維持）
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
+
+# バイナリ（diff/merge 対象外、改行変換しない）
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.svg   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+*.pdf   binary

@@ -1,0 +1,269 @@
+{
+  "hello": "你好",
+  "common": {
+    "appName": "KOBE in Your Pocket",
+    "back": "返回"
+  },
+  "tabs": {
+    "home": "首页",
+    "map": "地图",
+    "tourism": "观光地",
+    "manner": "礼仪",
+    "evacuation": "疏散",
+    "settings": "设置"
+  },
+  "home": {
+    "shortcuts": {
+      "tourism": {
+        "label": "观光景点",
+        "description": "浏览热门景点"
+      },
+      "map": {
+        "label": "地图",
+        "description": "查看周边地图"
+      },
+      "manners": {
+        "label": "礼仪",
+        "description": "了解当地礼仪"
+      },
+      "evacuation": {
+        "label": "避难所",
+        "description": "查找附近的避难所"
+      }
+    },
+    "catchphrase": {
+      "line1": "语言的隔阂",
+      "line2": "礼仪的差异",
+      "line3": "不再迷茫",
+      "tagline": "用图标连接的神户之旅"
+    }
+  },
+  "settings": {
+    "language": "语言",
+    "account": "账户",
+    "signIn": "登录 / 注册",
+    "signInWithGoogle": "使用 Google 登录",
+    "signOut": "退出登录",
+    "signInError": "登录失败，请稍后重试。",
+    "editAccount": "编辑账户",
+    "accountEdit": {
+      "title": "编辑账户",
+      "back": "返回",
+      "save": "保存",
+      "displayName": "显示名称",
+      "displayNamePlaceholder": "请输入显示名称",
+      "nameInvalid": "显示名称须为 1〜{{max}} 个字符",
+      "changeIcon": "更换头像",
+      "iconLibraryTitle": "选择照片",
+      "iconLibraryDescription": "请选择用作头像的照片（示例照片）",
+      "iconLibraryPhoto": "示例照片",
+      "iconLibraryClose": "关闭",
+      "notSignedIn": "编辑账户前请先登录。"
+    },
+    "about": "关于本应用",
+    "privacyPolicy": "隐私政策",
+    "credits": "鸣谢",
+    "contact": "联系我们",
+    "version": "版本"
+  },
+  "auth": {
+    "title": "账户",
+    "or": "或",
+    "signInTab": "登录",
+    "signUpTab": "注册",
+    "namePlaceholder": "昵称",
+    "emailPlaceholder": "电子邮箱",
+    "passwordPlaceholder": "密码（至少 6 位）",
+    "submitSignIn": "登录",
+    "submitSignUp": "注册",
+    "close": "关闭",
+    "invalidCredentials": "电子邮箱或密码不正确。",
+    "signUpError": "注册失败，请检查输入内容后重试。",
+    "confirmationEmailSent": "确认邮件已发送。请通过邮件中的链接完成验证后再登录。",
+    "emailNotConfirmed": "邮箱尚未完成验证。请打开确认邮件中的链接。",
+    "emailRateLimited": "确认邮件发送次数已达上限。请稍等片刻后重试。"
+  },
+  "tourism": {
+    "spotList": {
+      "title": "观光景点",
+      "subtitle": "附近景点",
+      "loadError": "无法加载景点。",
+      "routeButton": "路线"
+    },
+    "spotDetail": {
+      "back": "返回",
+      "reviews": "评论",
+      "noReviews": "暂无评论。",
+      "addressLabel": "地址",
+      "locationLabel": "位置信息",
+      "notFound": "未找到景点。",
+      "loadError": "无法加载景点详情。",
+      "openDirectionsButton": "开始导航"
+    },
+    "reviewList": {
+      "heading": "评价",
+      "loadError": "无法加载评价。",
+      "empty": "暂无评价。"
+    },
+    "reviewCard": {
+      "edit": "编辑",
+      "save": "保存",
+      "delete": "删除",
+      "openMenu": "打开菜单",
+      "saving": "保存中...",
+      "saveError": "无法更新评论。请稍后再试。"
+    },
+    "reviewFilter": {
+      "all": "全部"
+    },
+    "reviewForm": {
+      "placeholder": "写评价...",
+      "commentPlaceholder": "请输入评论",
+      "submit": "发布",
+      "cancel": "取消",
+      "starLabel": "{{count}}星",
+      "loginRequired": "发布评价需要登录。请从设置界面登录。",
+      "submitting": "发布中...",
+      "submitError": "无法发布评论。请稍后再试。"
+    },
+    "genreFilter": {
+      "all": "全部",
+      "landmark": "地标",
+      "nature": "自然",
+      "history": "历史",
+      "gourmet": "美食",
+      "onsen": "温泉"
+    }
+  },
+  "evacuation": {
+    "list": {
+      "title": "避难所",
+      "subtitle": "附近的避难所",
+      "loadError": "无法加载避难所。",
+      "empty": "未找到避难所。",
+      "capacity": "容纳 {{count}}人",
+      "nearest": "最近的避难所",
+      "locationServicesDisabled": "定位服务已关闭，无法显示距离。",
+      "category": {
+        "government": "公共建筑",
+        "school": "学校",
+        "park": "公园",
+        "gymnasium": "体育馆"
+      },
+      "accessible": {
+        "yes": "无障碍设施",
+        "no": "无无障碍设施"
+      },
+      "type": {
+        "emergency": "紧急",
+        "designated": "指定",
+        "both": "兼用"
+      }
+    },
+    "shelterCard": {
+      "detail": "查看详情",
+      "navigate": "路线导航",
+      "close": "关闭"
+    },
+    "shelterDetail": {
+      "back": "返回",
+      "loadError": "无法加载避难所详情。",
+      "externalLink": "查看开放状态（政府页面）",
+      "openDirectionsButton": "打开路线",
+      "linkErrorTitle": "错误",
+      "linkErrorMessage": "无法打开页面。"
+    },
+    "dataset": {
+      "source": "出处：{{source}}（数据基准日：{{asOf}}）",
+      "disclaimer": "避难所的开放情况在灾害发生时会发生变化。实际避难时，请务必以当地政府发布的最新信息为准。"
+    }
+  },
+  "manner": {
+    "list": {
+      "title": "礼仪",
+      "loadError": "无法加载礼仪信息。",
+      "empty": "未找到礼仪信息。"
+    },
+    "detail": {
+      "back": "返回",
+      "loadError": "无法加载礼仪信息。",
+      "notFound": "未找到礼仪信息。",
+      "relatedSpots": "相关地点",
+      "relatedSpotsLoading": "正在加载相关地点...",
+      "relatedSpotsError": "无法加载相关地点。",
+      "relatedSpotsEmpty": "没有相关地点。"
+    },
+    "spotSection": {
+      "title": "此处的礼仪"
+    },
+    "filter": {
+      "category": "类别",
+      "target": "对象"
+    },
+    "kind": {
+      "manner": "礼仪",
+      "rule": "规则"
+    },
+    "scopeFilter": {
+      "all": "全部",
+      "local": "当地特有",
+      "japan": "日本全国"
+    },
+    "kindFilter": {
+      "all": "全部",
+      "manner": "礼仪",
+      "rule": "规则"
+    }
+  },
+  "list": {
+    "modeToggle": {
+      "tourism": "景点",
+      "evacuation": "避难所"
+    }
+  },
+  "map": {
+    "modeToggle": {
+      "tourism": "观光",
+      "evacuation": "疏散"
+    },
+    "spotCard": {
+      "detail": "查看详情",
+      "navigate": "路线导航",
+      "close": "关闭"
+    },
+    "openDirections": {
+      "confirmTitle": "开始导航",
+      "confirmMessage": "※ 将跳转到{{mapAppName}}开始路线导航。",
+      "cancel": "取消",
+      "confirm": "前往",
+      "errorTitle": "错误",
+      "errorMessage": "无法打开地图应用。",
+      "appleMaps": "Apple 地图",
+      "googleMaps": "Google 地图"
+    }
+  },
+  "location": {
+    "permissionDeniedNotice": "未允许使用位置信息，无法显示当前位置。",
+    "servicesDisabledTitle": "位置信息已关闭",
+    "servicesDisabledMessage": "若要在地图上显示当前位置，请在设备设置中开启位置信息。",
+    "openSettings": "打开设置",
+    "close": "关闭"
+  },
+  "legal": {
+    "consent": {
+      "title": "使用前须知",
+      "description": "使用本应用需要同意隐私政策。其中说明了我们如何使用您的位置信息来显示景点和步行路线，以及在您创建账户时会保存哪些信息（如电子邮件地址和显示名称）。请阅读后再开始使用。",
+      "ageNotice": "未满 {{age}} 岁也可以使用本应用，但无法使用定位、创建账户和发表评价。景点和避难所的浏览不受年龄限制。",
+      "readPolicy": "阅读隐私政策",
+      "acceptAdult": "我已满 {{age}} 岁 · 同意并开始",
+      "acceptMinor": "我未满 {{age}} 岁 · 同意并开始",
+      "saveError": "保存同意记录失败，请重试。"
+    },
+    "credits": {
+      "mapAndRouting": "地图与路线",
+      "mapAndRoutingDescription": "步行路线通过 OpenRouteService 使用 OpenStreetMap 的数据。",
+      "evacuationData": "避难所数据",
+      "evacuationDataDescription": "避难所信息基于公共机构公开的数据。出处与数据基准日显示在避难标签页中。"
+    }
+  }
+}

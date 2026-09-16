@@ -1,0 +1,269 @@
+{
+  "hello": "こんにちは",
+  "common": {
+    "appName": "KOBE in Your Pocket",
+    "back": "戻る"
+  },
+  "tabs": {
+    "home": "ホーム",
+    "map": "地図",
+    "tourism": "観光地",
+    "manner": "マナー",
+    "evacuation": "避難",
+    "settings": "設定"
+  },
+  "home": {
+    "shortcuts": {
+      "tourism": {
+        "label": "観光スポット",
+        "description": "人気のスポットを探す"
+      },
+      "map": {
+        "label": "地図",
+        "description": "周辺の地図を見る"
+      },
+      "manners": {
+        "label": "マナー",
+        "description": "地域のマナーを学ぶ"
+      },
+      "evacuation": {
+        "label": "避難所",
+        "description": "近くの避難所を探す"
+      }
+    },
+    "catchphrase": {
+      "line1": "言葉の壁も",
+      "line2": "マナーの違いも",
+      "line3": "もう迷わない",
+      "tagline": "ピクトグラムで繋がる神戸の旅"
+    }
+  },
+  "settings": {
+    "language": "言語",
+    "account": "アカウント",
+    "signIn": "ログイン / 新規登録",
+    "signInWithGoogle": "Google でサインイン",
+    "signOut": "ログアウト",
+    "signInError": "サインインに失敗しました。時間をおいて再度お試しください。",
+    "editAccount": "アカウントを編集",
+    "accountEdit": {
+      "title": "アカウント編集",
+      "back": "戻る",
+      "save": "保存",
+      "displayName": "表示名",
+      "displayNamePlaceholder": "表示名を入力",
+      "nameInvalid": "表示名は1〜{{max}}文字で入力してください",
+      "changeIcon": "アイコンを変更",
+      "iconLibraryTitle": "写真を選択",
+      "iconLibraryDescription": "アイコンに使う写真を選んでください（モック写真）",
+      "iconLibraryPhoto": "モック写真",
+      "iconLibraryClose": "閉じる",
+      "notSignedIn": "アカウントを編集するにはログインが必要です。"
+    },
+    "about": "このアプリについて",
+    "privacyPolicy": "プライバシーポリシー",
+    "credits": "クレジット",
+    "contact": "お問い合わせ",
+    "version": "バージョン"
+  },
+  "auth": {
+    "title": "アカウント",
+    "or": "または",
+    "signInTab": "ログイン",
+    "signUpTab": "新規登録",
+    "namePlaceholder": "表示名",
+    "emailPlaceholder": "メールアドレス",
+    "passwordPlaceholder": "パスワード（6文字以上）",
+    "submitSignIn": "ログイン",
+    "submitSignUp": "登録する",
+    "close": "閉じる",
+    "invalidCredentials": "メールアドレスまたはパスワードが正しくありません。",
+    "signUpError": "登録に失敗しました。入力内容を確認して再度お試しください。",
+    "confirmationEmailSent": "確認メールを送信しました。メール内のリンクで認証を完了してから、ログインしてください。",
+    "emailNotConfirmed": "メールアドレスの確認が完了していません。届いている確認メールのリンクを開いてください。",
+    "emailRateLimited": "確認メールの送信回数が上限に達しました。しばらく時間をおいてから再度お試しください。"
+  },
+  "tourism": {
+    "spotList": {
+      "title": "観光スポット",
+      "subtitle": "近くのスポット",
+      "loadError": "スポットを読み込めませんでした。",
+      "routeButton": "経路"
+    },
+    "spotDetail": {
+      "back": "戻る",
+      "reviews": "レビュー",
+      "noReviews": "まだレビューはありません。",
+      "addressLabel": "住所",
+      "locationLabel": "位置情報",
+      "notFound": "スポットが見つかりませんでした。",
+      "loadError": "スポットの詳細を読み込めませんでした。",
+      "openDirectionsButton": "ナビを開始"
+    },
+    "reviewList": {
+      "heading": "レビュー",
+      "loadError": "レビューを読み込めませんでした。",
+      "empty": "まだレビューはありません。"
+    },
+    "reviewCard": {
+      "edit": "編集",
+      "save": "保存",
+      "delete": "削除",
+      "openMenu": "メニューを開く",
+      "saving": "保存中...",
+      "saveError": "レビューを更新できませんでした。時間をおいて再度お試しください。"
+    },
+    "reviewFilter": {
+      "all": "すべて"
+    },
+    "reviewForm": {
+      "placeholder": "レビューを書く...",
+      "commentPlaceholder": "コメントを入力してください",
+      "submit": "投稿する",
+      "cancel": "キャンセル",
+      "starLabel": "{{count}}星",
+      "loginRequired": "レビュー投稿にはログインが必要です。設定画面からログインしてください",
+      "submitting": "投稿中...",
+      "submitError": "レビューを投稿できませんでした。時間をおいて再度お試しください。"
+    },
+    "genreFilter": {
+      "all": "すべて",
+      "landmark": "ランドマーク",
+      "nature": "自然",
+      "history": "歴史",
+      "gourmet": "グルメ",
+      "onsen": "温泉"
+    }
+  },
+  "evacuation": {
+    "list": {
+      "title": "避難所",
+      "subtitle": "近くの避難所",
+      "loadError": "避難所を読み込めませんでした。",
+      "empty": "避難所が見つかりませんでした。",
+      "capacity": "収容 {{count}}人",
+      "nearest": "一番近い避難所",
+      "locationServicesDisabled": "位置情報サービスがオフのため、距離は表示されません。",
+      "category": {
+        "government": "公共施設",
+        "school": "学校",
+        "park": "公園",
+        "gymnasium": "体育館"
+      },
+      "accessible": {
+        "yes": "バリアフリー対応",
+        "no": "バリアフリー非対応"
+      },
+      "type": {
+        "emergency": "緊急",
+        "designated": "指定",
+        "both": "兼用"
+      }
+    },
+    "shelterCard": {
+      "detail": "詳細を見る",
+      "navigate": "経路案内",
+      "close": "閉じる"
+    },
+    "shelterDetail": {
+      "back": "戻る",
+      "loadError": "避難所の詳細を読み込めませんでした。",
+      "externalLink": "開設状況を確認（自治体ページ）",
+      "openDirectionsButton": "経路を開く",
+      "linkErrorTitle": "エラー",
+      "linkErrorMessage": "ページを開けませんでした。"
+    },
+    "dataset": {
+      "source": "出典: {{source}}（データ基準日: {{asOf}}）",
+      "disclaimer": "避難所の開設状況は災害時に変わります。実際に避難する際は、お住まいの自治体が発表する最新情報を必ず優先してください。"
+    }
+  },
+  "manner": {
+    "list": {
+      "title": "マナー",
+      "loadError": "マナー情報を読み込めませんでした。",
+      "empty": "マナー情報が見つかりませんでした。"
+    },
+    "detail": {
+      "back": "戻る",
+      "loadError": "マナー情報を読み込めませんでした。",
+      "notFound": "マナー情報が見つかりませんでした。",
+      "relatedSpots": "関連スポット",
+      "relatedSpotsLoading": "関連スポットを読み込み中...",
+      "relatedSpotsError": "関連スポットを読み込めませんでした。",
+      "relatedSpotsEmpty": "関連スポットはありません。"
+    },
+    "spotSection": {
+      "title": "この場所のマナー"
+    },
+    "filter": {
+      "category": "カテゴリー",
+      "target": "対象"
+    },
+    "kind": {
+      "manner": "マナー",
+      "rule": "ルール"
+    },
+    "scopeFilter": {
+      "all": "全て",
+      "local": "各所",
+      "japan": "全国"
+    },
+    "kindFilter": {
+      "all": "全て",
+      "manner": "マナー",
+      "rule": "ルール"
+    }
+  },
+  "list": {
+    "modeToggle": {
+      "tourism": "スポット",
+      "evacuation": "避難所"
+    }
+  },
+  "map": {
+    "modeToggle": {
+      "tourism": "観光",
+      "evacuation": "避難"
+    },
+    "spotCard": {
+      "detail": "詳細を見る",
+      "navigate": "経路案内",
+      "close": "閉じる"
+    },
+    "openDirections": {
+      "confirmTitle": "ナビを開始",
+      "confirmMessage": "※ {{mapAppName}}に移動して経路案内を開始します。",
+      "cancel": "キャンセル",
+      "confirm": "移動する",
+      "errorTitle": "エラー",
+      "errorMessage": "地図アプリを開けませんでした。",
+      "appleMaps": "Apple マップ",
+      "googleMaps": "Google マップ"
+    }
+  },
+  "location": {
+    "permissionDeniedNotice": "位置情報が許可されていないため、現在地を表示できません。",
+    "servicesDisabledTitle": "位置情報がオフになりました",
+    "servicesDisabledMessage": "現在地を地図に表示するには、端末の設定で位置情報をオンにしてください。",
+    "openSettings": "設定を開く",
+    "close": "閉じる"
+  },
+  "legal": {
+    "consent": {
+      "title": "ご利用にあたって",
+      "description": "本アプリのご利用には、プライバシーポリシーへの同意が必要です。観光スポットの表示や経路案内のために現在地を利用すること、アカウントを作成した場合にメールアドレスと表示名をお預かりすることなどを記載しています。内容をご確認のうえ、同意して開始してください。",
+      "ageNotice": "{{age}}歳未満の方もご利用いただけますが、現在地の利用・アカウント作成・レビュー投稿はご利用いただけません。観光スポットや避難所の閲覧は年齢に関わらずご利用いただけます。",
+      "readPolicy": "プライバシーポリシーを読む",
+      "acceptAdult": "{{age}}歳以上です・同意して開始",
+      "acceptMinor": "{{age}}歳未満です・同意して開始",
+      "saveError": "同意の保存に失敗しました。もう一度お試しください。"
+    },
+    "credits": {
+      "mapAndRouting": "地図・経路",
+      "mapAndRoutingDescription": "徒歩経路は OpenRouteService 経由で OpenStreetMap のデータを利用しています。",
+      "evacuationData": "避難所データ",
+      "evacuationDataDescription": "避難所の情報は公的機関が公開するデータをもとにしています。出典とデータ基準日は避難タブに表示しています。"
+    }
+  }
+}

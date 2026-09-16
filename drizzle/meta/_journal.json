@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1782881861722,
+      "tag": "0000_cloudy_post",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1782917212911,
+      "tag": "0001_known_cassandra_nova",
+      "breakpoints": true
+    }
+  ]
+}
