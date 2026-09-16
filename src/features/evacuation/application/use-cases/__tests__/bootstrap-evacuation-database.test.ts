@@ -8,7 +8,7 @@ import {
 import { reseedEvacuationSheltersIfNeeded } from '../reseed-evacuation-shelters-if-needed';
 
 jest.mock('../../../infrastructure/api/shelter-api', () => ({
-  fetchEvacuationShelters: jest.fn(),
+  fetchEvacuationShelterDataset: jest.fn(),
 }));
 
 jest.mock('../../../infrastructure/db/client', () => ({
@@ -26,6 +26,10 @@ jest.mock('../../../infrastructure/db/sqlite-evacuation-shelter-repository', () 
 jest.mock('../../../infrastructure/storage/shelter-language-storage', () => ({
   getLastSeededShelterLanguage: jest.fn(),
   setLastSeededShelterLanguage: jest.fn(),
+}));
+
+jest.mock('../../../infrastructure/storage/shelter-dataset-metadata-storage', () => ({
+  setShelterDatasetMetadata: jest.fn(),
 }));
 
 jest.mock('../reseed-evacuation-shelters-if-needed', () => ({

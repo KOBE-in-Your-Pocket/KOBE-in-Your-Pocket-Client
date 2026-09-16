@@ -1,7 +1,7 @@
 import { ApiError } from '@/shared/lib/api';
 
 import type { EvacuationShelter } from '../../../domain/evacuation-shelter';
-import { fetchEvacuationShelters } from '../shelter-api';
+import { fetchEvacuationShelterDataset } from '../shelter-api';
 
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
@@ -25,7 +25,13 @@ const shelterFixture: EvacuationShelter = {
   accessible: false,
 };
 
-describe('fetchEvacuationShelters', () => {
+const metaFixture = {
+  source: '神戸市オープンデータ',
+  asOf: '2025-04-02',
+  updatedAt: '2025-04-02T00:00:00Z',
+};
+
+describe('fetchEvacuationShelterDataset', () => {
   const originalBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
 
   beforeEach(() => {
@@ -42,9 +48,9 @@ describe('fetchEvacuationShelters', () => {
   });
 
   it('GET /api/v1/evacuation/shelters を lang クエリ付きで呼ぶ', async () => {
-    mockFetch.mockResolvedValue(jsonResponse(200, { data: [shelterFixture], meta: {} }));
+    mockFetch.mockResolvedValue(jsonResponse(200, { data: [shelterFixture], meta: metaFixture }));
 
-    await fetchEvacuationShelters('ja');
+    await fetchEvacuationShelterDataset('ja');
 
     expect(mockFetch).toHaveBeenCalledWith(
       'http://10.0.2.2:9090/api/v1/evacuation/shelters?lang=ja',
@@ -52,12 +58,24 @@ describe('fetchEvacuationShelters', () => {
     );
   });
 
-  it('{ data, meta } 封筒から data だけを取り出して返す', async () => {
+  it('{ data, meta } 封筒を shelters と metadata に分けて返す', async () => {
+    mockFetch.mockResolvedValue(jsonResponse(200, { data: [shelterFixture], meta: metaFixture }));
+
+    await expect(fetchEvacuationShelterDataset('ja')).resolves.toEqual({
+      shelters: [shelterFixture],
+      metadata: metaFixture,
+    });
+  });
+
+  it('meta が出典・基準日を満たさないときは metadata を null にする（一覧は返す）', async () => {
     mockFetch.mockResolvedValue(
-      jsonResponse(200, { data: [shelterFixture], meta: { updatedAt: '2025-04-02' } }),
+      jsonResponse(200, { data: [shelterFixture], meta: { updatedAt: '2025-04-02T00:00:00Z' } }),
     );
 
-    await expect(fetchEvacuationShelters('ja')).resolves.toEqual([shelterFixture]);
+    await expect(fetchEvacuationShelterDataset('ja')).resolves.toEqual({
+      shelters: [shelterFixture],
+      metadata: null,
+    });
   });
 
   it('非 2xx レスポンスは ApiError として伝播する', async () => {
@@ -65,6 +83,6 @@ describe('fetchEvacuationShelters', () => {
       jsonResponse(500, { status: 500, error: 'INTERNAL', message: '内部エラー' }),
     );
 
-    await expect(fetchEvacuationShelters('ja')).rejects.toBeInstanceOf(ApiError);
+    await expect(fetchEvacuationShelterDataset('ja')).rejects.toBeInstanceOf(ApiError);
   });
 });

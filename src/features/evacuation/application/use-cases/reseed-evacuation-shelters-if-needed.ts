@@ -2,13 +2,16 @@ import type { SupportedLanguage } from '@/shared/lib/i18n';
 
 import type { EvacuationShelter } from '../../domain/evacuation-shelter';
 import type { EvacuationShelterRepository } from '../../domain/evacuation-shelter-repository';
+import type { ShelterDataset, ShelterDatasetMetadata } from '../../domain/shelter-dataset-metadata';
 
 export type ReseedEvacuationSheltersDeps = {
   repository: EvacuationShelterRepository;
-  fetchShelters: (language: SupportedLanguage) => Promise<EvacuationShelter[]>;
+  fetchDataset: (language: SupportedLanguage) => Promise<ShelterDataset<EvacuationShelter>>;
   language: SupportedLanguage;
   getLastSeededLanguage: () => Promise<SupportedLanguage | null>;
   setLastSeededLanguage: (language: SupportedLanguage) => Promise<void>;
+  /** 出典・データ基準日の保存（#492）。取得できた場合のみ呼ばれる。 */
+  setDatasetMetadata: (metadata: ShelterDatasetMetadata) => Promise<void>;
 };
 
 /**
@@ -35,9 +38,9 @@ export async function reseedEvacuationSheltersIfNeeded(
     return false;
   }
 
-  let shelters: EvacuationShelter[];
+  let dataset: ShelterDataset<EvacuationShelter>;
   try {
-    shelters = await deps.fetchShelters(deps.language);
+    dataset = await deps.fetchDataset(deps.language);
   } catch (error) {
     if (existing.length > 0) {
       return false;
@@ -45,7 +48,14 @@ export async function reseedEvacuationSheltersIfNeeded(
     throw error;
   }
 
-  await deps.repository.replaceAll(shelters);
+  await deps.repository.replaceAll(dataset.shelters);
   await deps.setLastSeededLanguage(deps.language);
+
+  // メタデータを返さないバックエンドでも避難所一覧の投入は成功扱いにする。
+  // 保存済みの古い出典を消さないよう、取得できたときだけ上書きする。
+  if (dataset.metadata !== null) {
+    await deps.setDatasetMetadata(dataset.metadata);
+  }
+
   return true;
 }

@@ -3,6 +3,8 @@ import { Text as MockText, View as MockView, View as RNView } from 'react-native
 
 import { SpotDetailContent } from '../spot-detail';
 
+import { useAgeRestrictionStore } from '@/shared/store';
+
 import type { Spot } from '../../../domain/spot';
 import type { ReactNode } from 'react';
 
@@ -93,6 +95,9 @@ jest.mock('@/shared/lib/theme', () => ({
 
 jest.mock('@/shared/config', () => ({
   Spacing: { half: 2, one: 4, two: 8, three: 16, four: 24, five: 32, six: 64 },
+  // 投稿機能そのものの挙動を検証するため、v1 で OFF のフラグを ON にして描画する。
+  // OFF のときに何も出さないことは *-user-content-disabled.test.tsx で検証する。
+  IS_USER_CONTENT_ENABLED: true,
 }));
 
 jest.mock('@/shared/ui', () => ({
@@ -138,6 +143,9 @@ describe('SpotDetailContent', () => {
     mockUseSpotReviews.mockReturnValue({ data: [], isPending: false });
     mockUseCurrentUser.mockReturnValue({ name: 'test-user' });
     mockUseCurrentLocation.mockReturnValue({ coords: null });
+    // 編集・削除メニューそのものの挙動を検証するため成人として描画する。
+    // 18歳未満で出さないことは同 describe 内の専用ケースで検証する。
+    useAgeRestrictionStore.setState({ isAdult: true });
   });
 
   afterEach(() => {
@@ -231,6 +239,16 @@ describe('SpotDetailContent', () => {
       expect(mockUpdateReviewAsync).toHaveBeenCalledTimes(1);
 
       await waitFor(() => resolveSave(OWN_REVIEW), ASYNC_TIMEOUT);
+    });
+
+    it('18歳未満には自分のレビューでも編集メニューを出さない', () => {
+      // 投稿できない以上、編集・削除も提供しない。レビューの閲覧そのものは制限しない。
+      useAgeRestrictionStore.setState({ isAdult: false });
+
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      expect(screen.getByText(OWN_REVIEW.comment)).toBeTruthy();
+      expect(screen.queryByLabelText('tourism.reviewCard.openMenu')).toBeNull();
     });
   });
 });

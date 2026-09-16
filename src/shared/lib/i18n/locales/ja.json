@@ -1,7 +1,8 @@
 {
   "hello": "こんにちは",
   "common": {
-    "appName": "KOBE in Your Pocket"
+    "appName": "KOBE in Your Pocket",
+    "back": "戻る"
   },
   "tabs": {
     "home": "ホーム",
@@ -58,7 +59,12 @@
       "iconLibraryPhoto": "モック写真",
       "iconLibraryClose": "閉じる",
       "notSignedIn": "アカウントを編集するにはログインが必要です。"
-    }
+    },
+    "about": "このアプリについて",
+    "privacyPolicy": "プライバシーポリシー",
+    "credits": "クレジット",
+    "contact": "お問い合わせ",
+    "version": "バージョン"
   },
   "auth": {
     "title": "アカウント",
@@ -166,6 +172,10 @@
       "openDirectionsButton": "経路を開く",
       "linkErrorTitle": "エラー",
       "linkErrorMessage": "ページを開けませんでした。"
+    },
+    "dataset": {
+      "source": "出典: {{source}}（データ基準日: {{asOf}}）",
+      "disclaimer": "避難所の開設状況は災害時に変わります。実際に避難する際は、お住まいの自治体が発表する最新情報を必ず優先してください。"
     }
   },
   "manner": {
@@ -243,9 +253,17 @@
     "consent": {
       "title": "ご利用にあたって",
       "description": "本アプリのご利用には、プライバシーポリシーへの同意が必要です。観光スポットの表示や経路案内のために現在地を利用すること、アカウントを作成した場合にメールアドレスと表示名をお預かりすることなどを記載しています。内容をご確認のうえ、同意して開始してください。",
+      "ageNotice": "{{age}}歳未満の方もご利用いただけますが、現在地の利用・アカウント作成・レビュー投稿はご利用いただけません。観光スポットや避難所の閲覧は年齢に関わらずご利用いただけます。",
       "readPolicy": "プライバシーポリシーを読む",
-      "accept": "同意して開始",
+      "acceptAdult": "{{age}}歳以上です・同意して開始",
+      "acceptMinor": "{{age}}歳未満です・同意して開始",
       "saveError": "同意の保存に失敗しました。もう一度お試しください。"
+    },
+    "credits": {
+      "mapAndRouting": "地図・経路",
+      "mapAndRoutingDescription": "徒歩経路は OpenRouteService 経由で OpenStreetMap のデータを利用しています。",
+      "evacuationData": "避難所データ",
+      "evacuationDataDescription": "避難所の情報は公的機関が公開するデータをもとにしています。出典とデータ基準日は避難タブに表示しています。"
     }
   }
 }

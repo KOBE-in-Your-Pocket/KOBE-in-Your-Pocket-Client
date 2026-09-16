@@ -49,7 +49,9 @@ if (!googleMapsApiKey) {
 }
 
 export default (): ExpoConfig => ({
-  name: 'KOBE-in-Your-Poket-Client',
+  // ホーム画面・App Store に出る製品名。slug と EAS プロジェクトの紐付けは
+  // 'KOBE-in-Your-Poket-Client' のままにする（変更すると EAS の参照が切れるため）。
+  name: 'KOBE in Your Pocket',
   slug: 'KOBE-in-Your-Poket-Client',
   version: '1.0.0',
   orientation: 'portrait',
@@ -61,6 +63,11 @@ export default (): ExpoConfig => ({
     bundleIdentifier: iosBundleIdentifier,
     ...(iosAppleTeamId ? { appleTeamId: iosAppleTeamId } : {}),
     infoPlist: {
+      // 非適用暗号（HTTPS 以外の独自暗号）を含まないことの申告。
+      // 未設定だと提出のたびに App Store Connect で輸出コンプライアンスを聞かれる。
+      ITSAppUsesNonExemptEncryption: false,
+      // 権限ダイアログを端末の言語で出すために必要（下の locales と対で効く）。
+      CFBundleAllowMixedLocalizations: true,
       // 開発ビルドで HTTP backend を使う場合のみ ATS 例外を設定する。
       // - LOCAL_DEV_IOS=1: 実機ローカル検証（localhost / LAN IP も許可）
       // - EXPO_PUBLIC_API_BASE_URL が http:// 始まり: ローカル HTTP backend（nip.io 等）
@@ -113,8 +120,10 @@ export default (): ExpoConfig => ({
     [
       'expo-location',
       {
+        // Info.plist に焼き込まれる既定値。審査は英語環境で行われるため英語にし、
+        // ja / ko / zh-Hans は上の locales が InfoPlist.strings で上書きする。
         locationWhenInUsePermission:
-          '観光案内のため、現在地を地図上に表示します。周辺のおすすめスポットへのご案内に利用します。',
+          'Your location is shown on the map so we can guide you to nearby sightseeing spots and evacuation shelters, and show how far away they are. Your location stays on your device except when calculating a walking route.',
         isIosBackgroundLocationEnabled: false,
         isAndroidBackgroundLocationEnabled: false,
         isAndroidForegroundServiceEnabled: false,
@@ -149,6 +158,17 @@ export default (): ExpoConfig => ({
         ]
       : []),
   ],
+  // ネイティブの権限ダイアログ・ホーム画面表示名の言語別文字列。
+  // prebuild 時に InfoPlist.strings（<lang>.lproj）へ書き出される。
+  // アプリ内文言の i18n（src/shared/lib/i18n/locales/）とは別物なので、
+  // 権限文言を変えるときは両方ではなくこちらだけを直す。
+  // iOS のロケール識別子に合わせるため、中国語は 'zh' ではなく 'zh-Hans'。
+  locales: {
+    en: './assets/locales/en.json',
+    ja: './assets/locales/ja.json',
+    ko: './assets/locales/ko.json',
+    'zh-Hans': './assets/locales/zh-Hans.json',
+  },
   experiments: {
     typedRoutes: true,
     reactCompiler: true,

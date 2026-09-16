@@ -7,10 +7,15 @@ import { Text as MockText } from 'react-native';
 import type { PublicUser } from '../../../domain/public-user';
 import { AccountSection } from '../account-section';
 
+import { useAgeRestrictionStore } from '@/shared/store';
+
 import type { ReactNode } from 'react';
 
 jest.mock('@/shared/config', () => ({
   Spacing: { half: 2, one: 4, two: 8, three: 16, four: 24, five: 32, six: 64 },
+  // 投稿機能そのものの挙動を検証するため、v1 で OFF のフラグを ON にして描画する。
+  // OFF のときに何も出さないことは *-user-content-disabled.test.tsx で検証する。
+  IS_USER_CONTENT_ENABLED: true,
 }));
 
 jest.mock('@/shared/lib/theme', () => ({
@@ -64,6 +69,9 @@ describe('AccountSection', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockCurrentUser = null;
+    // アカウント欄そのものの挙動を検証するため成人として描画する。
+    // 18歳未満で何も出さないことは account-section-age-restricted.test.tsx で検証する。
+    useAgeRestrictionStore.setState({ isAdult: true });
   });
 
   it('未ログイン時は「ログイン / 新規登録」行を表示し、タップでモーダルを開く', () => {

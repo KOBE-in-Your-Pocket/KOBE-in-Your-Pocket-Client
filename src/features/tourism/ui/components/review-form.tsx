@@ -9,7 +9,9 @@ import { useSubmitReview } from '../../application/use-submit-review';
 import { ACTIVE_STAR_COLOR, INACTIVE_STAR_COLOR, styles } from '../styles/review-form.styles';
 
 import { useCurrentUser } from '@/features/user/application/use-current-user';
+import { IS_USER_CONTENT_ENABLED } from '@/shared/config';
 import { useTheme } from '@/shared/lib/theme';
+import { useIsAdult } from '@/shared/store';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
 const MAX_RATING = 5;
@@ -42,6 +44,7 @@ export function ReviewForm({ spotId }: { spotId: string }) {
   const theme = useTheme();
   const submitReview = useSubmitReview(spotId);
   const currentUser = useCurrentUser();
+  const isAdult = useIsAdult();
 
   const [expanded, setExpanded] = useState(false);
   const [rating, setRating] = useState(0);
@@ -83,6 +86,12 @@ export function ReviewForm({ spotId }: { spotId: string }) {
     setRating(0);
     setComment('');
     setExpanded(false);
+  }
+
+  // v1 では投稿機能そのものを出さない（#306）。案内も出さず、レビューは閲覧のみになる。
+  // 18歳未満にも出さない（子供の個人情報を扱わないため）。どちらの場合も閲覧はできる。
+  if (!IS_USER_CONTENT_ENABLED || !isAdult) {
+    return null;
   }
 
   // 未ログイン時はレビュー投稿できないため、ログインを促す案内を表示する（#400）。

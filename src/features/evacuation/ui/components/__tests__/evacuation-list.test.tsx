@@ -31,6 +31,12 @@ jest.mock('../../../application/hooks/use-evacuation-shelters', () => ({
   useEvacuationShelters: () => mockUseEvacuationShelters(),
 }));
 
+// フッターの出典・免責は shelter-dataset-notice のテストで検証する。
+// ここでは QueryClient を要求しないよう隔離するだけ。
+jest.mock('../../../application/hooks/use-shelter-dataset-metadata', () => ({
+  useShelterDatasetMetadata: () => ({ data: null }),
+}));
+
 jest.mock('@/shared/lib/geo', () => ({
   useCurrentLocation: () => mockUseCurrentLocation(),
   getDistanceKm: () => 1,

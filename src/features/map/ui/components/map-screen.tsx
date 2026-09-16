@@ -15,6 +15,7 @@ import { useRoute } from '../../application/use-route';
 import { useMapModeStore } from '../../store/use-map-mode-store';
 import { styles } from '../styles/map-screen.styles';
 import { MapModeToggle } from './map-mode-toggle';
+import { RouteAttribution } from './route-attribution';
 import { SpotCard } from './spot-card';
 
 export function MapScreen() {
@@ -148,6 +149,9 @@ export function MapScreen() {
       />
 
       <MapModeToggle />
+
+      {/* 経路を描画しているときだけ OSM / ORS の帰属表示を出す（ODbL）。 */}
+      {route?.coordinates ? <RouteAttribution /> : null}
 
       {mapMode === 'tourism' && selectedSpot ? (
         <SpotCard

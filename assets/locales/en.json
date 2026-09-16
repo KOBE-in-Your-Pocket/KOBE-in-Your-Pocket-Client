@@ -1,0 +1,6 @@
+{
+  "ios": {
+    "CFBundleDisplayName": "KOBE in Your Pocket",
+    "NSLocationWhenInUseUsageDescription": "Your location is shown on the map so we can guide you to nearby sightseeing spots and evacuation shelters, and show how far away they are. Your location stays on your device except when calculating a walking route."
+  }
+}

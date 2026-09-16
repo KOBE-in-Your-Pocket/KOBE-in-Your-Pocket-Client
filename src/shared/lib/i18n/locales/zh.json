@@ -1,7 +1,8 @@
 {
   "hello": "你好",
   "common": {
-    "appName": "KOBE in Your Pocket"
+    "appName": "KOBE in Your Pocket",
+    "back": "返回"
   },
   "tabs": {
     "home": "首页",
@@ -58,7 +59,12 @@
       "iconLibraryPhoto": "示例照片",
       "iconLibraryClose": "关闭",
       "notSignedIn": "编辑账户前请先登录。"
-    }
+    },
+    "about": "关于本应用",
+    "privacyPolicy": "隐私政策",
+    "credits": "鸣谢",
+    "contact": "联系我们",
+    "version": "版本"
   },
   "auth": {
     "title": "账户",
@@ -166,6 +172,10 @@
       "openDirectionsButton": "打开路线",
       "linkErrorTitle": "错误",
       "linkErrorMessage": "无法打开页面。"
+    },
+    "dataset": {
+      "source": "出处：{{source}}（数据基准日：{{asOf}}）",
+      "disclaimer": "避难所的开放情况在灾害发生时会发生变化。实际避难时，请务必以当地政府发布的最新信息为准。"
     }
   },
   "manner": {
@@ -243,9 +253,17 @@
     "consent": {
       "title": "使用前须知",
       "description": "使用本应用需要同意隐私政策。其中说明了我们如何使用您的位置信息来显示景点和步行路线，以及在您创建账户时会保存哪些信息（如电子邮件地址和显示名称）。请阅读后再开始使用。",
+      "ageNotice": "未满 {{age}} 岁也可以使用本应用，但无法使用定位、创建账户和发表评价。景点和避难所的浏览不受年龄限制。",
       "readPolicy": "阅读隐私政策",
-      "accept": "同意并开始",
+      "acceptAdult": "我已满 {{age}} 岁 · 同意并开始",
+      "acceptMinor": "我未满 {{age}} 岁 · 同意并开始",
       "saveError": "保存同意记录失败，请重试。"
+    },
+    "credits": {
+      "mapAndRouting": "地图与路线",
+      "mapAndRoutingDescription": "步行路线通过 OpenRouteService 使用 OpenStreetMap 的数据。",
+      "evacuationData": "避难所数据",
+      "evacuationDataDescription": "避难所信息基于公共机构公开的数据。出处与数据基准日显示在避难标签页中。"
     }
   }
 }

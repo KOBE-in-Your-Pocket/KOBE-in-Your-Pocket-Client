@@ -9,6 +9,8 @@ import {
 } from '../dev-default-coordinates';
 import { useCurrentLocation } from '../hooks/use-current-location';
 
+import { useAgeRestrictionStore } from '@/shared/store';
+
 jest.mock('expo-location');
 jest.mock('../dev-default-coordinates', () => ({
   ...jest.requireActual('../dev-default-coordinates'),
@@ -44,6 +46,9 @@ describe('useCurrentLocation', () => {
     jest.clearAllMocks();
     mockedShouldUseDevDefaultLocation.mockReturnValue(false);
     mockedHasServicesEnabled.mockResolvedValue(true);
+    // 年齢制限は既定で「制限あり」のため、位置情報そのものの検証では成人として扱う。
+    // 制限が掛かっている場合の挙動は「年齢による制限」ブロックで検証する。
+    useAgeRestrictionStore.setState({ isAdult: true });
   });
 
   it('returns coords when permission is granted', async () => {
@@ -67,6 +72,7 @@ describe('useCurrentLocation', () => {
     expect(result.current.error).toBeNull();
     expect(result.current.permissionDenied).toBe(false);
     expect(result.current.servicesDisabled).toBe(false);
+    expect(result.current.restrictedByAge).toBe(false);
     expect(mockedGetCurrentPosition).toHaveBeenCalledTimes(1);
   });
 
@@ -141,5 +147,72 @@ describe('useCurrentLocation', () => {
     expect(result.current.permissionDenied).toBe(false);
     expect(mockedRequestPermissions).not.toHaveBeenCalled();
     expect(mockedGetCurrentPosition).not.toHaveBeenCalled();
+  });
+
+  describe('年齢による制限', () => {
+    beforeEach(() => {
+      useAgeRestrictionStore.setState({ isAdult: false });
+    });
+
+    it('18歳未満には権限ダイアログを出さず、現在地も取得しない', async () => {
+      // 「尋ねたうえで使わない」のでは子供の位置情報に触れる余地が残るため、
+      // 権限要求そのものに到達しないことを検証する。
+      const { result } = renderHook(() => useCurrentLocation());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.coords).toBeNull();
+      expect(result.current.restrictedByAge).toBe(true);
+      expect(mockedHasServicesEnabled).not.toHaveBeenCalled();
+      expect(mockedRequestPermissions).not.toHaveBeenCalled();
+      expect(mockedGetCurrentPosition).not.toHaveBeenCalled();
+    });
+
+    it('権限拒否・サービスオフとは区別し、設定変更を促さない', async () => {
+      // 端末設定では解除できない制限なので、「設定アプリで許可してください」の
+      // 案内に使われる 2 つのフラグは立ててはいけない。
+      const { result } = renderHook(() => useCurrentLocation());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.permissionDenied).toBe(false);
+      expect(result.current.servicesDisabled).toBe(false);
+      expect(result.current.error).toBeNull();
+    });
+
+    it('開発用の既定座標よりも年齢制限を優先する', async () => {
+      mockedShouldUseDevDefaultLocation.mockReturnValue(true);
+
+      const { result } = renderHook(() => useCurrentLocation());
+
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
+
+      expect(result.current.coords).toBeNull();
+      expect(result.current.restrictedByAge).toBe(true);
+    });
+
+    it('成人として同意し直すと現在地の取得を開始する', async () => {
+      mockedRequestPermissions.mockResolvedValue({
+        status: 'granted',
+      } as Awaited<ReturnType<typeof Location.requestForegroundPermissionsAsync>>);
+      mockedGetCurrentPosition.mockResolvedValue({ coords: sampleCoords, timestamp: 0 });
+
+      const { result, rerender } = renderHook(() => useCurrentLocation());
+
+      await waitFor(() => expect(result.current.restrictedByAge).toBe(true));
+      expect(mockedRequestPermissions).not.toHaveBeenCalled();
+
+      useAgeRestrictionStore.setState({ isAdult: true });
+      rerender(undefined);
+
+      await waitFor(() => expect(result.current.coords).toEqual(sampleCoords));
+      expect(result.current.restrictedByAge).toBe(false);
+    });
   });
 });

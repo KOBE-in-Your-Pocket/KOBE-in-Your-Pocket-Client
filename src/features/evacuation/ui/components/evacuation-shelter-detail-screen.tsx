@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useEvacuationShelterDetail } from '../../application/hooks/use-evacuation-shelter-detail';
 
+import { ShelterDatasetNotice } from './shelter-dataset-notice';
 import { ShelterImage } from './shelter-image';
 
 import { EXTERNAL_LINK_COLOR, styles } from '../styles/evacuation-shelter-detail.styles';
@@ -176,6 +177,8 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
             />
           </Pressable>
         ) : null}
+
+        <ShelterDatasetNotice />
       </View>
     </ScrollView>
   );

@@ -1,7 +1,8 @@
 {
   "hello": "안녕하세요",
   "common": {
-    "appName": "KOBE in Your Pocket"
+    "appName": "KOBE in Your Pocket",
+    "back": "뒤로"
   },
   "tabs": {
     "home": "홈",
@@ -58,7 +59,12 @@
       "iconLibraryPhoto": "샘플 사진",
       "iconLibraryClose": "닫기",
       "notSignedIn": "계정을 편집하려면 로그인이 필요합니다."
-    }
+    },
+    "about": "앱 정보",
+    "privacyPolicy": "개인정보 처리방침",
+    "credits": "크레딧",
+    "contact": "문의하기",
+    "version": "버전"
   },
   "auth": {
     "title": "계정",
@@ -166,6 +172,10 @@
       "openDirectionsButton": "경로 열기",
       "linkErrorTitle": "오류",
       "linkErrorMessage": "페이지를 열 수 없습니다."
+    },
+    "dataset": {
+      "source": "출처: {{source}} (데이터 기준일: {{asOf}})",
+      "disclaimer": "대피소 개설 상황은 재해 시 변경됩니다. 실제로 대피할 때는 거주 지역 지자체가 발표하는 최신 정보를 반드시 우선하십시오."
     }
   },
   "manner": {
@@ -232,13 +242,28 @@
       "googleMaps": "Google 지도"
     }
   },
+  "location": {
+    "permissionDeniedNotice": "위치 정보가 허용되지 않아 현재 위치를 표시할 수 없습니다.",
+    "servicesDisabledTitle": "위치 서비스가 꺼졌습니다",
+    "servicesDisabledMessage": "지도에 현재 위치를 표시하려면 기기 설정에서 위치 서비스를 켜 주세요.",
+    "openSettings": "설정 열기",
+    "close": "닫기"
+  },
   "legal": {
     "consent": {
       "title": "이용 전 안내",
       "description": "본 앱을 이용하려면 개인정보 처리방침에 동의해야 합니다. 관광지 표시와 도보 경로 안내를 위해 현재 위치를 이용하는 방법, 계정을 만들 경우 이메일 주소와 표시 이름 등을 보관하는 내용이 기재되어 있습니다. 내용을 확인한 후 시작해 주세요.",
+      "ageNotice": "{{age}}세 미만도 이용할 수 있지만 현재 위치 이용, 계정 생성, 리뷰 작성은 이용할 수 없습니다. 관광지와 대피소 열람은 연령과 관계없이 이용할 수 있습니다.",
       "readPolicy": "개인정보 처리방침 읽기",
-      "accept": "동의하고 시작",
+      "acceptAdult": "{{age}}세 이상입니다 · 동의하고 시작",
+      "acceptMinor": "{{age}}세 미만입니다 · 동의하고 시작",
       "saveError": "동의 내용을 저장하지 못했습니다. 다시 시도해 주세요."
+    },
+    "credits": {
+      "mapAndRouting": "지도 및 경로",
+      "mapAndRoutingDescription": "도보 경로는 OpenRouteService를 통해 OpenStreetMap 데이터를 이용합니다.",
+      "evacuationData": "대피소 데이터",
+      "evacuationDataDescription": "대피소 정보는 공공기관이 공개한 데이터를 기반으로 합니다. 출처와 데이터 기준일은 대피 탭에 표시됩니다."
     }
   }
 }

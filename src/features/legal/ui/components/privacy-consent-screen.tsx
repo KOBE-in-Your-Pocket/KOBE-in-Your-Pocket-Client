@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ADULT_AGE_THRESHOLD } from '../../domain/age-restriction';
 import { privacyPolicyUrl } from '../../domain/privacy-policy';
 
 import { MaxContentWidth, Spacing } from '@/shared/config';
@@ -13,22 +14,34 @@ import { ThemedText, ThemedView } from '@/shared/ui';
 /** プライマリアクションの配色（サインインモーダルのアクセントカラーに合わせる）。 */
 const ACCENT_COLOR = '#C67B4A';
 
+/** どちらの選択肢を保存中か。押した側だけにスピナーを出すために持つ。 */
+type SavingChoice = 'adult' | 'minor' | null;
+
 export type PrivacyConsentScreenProps = {
-  /** 同意ボタンの押下。保存に失敗した場合は reject する。 */
-  onAccept: () => Promise<void>;
+  /**
+   * 同意ボタンの押下。{@link ADULT_AGE_THRESHOLD} 歳以上として同意したかを渡す。
+   * 保存に失敗した場合は reject する。
+   */
+  onAccept: (isAdult: boolean) => Promise<void>;
 };
 
 /**
  * 初回起動時に表示する同意画面。
  *
  * 同意するまでアプリ本体へ進めないブロッキング画面のため、閉じる導線は持たない。
+ *
+ * 年齢は「閾値以上かどうか」だけを尋ねる。生年月日を入力させると、回避したいはずの
+ * 子供の個人情報そのものを集めることになるため。どちらを選んでも観光・避難所・マナーの
+ * 閲覧はできるので、未成年の選択肢を選びにくく見せない。
  */
 export function PrivacyConsentScreen({ onAccept }: PrivacyConsentScreenProps) {
   const { t, i18n } = useTranslation();
   const theme = useTheme();
 
-  const [isSaving, setIsSaving] = useState(false);
+  const [savingChoice, setSavingChoice] = useState<SavingChoice>(null);
   const [hasFailed, setHasFailed] = useState(false);
+
+  const isSaving = savingChoice !== null;
 
   const openPolicy = async () => {
     await openBrowserAsync(privacyPolicyUrl(i18n.language), {
@@ -36,19 +49,19 @@ export function PrivacyConsentScreen({ onAccept }: PrivacyConsentScreenProps) {
     });
   };
 
-  const accept = async () => {
+  const accept = async (isAdult: boolean) => {
     if (isSaving) {
       return;
     }
 
-    setIsSaving(true);
+    setSavingChoice(isAdult ? 'adult' : 'minor');
     setHasFailed(false);
     try {
-      await onAccept();
+      await onAccept(isAdult);
     } catch {
       setHasFailed(true);
     } finally {
-      setIsSaving(false);
+      setSavingChoice(null);
     }
   };
 
@@ -59,6 +72,9 @@ export function PrivacyConsentScreen({ onAccept }: PrivacyConsentScreenProps) {
           <ThemedText type="title">{t('common.appName')}</ThemedText>
           <ThemedText type="subtitle">{t('legal.consent.title')}</ThemedText>
           <ThemedText>{t('legal.consent.description')}</ThemedText>
+          <ThemedText themeColor="textSecondary">
+            {t('legal.consent.ageNotice', { age: ADULT_AGE_THRESHOLD })}
+          </ThemedText>
 
           <Pressable
             accessibilityRole="link"
@@ -80,14 +96,34 @@ export function PrivacyConsentScreen({ onAccept }: PrivacyConsentScreenProps) {
           accessibilityState={{ disabled: isSaving }}
           disabled={isSaving}
           onPress={() => {
-            void accept();
+            void accept(true);
           }}
-          style={[styles.acceptButton, isSaving && styles.acceptButtonDisabled]}
+          style={[styles.acceptButton, isSaving && styles.buttonDisabled]}
         >
-          {isSaving ? (
+          {savingChoice === 'adult' ? (
             <ActivityIndicator color="#ffffff" />
           ) : (
-            <ThemedText style={styles.acceptLabel}>{t('legal.consent.accept')}</ThemedText>
+            <ThemedText style={styles.acceptLabel}>
+              {t('legal.consent.acceptAdult', { age: ADULT_AGE_THRESHOLD })}
+            </ThemedText>
+          )}
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: isSaving }}
+          disabled={isSaving}
+          onPress={() => {
+            void accept(false);
+          }}
+          style={[styles.minorButton, isSaving && styles.buttonDisabled]}
+        >
+          {savingChoice === 'minor' ? (
+            <ActivityIndicator color={ACCENT_COLOR} />
+          ) : (
+            <ThemedText style={styles.minorLabel}>
+              {t('legal.consent.acceptMinor', { age: ADULT_AGE_THRESHOLD })}
+            </ThemedText>
           )}
         </Pressable>
       </SafeAreaView>
@@ -132,11 +168,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: Spacing.four,
   },
-  acceptButtonDisabled: {
+  minorButton: {
+    borderColor: ACCENT_COLOR,
+    borderWidth: 1,
+    borderRadius: Spacing.two,
+    paddingVertical: Spacing.three,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: Spacing.two,
+  },
+  buttonDisabled: {
     opacity: 0.6,
   },
   acceptLabel: {
     color: '#ffffff',
+    fontWeight: '600',
+  },
+  minorLabel: {
+    color: ACCENT_COLOR,
     fontWeight: '600',
   },
 });
