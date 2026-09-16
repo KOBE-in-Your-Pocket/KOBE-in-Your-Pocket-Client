@@ -7,7 +7,7 @@ import { FALLBACK_LANGUAGE, SUPPORTED_LANGUAGES, type SupportedLanguage } from '
  * 本文を改定して再同意が必要になったらこの値を上げる。保存済みの同意がこの値と異なる場合、
  * アプリは起動時に再度同意を求める。
  */
-export const PRIVACY_POLICY_VERSION = '2026-09-07';
+export const PRIVACY_POLICY_VERSION = '2026-09-16';
 
 /**
  * 公開されたプライバシーポリシーのベース URL。
@@ -23,6 +23,13 @@ export type PolicyConsent = {
   version: string;
   /** 同意した日時（ISO 8601 拡張形式・UTC）。 */
   agreedAt: string;
+  /**
+   * {@link ADULT_AGE_THRESHOLD} 歳以上として同意したか。
+   *
+   * false の場合は個人情報に関わる機能を無効化する。年齢は端末内にのみ保持し、
+   * 生年月日など特定につながる値は持たない（必要なのは閾値を超えるか否かだけ）。
+   */
+  isAdult: boolean;
 };
 
 /** 同意記録の永続化ポート。 */

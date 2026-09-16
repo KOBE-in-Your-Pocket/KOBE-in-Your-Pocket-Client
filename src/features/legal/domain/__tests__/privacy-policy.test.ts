@@ -3,12 +3,32 @@ import { isConsentCurrent, PRIVACY_POLICY_VERSION, privacyPolicyUrl } from '../p
 describe('isConsentCurrent', () => {
   it('現在の版数と一致する場合のみ true', () => {
     expect(
-      isConsentCurrent({ version: PRIVACY_POLICY_VERSION, agreedAt: '2026-09-07T00:00:00.000Z' }),
+      isConsentCurrent({
+        version: PRIVACY_POLICY_VERSION,
+        agreedAt: '2026-09-07T00:00:00.000Z',
+        isAdult: true,
+      }),
     ).toBe(true);
-    expect(isConsentCurrent({ version: '2000-01-01', agreedAt: '2000-01-01T00:00:00.000Z' })).toBe(
-      false,
-    );
+    expect(
+      isConsentCurrent({
+        version: '2000-01-01',
+        agreedAt: '2000-01-01T00:00:00.000Z',
+        isAdult: true,
+      }),
+    ).toBe(false);
     expect(isConsentCurrent(null)).toBe(false);
+  });
+
+  it('年齢区分は版数の判定に影響しない', () => {
+    // 未成年として同意した記録も「現在の版数に同意済み」であり、再同意は不要。
+    // 年齢による機能制限は、同意が最新かどうかとは別の軸で判断する。
+    expect(
+      isConsentCurrent({
+        version: PRIVACY_POLICY_VERSION,
+        agreedAt: '2026-09-07T00:00:00.000Z',
+        isAdult: false,
+      }),
+    ).toBe(true);
   });
 });
 

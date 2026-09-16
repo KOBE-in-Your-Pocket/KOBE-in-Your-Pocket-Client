@@ -5,6 +5,8 @@ import { AppState, Platform } from 'react-native';
 
 import { createDevDefaultCoords, shouldUseDevDefaultLocation } from '../dev-default-coordinates';
 
+import { useIsAdult } from '@/shared/store';
+
 export type CurrentLocationCoords = Location.LocationObjectCoords;
 
 export type UseCurrentLocationResult = {
@@ -15,9 +17,17 @@ export type UseCurrentLocationResult = {
   permissionDenied: boolean;
   /** 端末側で位置情報サービス（GPS）がオフの場合に true。 */
   servicesDisabled: boolean;
+  /**
+   * 年齢による制限で現在地を取得しない場合に true。
+   *
+   * `permissionDenied` とは区別する。端末の設定を変えても解除されないため、
+   * 「設定アプリで許可してください」と案内してはいけない。
+   */
+  restrictedByAge: boolean;
 };
 
 export function useCurrentLocation(): UseCurrentLocationResult {
+  const isAdult = useIsAdult();
   const [coords, setCoords] = useState<CurrentLocationCoords | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -32,6 +42,17 @@ export function useCurrentLocation(): UseCurrentLocationResult {
     // 位置情報をオン/オフした直後など）にも呼び、起動後の状態変化を取りこぼさない。
     const resolveLocation = async () => {
       try {
+        // 18歳未満には現在地を使わせない。要点は権限ダイアログ自体を出さないことで、
+        // 「尋ねたうえで使わない」のでは子供の位置情報に触れる余地が残る。
+        if (!isAdult) {
+          if (cancelled) return;
+          setServicesDisabled(false);
+          setPermissionDenied(false);
+          setError(null);
+          setCoords(null);
+          return;
+        }
+
         if (shouldUseDevDefaultLocation(Device.isDevice, Platform.OS)) {
           if (cancelled) return;
           setServicesDisabled(false);
@@ -92,7 +113,7 @@ export function useCurrentLocation(): UseCurrentLocationResult {
       cancelled = true;
       subscription.remove();
     };
-  }, []);
+  }, [isAdult]);
 
-  return { loading, error, coords, permissionDenied, servicesDisabled };
+  return { loading, error, coords, permissionDenied, servicesDisabled, restrictedByAge: !isAdult };
 }

@@ -7,6 +7,8 @@ import { useAuthStore } from '@/features/user';
 import { postReview } from '../../../infrastructure/api/review-api';
 import { ReviewForm } from '../review-form';
 
+import { useAgeRestrictionStore } from '@/shared/store';
+
 import type { ReactNode } from 'react';
 
 jest.mock('../../../infrastructure/api/review-api', () => ({
@@ -108,6 +110,9 @@ describe('ReviewForm', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     useAuthStore.getState().logout();
+    // 投稿フォームそのものの挙動を検証するため成人として描画する。
+    // 18歳未満で何も出さないことは review-form-age-restricted.test.tsx で検証する。
+    useAgeRestrictionStore.setState({ isAdult: true });
   });
 
   it('未ログイン時はログイン案内を表示する', () => {

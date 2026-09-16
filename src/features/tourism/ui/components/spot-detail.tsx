@@ -35,6 +35,7 @@ import { IS_USER_CONTENT_ENABLED, Spacing } from '@/shared/config';
 import { confirmOpenDirections } from '@/shared/lib/directions';
 import { useCurrentLocation } from '@/shared/lib/geo';
 import { useTheme } from '@/shared/lib/theme';
+import { useIsAdult } from '@/shared/store';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
 function BackButton({ label }: { label: string }) {
@@ -306,6 +307,7 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
   const { data: reviews, isPending: isReviewsPending } = useSpotReviews(spot.id);
   const [reviewLang, setReviewLang] = useState<ReviewLangFilter>('all');
   const currentUser = useCurrentUser();
+  const isAdult = useIsAdult();
   const updateReview = useUpdateReview(spot.id);
   const deleteReview = useDeleteReview(spot.id);
 
@@ -399,7 +401,8 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
                 key={review.id}
                 review={review}
                 // v1 は閲覧のみ（#306）。投稿できない以上、編集・削除メニューも出さない。
-                isOwn={IS_USER_CONTENT_ENABLED && review.author.id === currentUser?.id}
+                // 18歳未満も同様に投稿できないため、メニューを出す条件から外す。
+                isOwn={IS_USER_CONTENT_ENABLED && isAdult && review.author.id === currentUser?.id}
                 onUpdate={(changes) => updateReview.mutateAsync({ reviewId: review.id, changes })}
                 onDelete={() => deleteReview(review.id)}
               />

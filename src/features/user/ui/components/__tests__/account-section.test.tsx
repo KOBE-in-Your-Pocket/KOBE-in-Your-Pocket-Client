@@ -7,6 +7,8 @@ import { Text as MockText } from 'react-native';
 import type { PublicUser } from '../../../domain/public-user';
 import { AccountSection } from '../account-section';
 
+import { useAgeRestrictionStore } from '@/shared/store';
+
 import type { ReactNode } from 'react';
 
 jest.mock('@/shared/config', () => ({
@@ -67,6 +69,9 @@ describe('AccountSection', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockCurrentUser = null;
+    // アカウント欄そのものの挙動を検証するため成人として描画する。
+    // 18歳未満で何も出さないことは account-section-age-restricted.test.tsx で検証する。
+    useAgeRestrictionStore.setState({ isAdult: true });
   });
 
   it('未ログイン時は「ログイン / 新規登録」行を表示し、タップでモーダルを開く', () => {

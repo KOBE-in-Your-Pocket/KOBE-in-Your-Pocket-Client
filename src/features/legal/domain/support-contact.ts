@@ -5,9 +5,10 @@
  * v1 は UGC を出さないため必須ではないが、プライバシーポリシー第 7 章の請求窓口として
  * 到達手段を 1 つは公開しておく必要がある。
  *
- * 現時点ではチーム共用のメールアドレスが無いため、GitHub Issues を窓口とする
- * （チーム決定・2026-09-14）。メールアドレスを用意したらここを差し替え、
- * Specification の `docs/legal/privacy-policy.*.md` 第 1 章も合わせて更新すること。
+ * 窓口は Google フォーム。GitHub Issues から移したのは、GitHub アカウントを持たない
+ * 利用者（主対象である訪日外国人を含む）が到達できないため（チーム決定・2026-09-16）。
+ *
+ * 差し替える場合は Specification の `docs/legal/privacy-policy.*.md` 第 1 章と、
+ * 公開ページの再生成も合わせて行うこと。
  */
-export const SUPPORT_CONTACT_URL =
-  'https://github.com/KOBE-in-Your-Pocket/KOBE-in-Your-Poket-Client/issues';
+export const SUPPORT_CONTACT_URL = 'https://forms.gle/EkiCqzzmxnSkT86X7';

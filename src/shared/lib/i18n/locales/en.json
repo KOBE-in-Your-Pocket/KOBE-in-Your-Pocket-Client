@@ -253,8 +253,10 @@
     "consent": {
       "title": "Before you start",
       "description": "Using this app requires your acceptance of our Privacy Policy. It explains how we use your location to show tourist spots and walking directions, and what we store if you create an account, such as your email address and display name. Please read it and then continue.",
+      "ageNotice": "If you are under {{age}}, you can still use the app, but location, accounts, and posting reviews are turned off. Browsing sightseeing spots and evacuation shelters is available at any age.",
       "readPolicy": "Read the Privacy Policy",
-      "accept": "Accept and start",
+      "acceptAdult": "I am {{age}} or older — accept and start",
+      "acceptMinor": "I am under {{age}} — accept and start",
       "saveError": "We could not save your acceptance. Please try again."
     },
     "credits": {

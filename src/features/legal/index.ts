@@ -1,4 +1,5 @@
 export { usePrivacyConsent, type ConsentStatus } from './application/use-privacy-consent';
+export { ADULT_AGE_THRESHOLD } from './domain/age-restriction';
 export { type Attribution, ROUTING_ATTRIBUTIONS } from './domain/attributions';
 export {
   isConsentCurrent,

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   type ConsentStore,
   isConsentCurrent,
+  type PolicyConsent,
   PRIVACY_POLICY_VERSION,
 } from '../domain/privacy-policy';
 
@@ -19,8 +20,15 @@ export type ConsentStatus = 'loading' | 'required' | 'granted';
 
 export type PrivacyConsent = {
   status: ConsentStatus;
+  /**
+   * 成人として同意しているか。`status` が `granted` 以外の間は false。
+   *
+   * 未確定の間を false（制限あり）に倒しているのは、読み出し前に個人情報に関わる
+   * 機能が開いてしまうのを防ぐため。
+   */
+  isAdult: boolean;
   /** 現在の版数への同意を記録する。保存に失敗した場合は状態を変えない。 */
-  accept: () => Promise<void>;
+  accept: (isAdult: boolean) => Promise<void>;
 };
 
 /**
@@ -32,22 +40,27 @@ export type PrivacyConsent = {
  */
 export function usePrivacyConsent(store: ConsentStore = defaultConsentStore): PrivacyConsent {
   const [status, setStatus] = useState<ConsentStatus>('loading');
+  const [isAdult, setIsAdult] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
     void (async () => {
-      let granted = false;
+      let consent: PolicyConsent | null = null;
       try {
-        granted = isConsentCurrent(await store.loadConsent());
+        consent = await store.loadConsent();
       } catch {
         // 読み出しに失敗した場合は未同意として扱い、同意を求める。
-        granted = false;
+        consent = null;
       }
 
-      if (!cancelled) {
-        setStatus(granted ? 'granted' : 'required');
+      if (cancelled) {
+        return;
       }
+
+      const granted = isConsentCurrent(consent);
+      setIsAdult(granted ? (consent?.isAdult ?? false) : false);
+      setStatus(granted ? 'granted' : 'required');
     })();
 
     return () => {
@@ -55,13 +68,18 @@ export function usePrivacyConsent(store: ConsentStore = defaultConsentStore): Pr
     };
   }, [store]);
 
-  const accept = useCallback(async () => {
-    await store.saveConsent({
-      version: PRIVACY_POLICY_VERSION,
-      agreedAt: new Date().toISOString(),
-    });
-    setStatus('granted');
-  }, [store]);
+  const accept = useCallback(
+    async (acceptedAsAdult: boolean) => {
+      await store.saveConsent({
+        version: PRIVACY_POLICY_VERSION,
+        agreedAt: new Date().toISOString(),
+        isAdult: acceptedAsAdult,
+      });
+      setIsAdult(acceptedAsAdult);
+      setStatus('granted');
+    },
+    [store],
+  );
 
-  return { status, accept };
+  return { status, isAdult, accept };
 }
