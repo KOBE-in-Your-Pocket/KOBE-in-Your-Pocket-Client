@@ -71,7 +71,8 @@ function ReviewCard({
   isOwn: boolean;
   /** 保存は backend への PUT。完了を待って編集モードを閉じるため Promise を返す。 */
   onUpdate: (changes: ReviewEdit) => Promise<unknown>;
-  onDelete: () => void;
+  /** 削除は backend への DELETE。失敗を検知できるよう Promise を返す。 */
+  onDelete: () => Promise<unknown>;
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -257,7 +258,8 @@ function ReviewCard({
               style={dropdownStyles.item}
               onPress={() => {
                 setMenuOpen(false);
-                onDelete();
+                // 確認ダイアログ（#535）・失敗時の表示（#537）は後続コミットで追加する。
+                onDelete().catch(() => {});
               }}
             >
               <SymbolView
@@ -404,7 +406,7 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
                 // 18歳未満も同様に投稿できないため、メニューを出す条件から外す。
                 isOwn={IS_USER_CONTENT_ENABLED && isAdult && review.author.id === currentUser?.id}
                 onUpdate={(changes) => updateReview.mutateAsync({ reviewId: review.id, changes })}
-                onDelete={() => deleteReview(review.id)}
+                onDelete={() => deleteReview.mutateAsync(review.id)}
               />
             ))
           ) : (

@@ -26,6 +26,7 @@ const mockUseSpotReviews = jest.fn();
 const mockUseCurrentUser = jest.fn();
 const mockUseCurrentLocation = jest.fn();
 const mockUpdateReviewAsync = jest.fn();
+const mockDeleteReviewAsync = jest.fn();
 
 jest.mock('../../../application/use-spot-reviews', () => ({
   useSpotReviews: (spotId: string) => mockUseSpotReviews(spotId),
@@ -36,7 +37,7 @@ jest.mock('../../../application/use-update-review', () => ({
 }));
 
 jest.mock('../../../application/use-delete-review', () => ({
-  useDeleteReview: () => jest.fn(),
+  useDeleteReview: () => ({ mutateAsync: mockDeleteReviewAsync }),
 }));
 
 jest.mock('@/features/manner', () => ({
@@ -140,6 +141,7 @@ function openEditor() {
 describe('SpotDetailContent', () => {
   beforeEach(() => {
     mockUpdateReviewAsync.mockReset();
+    mockDeleteReviewAsync.mockReset();
     mockUseSpotReviews.mockReturnValue({ data: [], isPending: false });
     mockUseCurrentUser.mockReturnValue({ name: 'test-user' });
     mockUseCurrentLocation.mockReturnValue({ coords: null });
@@ -249,6 +251,31 @@ describe('SpotDetailContent', () => {
 
       expect(screen.getByText(OWN_REVIEW.comment)).toBeTruthy();
       expect(screen.queryByLabelText('tourism.reviewCard.openMenu')).toBeNull();
+    });
+  });
+
+  describe('自分のレビューの削除', () => {
+    beforeEach(() => {
+      stubMeasureInWindow();
+      mockUseSpotReviews.mockReturnValue({ data: [OWN_REVIEW], isPending: false });
+      mockUseCurrentUser.mockReturnValue(OWN_REVIEW.author);
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('削除メニューを押すと reviewId を渡して削除 mutation を呼ぶ', async () => {
+      mockDeleteReviewAsync.mockResolvedValue(undefined);
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
+      fireEvent.press(screen.getByText('tourism.reviewCard.delete'));
+
+      await waitFor(
+        () => expect(mockDeleteReviewAsync).toHaveBeenCalledWith('review-1'),
+        ASYNC_TIMEOUT,
+      );
     });
   });
 });
