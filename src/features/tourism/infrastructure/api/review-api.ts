@@ -138,3 +138,15 @@ export async function updateReview(
     },
   };
 }
+
+/**
+ * 自分のレビューを削除する。
+ *
+ * バックエンド `DELETE /api/v1/tourism/spots/:spotId/reviews/:reviewId` を呼び出す（認証必須 / #526）。
+ */
+export async function deleteReview(spotId: string, reviewId: string): Promise<void> {
+  await apiFetch<void>(
+    `/api/v1/tourism/spots/${encodeURIComponent(spotId)}/reviews/${encodeURIComponent(reviewId)}`,
+    { method: 'DELETE', auth: true },
+  );
+}
