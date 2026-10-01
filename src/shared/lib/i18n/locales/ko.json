@@ -114,7 +114,10 @@
       "saving": "저장 중...",
       "saveError": "리뷰를 수정하지 못했습니다. 잠시 후 다시 시도해 주세요.",
       "deleteConfirmTitle": "리뷰를 삭제하시겠습니까?",
-      "deleteConfirmMessage": "삭제하면 되돌릴 수 없습니다."
+      "deleteConfirmMessage": "삭제하면 되돌릴 수 없습니다.",
+      "deleting": "삭제 중...",
+      "deleteError": "리뷰를 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      "retry": "다시 시도"
     },
     "reviewFilter": {
       "all": "전체"

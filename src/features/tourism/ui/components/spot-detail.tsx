@@ -86,8 +86,23 @@ function ReviewCard({
   const [editComment, setEditComment] = useState(review.comment);
   const [isSaving, setIsSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteFailed, setDeleteFailed] = useState(false);
 
   const canSave = editRating > 0 && editComment.trim() !== '' && !isSaving;
+
+  async function handleDelete() {
+    if (isDeleting) return;
+    setIsDeleting(true);
+    setDeleteFailed(false);
+    try {
+      await onDelete();
+    } catch {
+      setDeleteFailed(true);
+    } finally {
+      setIsDeleting(false);
+    }
+  }
 
   function openMenu() {
     menuAnchorRef.current?.measureInWindow((x, _y, w, h) => {
@@ -232,6 +247,23 @@ function ReviewCard({
         <ThemedText type="small" themeColor="textSecondary" style={styles.reviewComment}>
           {review.comment}
         </ThemedText>
+        {isDeleting && (
+          <ThemedText type="small" themeColor="textSecondary">
+            {t('tourism.reviewCard.deleting')}
+          </ThemedText>
+        )}
+        {deleteFailed && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+            <ThemedText type="small" style={{ color: '#D45B45' }}>
+              {t('tourism.reviewCard.deleteError')}
+            </ThemedText>
+            <Pressable onPress={handleDelete} accessibilityRole="button">
+              <ThemedText type="smallBold" style={{ color: '#D45B45' }}>
+                {t('tourism.reviewCard.retry')}
+              </ThemedText>
+            </Pressable>
+          </View>
+        )}
       </ThemedView>
 
       {menuOpen && (
@@ -270,8 +302,7 @@ function ReviewCard({
                       {
                         text: t('tourism.reviewCard.delete'),
                         style: 'destructive',
-                        // 失敗時の表示（#537）は後続コミットで追加する。
-                        onPress: () => onDelete().catch(() => {}),
+                        onPress: handleDelete,
                       },
                     ],
                   );

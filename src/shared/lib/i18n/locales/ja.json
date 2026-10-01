@@ -114,7 +114,10 @@
       "saving": "保存中...",
       "saveError": "レビューを更新できませんでした。時間をおいて再度お試しください。",
       "deleteConfirmTitle": "レビューを削除しますか？",
-      "deleteConfirmMessage": "削除すると元に戻せません。"
+      "deleteConfirmMessage": "削除すると元に戻せません。",
+      "deleting": "削除中...",
+      "deleteError": "レビューを削除できませんでした。時間をおいて再度お試しください。",
+      "retry": "再試行"
     },
     "reviewFilter": {
       "all": "すべて"
