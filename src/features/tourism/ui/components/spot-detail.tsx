@@ -260,6 +260,7 @@ function ReviewCard({
               onPress={() => {
                 setMenuOpen(false);
                 // 三点リーダーの Modal を閉じてから Alert を出す（同時だと iOS で Alert が出ないことがある）。
+                // 0ms だとネイティブ側の Modal 終了処理と競合する可能性があるため、安全マージンを持たせる。
                 setTimeout(() => {
                   Alert.alert(
                     t('tourism.reviewCard.deleteConfirmTitle'),
@@ -274,7 +275,7 @@ function ReviewCard({
                       },
                     ],
                   );
-                }, 0);
+                }, 100);
               }}
             >
               <SymbolView
