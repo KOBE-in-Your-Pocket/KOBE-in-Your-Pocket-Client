@@ -109,9 +109,12 @@
       "edit": "Edit",
       "save": "Save",
       "delete": "Delete",
+      "cancel": "Cancel",
       "openMenu": "Open menu",
       "saving": "Saving...",
-      "saveError": "Could not update your review. Please try again later."
+      "saveError": "Could not update your review. Please try again later.",
+      "deleteConfirmTitle": "Delete this review?",
+      "deleteConfirmMessage": "This action can't be undone."
     },
     "reviewFilter": {
       "all": "All"
