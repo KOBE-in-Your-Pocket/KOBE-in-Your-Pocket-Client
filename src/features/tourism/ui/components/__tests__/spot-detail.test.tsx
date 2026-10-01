@@ -331,6 +331,8 @@ describe('SpotDetailContent', () => {
         () => expect(screen.getByText('tourism.reviewCard.deleting')).toBeTruthy(),
         ASYNC_TIMEOUT,
       );
+      // 削除中は三点リーダーメニュー自体を出さない（編集に入れてしまわないように）。
+      expect(screen.queryByLabelText('tourism.reviewCard.openMenu')).toBeNull();
 
       await waitFor(() => resolveDelete(), ASYNC_TIMEOUT);
     });

@@ -227,7 +227,7 @@ function ReviewCard({
             />
             <ThemedText type="smallBold">{review.rating.value.toFixed(1)}</ThemedText>
           </View>
-          {isOwn && (
+          {isOwn && !isDeleting && (
             <View ref={menuAnchorRef}>
               <Pressable
                 onPress={openMenu}
@@ -254,7 +254,7 @@ function ReviewCard({
         )}
         {deleteFailed && (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
-            <ThemedText type="small" style={{ color: '#D45B45' }}>
+            <ThemedText type="small" style={{ color: '#D45B45', flexShrink: 1 }}>
               {t('tourism.reviewCard.deleteError')}
             </ThemedText>
             <Pressable onPress={handleDelete} accessibilityRole="button">
