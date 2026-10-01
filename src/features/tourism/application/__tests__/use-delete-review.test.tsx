@@ -4,6 +4,7 @@ import { renderHook, waitFor } from '@testing-library/react-native';
 import { deleteReview } from '../../infrastructure/api/review-api';
 import { useReviewStore } from '../../store/use-review-store';
 import { useDeleteReview } from '../use-delete-review';
+import { SPOTS_QUERY_KEY } from '../use-spots';
 import { SPOT_REVIEWS_QUERY_KEY } from '../use-spot-reviews';
 
 import type { PropsWithChildren } from 'react';
@@ -74,6 +75,18 @@ describe('useDeleteReview', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(invalidate).toHaveBeenCalledWith({ queryKey: [...SPOT_REVIEWS_QUERY_KEY, 'spot-a'] });
+  });
+
+  it('削除に成功したらスポットの評価・件数表示が更新されるようクエリを無効化する', async () => {
+    deleteReviewMock.mockResolvedValue(undefined);
+    const { queryClient, wrapper } = createWrapper();
+    const invalidate = jest.spyOn(queryClient, 'invalidateQueries');
+    const { result } = renderHook(() => useDeleteReview('spot-a'), { wrapper });
+
+    result.current.mutate('review-1');
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: SPOTS_QUERY_KEY });
   });
 
   it('削除に失敗したらローカルストアを書き換えずエラーになる', async () => {
