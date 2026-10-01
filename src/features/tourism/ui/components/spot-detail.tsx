@@ -5,6 +5,7 @@ import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
+  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -258,8 +259,22 @@ function ReviewCard({
               style={dropdownStyles.item}
               onPress={() => {
                 setMenuOpen(false);
-                // 確認ダイアログ（#535）・失敗時の表示（#537）は後続コミットで追加する。
-                onDelete().catch(() => {});
+                // 三点リーダーの Modal を閉じてから Alert を出す（同時だと iOS で Alert が出ないことがある）。
+                setTimeout(() => {
+                  Alert.alert(
+                    t('tourism.reviewCard.deleteConfirmTitle'),
+                    t('tourism.reviewCard.deleteConfirmMessage'),
+                    [
+                      { text: t('tourism.reviewCard.cancel'), style: 'cancel' },
+                      {
+                        text: t('tourism.reviewCard.delete'),
+                        style: 'destructive',
+                        // 失敗時の表示（#537）は後続コミットで追加する。
+                        onPress: () => onDelete().catch(() => {}),
+                      },
+                    ],
+                  );
+                }, 0);
               }}
             >
               <SymbolView

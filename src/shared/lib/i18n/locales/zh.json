@@ -109,9 +109,12 @@
       "edit": "编辑",
       "save": "保存",
       "delete": "删除",
+      "cancel": "取消",
       "openMenu": "打开菜单",
       "saving": "保存中...",
-      "saveError": "无法更新评论。请稍后再试。"
+      "saveError": "无法更新评论。请稍后再试。",
+      "deleteConfirmTitle": "要删除这条评论吗？",
+      "deleteConfirmMessage": "删除后将无法恢复。"
     },
     "reviewFilter": {
       "all": "全部"

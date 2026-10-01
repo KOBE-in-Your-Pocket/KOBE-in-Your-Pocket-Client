@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { Text as MockText, View as MockView, View as RNView } from 'react-native';
+import { Alert, Text as MockText, View as MockView, View as RNView } from 'react-native';
 
 import { SpotDetailContent } from '../spot-detail';
 
@@ -265,17 +265,54 @@ describe('SpotDetailContent', () => {
       jest.restoreAllMocks();
     });
 
-    it('削除メニューを押すと reviewId を渡して削除 mutation を呼ぶ', async () => {
+    /** メニューから「削除」を押して確認ダイアログを開く。Alert.alert の呼び出し引数を返す。 */
+    async function openDeleteConfirm() {
+      const alertSpy = jest.spyOn(Alert, 'alert');
+      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
+      fireEvent.press(screen.getByText('tourism.reviewCard.delete'));
+
+      await waitFor(() => expect(alertSpy).toHaveBeenCalled(), ASYNC_TIMEOUT);
+      return alertSpy;
+    }
+
+    function pressAlertButton(alertSpy: jest.SpyInstance, buttonText: string) {
+      const [, , buttons] = alertSpy.mock.calls[0];
+      const button = (buttons as { text?: string; onPress?: () => void }[]).find(
+        (b) => b.text === buttonText,
+      );
+      button?.onPress?.();
+    }
+
+    it('削除メニューを押しただけでは確認ダイアログを出すのみで、まだ削除しない', async () => {
       mockDeleteReviewAsync.mockResolvedValue(undefined);
       render(<SpotDetailContent spot={mockSpot} />);
 
-      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
-      fireEvent.press(screen.getByText('tourism.reviewCard.delete'));
+      await openDeleteConfirm();
+
+      expect(mockDeleteReviewAsync).not.toHaveBeenCalled();
+    });
+
+    it('確認ダイアログで「削除」を選ぶと reviewId を渡して削除 mutation を呼ぶ', async () => {
+      mockDeleteReviewAsync.mockResolvedValue(undefined);
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      const alertSpy = await openDeleteConfirm();
+      pressAlertButton(alertSpy, 'tourism.reviewCard.delete');
 
       await waitFor(
         () => expect(mockDeleteReviewAsync).toHaveBeenCalledWith('review-1'),
         ASYNC_TIMEOUT,
       );
+    });
+
+    it('確認ダイアログで「キャンセル」を選ぶと削除しない', async () => {
+      mockDeleteReviewAsync.mockResolvedValue(undefined);
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      const alertSpy = await openDeleteConfirm();
+      pressAlertButton(alertSpy, 'tourism.reviewCard.cancel');
+
+      expect(mockDeleteReviewAsync).not.toHaveBeenCalled();
     });
   });
 });

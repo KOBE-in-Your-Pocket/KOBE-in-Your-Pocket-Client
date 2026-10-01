@@ -109,9 +109,12 @@
       "edit": "編集",
       "save": "保存",
       "delete": "削除",
+      "cancel": "キャンセル",
       "openMenu": "メニューを開く",
       "saving": "保存中...",
-      "saveError": "レビューを更新できませんでした。時間をおいて再度お試しください。"
+      "saveError": "レビューを更新できませんでした。時間をおいて再度お試しください。",
+      "deleteConfirmTitle": "レビューを削除しますか？",
+      "deleteConfirmMessage": "削除すると元に戻せません。"
     },
     "reviewFilter": {
       "all": "すべて"
