@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { IS_USER_CONTENT_ENABLED, Spacing } from '@/shared/config';
 import { useTheme } from '@/shared/lib/theme';
@@ -36,6 +36,21 @@ export function AccountSection() {
 
   if (!IS_USER_CONTENT_ENABLED || !isAdult) {
     return null;
+  }
+
+  function handleDeleteAccount() {
+    // #542 で退会 API への接続とローカル状態の初期化を行う。
+  }
+
+  function confirmDeleteAccount() {
+    Alert.alert(
+      t('settings.deleteAccountConfirmTitle'),
+      t('settings.deleteAccountConfirmMessage'),
+      [
+        { text: t('settings.cancel'), style: 'cancel' },
+        { text: t('settings.deleteAccount'), style: 'destructive', onPress: handleDeleteAccount },
+      ],
+    );
   }
 
   return (
@@ -75,6 +90,15 @@ export function AccountSection() {
           >
             <ThemedText type="default" themeColor="textSecondary">
               {t('settings.signOut')}
+            </ThemedText>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            onPress={confirmDeleteAccount}
+            style={[styles.row, { backgroundColor: theme.backgroundElement }]}
+          >
+            <ThemedText type="default" style={styles.deleteAccountText}>
+              {t('settings.deleteAccount')}
             </ThemedText>
           </Pressable>
         </View>
@@ -122,5 +146,8 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.85,
+  },
+  deleteAccountText: {
+    color: '#D45B45',
   },
 });

@@ -60,6 +60,10 @@
       "iconLibraryClose": "关闭",
       "notSignedIn": "编辑账户前请先登录。"
     },
+    "deleteAccount": "删除账户（注销）",
+    "deleteAccountConfirmTitle": "要删除账户吗？",
+    "deleteAccountConfirmMessage": "您发布的评价也会被删除。此操作无法撤销。",
+    "cancel": "取消",
     "about": "关于本应用",
     "privacyPolicy": "隐私政策",
     "credits": "鸣谢",

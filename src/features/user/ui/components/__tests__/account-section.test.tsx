@@ -2,7 +2,7 @@ import '@testing-library/jest-native/extend-expect';
 
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
-import { Text as MockText } from 'react-native';
+import { Alert, Text as MockText } from 'react-native';
 
 import type { PublicUser } from '../../../domain/public-user';
 import { AccountSection } from '../account-section';
@@ -106,5 +106,33 @@ describe('AccountSection', () => {
     fireEvent.press(screen.getByText('settings.signOut'));
 
     expect(mockSignOut.mutate).toHaveBeenCalled();
+  });
+
+  it('未ログイン時は「アカウント削除（退会）」を表示しない', () => {
+    render(<AccountSection />);
+
+    expect(screen.queryByText('settings.deleteAccount')).toBeNull();
+  });
+
+  it('ログイン済み時は「アカウント削除（退会）」をタップすると確認ダイアログを表示する（表示前には出さない）', () => {
+    mockCurrentUser = USER;
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    render(<AccountSection />);
+
+    expect(alertSpy).not.toHaveBeenCalled();
+
+    fireEvent.press(screen.getByText('settings.deleteAccount'));
+
+    expect(alertSpy).toHaveBeenCalledTimes(1);
+    const [title, message, buttons] = alertSpy.mock.calls[0];
+    expect(title).toBe('settings.deleteAccountConfirmTitle');
+    expect(message).toBe('settings.deleteAccountConfirmMessage');
+    // キャンセル側に onPress が無いこと（キャンセルでは何も実行されない）まで含めて検証する。
+    expect(buttons).toEqual([
+      { text: 'settings.cancel', style: 'cancel' },
+      expect.objectContaining({ text: 'settings.deleteAccount', style: 'destructive' }),
+    ]);
+
+    alertSpy.mockRestore();
   });
 });
