@@ -130,7 +130,7 @@ describe('AccountSection', () => {
     // キャンセル側に onPress が無いこと（キャンセルでは何も実行されない）まで含めて検証する。
     expect(buttons).toEqual([
       { text: 'settings.cancel', style: 'cancel' },
-      expect.objectContaining({ text: 'settings.deleteAccount', style: 'destructive' }),
+      expect.objectContaining({ text: 'settings.deleteAccountConfirm', style: 'destructive' }),
     ]);
 
     alertSpy.mockRestore();

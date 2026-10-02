@@ -48,7 +48,11 @@ export function AccountSection() {
       t('settings.deleteAccountConfirmMessage'),
       [
         { text: t('settings.cancel'), style: 'cancel' },
-        { text: t('settings.deleteAccount'), style: 'destructive', onPress: handleDeleteAccount },
+        {
+          text: t('settings.deleteAccountConfirm'),
+          style: 'destructive',
+          onPress: handleDeleteAccount,
+        },
       ],
     );
   }
