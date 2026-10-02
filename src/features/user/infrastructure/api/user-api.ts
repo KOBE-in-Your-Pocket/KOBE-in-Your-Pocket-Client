@@ -26,3 +26,14 @@ export async function fetchCurrentUser(): Promise<PublicUser> {
     iconUrl: response.iconUrl ?? '',
   };
 }
+
+/**
+ * ログイン中のユーザーを本人の意思で削除（退会）する。
+ *
+ * `DELETE /api/v1/users/me` は認証必須。削除対象は JWT の subject から決まり、
+ * 本人以外を指定する余地は無い（backend #182）。成功時は 204、
+ * 対象がすでに存在しない場合は 404 を返す（backend 側は冪等にしていない）。
+ */
+export async function deleteCurrentUser(): Promise<void> {
+  await apiFetch<void>('/api/v1/users/me', { method: 'DELETE', auth: true });
+}
