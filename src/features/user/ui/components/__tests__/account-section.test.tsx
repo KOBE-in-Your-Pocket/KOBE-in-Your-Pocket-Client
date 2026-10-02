@@ -1,6 +1,6 @@
 import '@testing-library/jest-native/extend-expect';
 
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { Pressable as MockPressable, Text as MockText, View as MockView } from 'react-native';
 
@@ -74,7 +74,7 @@ jest.mock('expo-router', () => ({
 
 let mockCurrentUser: PublicUser | null;
 const mockSignOut = { mutate: jest.fn(), isPending: false };
-const mockDeleteAccount = { mutate: jest.fn(), isPending: false };
+const mockDeleteAccount = { mutate: jest.fn(), mutateAsync: jest.fn(), isPending: false };
 
 jest.mock('../../../application/use-current-user', () => ({
   useCurrentUser: () => mockCurrentUser,
@@ -104,6 +104,7 @@ describe('AccountSection', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockCurrentUser = null;
+    mockDeleteAccount.isPending = false;
     // アカウント欄そのものの挙動を検証するため成人として描画する。
     // 18歳未満で何も出さないことは account-section-age-restricted.test.tsx で検証する。
     useAgeRestrictionStore.setState({ isAdult: true });
@@ -178,14 +179,84 @@ describe('AccountSection', () => {
     expect(screen.getByTestId('destructive-confirm-dialog')).toBeTruthy();
   });
 
-  it('確認ダイアログで「削除」を選ぶと退会処理を実行する', () => {
+  it('退会処理中は「削除中...」を表示する', () => {
     mockCurrentUser = USER;
+    mockDeleteAccount.isPending = true;
+    render(<AccountSection />);
+
+    expect(screen.getByText('settings.deletingAccount')).toBeTruthy();
+  });
+
+  it('退会処理中はログアウト・アカウント編集も押せない', () => {
+    mockCurrentUser = USER;
+    mockDeleteAccount.isPending = true;
+    render(<AccountSection />);
+
+    expect(screen.getByRole('button', { name: 'settings.signOut' })).toBeDisabled();
+    expect(screen.getByLabelText('settings.editAccount')).toBeDisabled();
+  });
+
+  it('確認ダイアログで「削除」を選ぶと退会処理を実行する', async () => {
+    mockCurrentUser = USER;
+    mockDeleteAccount.mutateAsync.mockResolvedValue(undefined);
     render(<AccountSection />);
 
     fireEvent.press(screen.getByText('settings.deleteAccount'));
     fireEvent.press(screen.getByTestId('destructive-confirm-dialog-confirm'));
 
-    expect(mockDeleteAccount.mutate).toHaveBeenCalled();
     expect(screen.queryByTestId('destructive-confirm-dialog')).toBeNull();
+    await waitFor(() => expect(mockDeleteAccount.mutateAsync).toHaveBeenCalled());
+  });
+
+  it('退会に失敗したらエラーを表示し、再試行で退会処理を再度呼ぶ', async () => {
+    mockCurrentUser = USER;
+    mockDeleteAccount.mutateAsync.mockRejectedValueOnce(new Error('network down'));
+    render(<AccountSection />);
+
+    fireEvent.press(screen.getByText('settings.deleteAccount'));
+    fireEvent.press(screen.getByTestId('destructive-confirm-dialog-confirm'));
+
+    await waitFor(() => expect(screen.getByText('settings.deleteAccountError')).toBeTruthy());
+
+    mockDeleteAccount.mutateAsync.mockResolvedValueOnce(undefined);
+    fireEvent.press(screen.getByText('settings.retry'));
+
+    await waitFor(() => expect(mockDeleteAccount.mutateAsync).toHaveBeenCalledTimes(2));
+  });
+
+  it('退会処理の後始末でログイン状態が外れたら、再試行できないエラー表示は出さない', async () => {
+    mockCurrentUser = USER;
+    mockDeleteAccount.mutateAsync.mockImplementation(() => {
+      // サーバー側の削除は成立し、ローカルのログアウトは先に反映されたが、
+      // 後始末（SecureStore 削除等）の失敗で mutation 自体は失敗した想定（#542 と同じ経路）。
+      // ログアウト済みでアクセストークンが無いため、ここで「失敗・再試行」を出しても
+      // 再試行は常に 401 で失敗し続ける。削除自体は成立しているので誤情報にもなる。
+      mockCurrentUser = null;
+      return Promise.reject(new Error('secure-store failed'));
+    });
+    render(<AccountSection />);
+
+    fireEvent.press(screen.getByText('settings.deleteAccount'));
+    fireEvent.press(screen.getByTestId('destructive-confirm-dialog-confirm'));
+
+    await waitFor(() => expect(screen.getByText('settings.signIn')).toBeTruthy());
+    expect(screen.queryByText('settings.deleteAccountError')).toBeNull();
+    expect(screen.queryByText('settings.retry')).toBeNull();
+  });
+
+  it('退会に失敗したまま別アカウントでログインすると、前のアカウントの失敗表示を持ち越さない', async () => {
+    mockCurrentUser = USER;
+    mockDeleteAccount.mutateAsync.mockRejectedValueOnce(new Error('network down'));
+    const { rerender } = render(<AccountSection />);
+
+    fireEvent.press(screen.getByText('settings.deleteAccount'));
+    fireEvent.press(screen.getByTestId('destructive-confirm-dialog-confirm'));
+
+    await waitFor(() => expect(screen.getByText('settings.deleteAccountError')).toBeTruthy());
+
+    mockCurrentUser = { id: 'user-2', name: '別のユーザー', iconUrl: '' };
+    rerender(<AccountSection />);
+
+    await waitFor(() => expect(screen.queryByText('settings.deleteAccountError')).toBeNull());
   });
 });

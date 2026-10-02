@@ -36,14 +36,29 @@ export function AccountSection() {
   const isAdult = useIsAdult();
   const [signInVisible, setSignInVisible] = useState(false);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [deleteAccountFailed, setDeleteAccountFailed] = useState(false);
+  const [lastCurrentUser, setLastCurrentUser] = useState(currentUser);
+
+  // currentUser が変わる（ログアウト・別アカウントでのログイン）たびに、
+  // 前のアカウントの退会失敗表示を持ち越さない。再試行ボタンが別人のアカウントに
+  // 対して実行されてしまうのを防ぐため。
+  if (currentUser !== lastCurrentUser) {
+    setLastCurrentUser(currentUser);
+    setDeleteAccountFailed(false);
+  }
 
   if (!IS_USER_CONTENT_ENABLED || !isAdult) {
     return null;
   }
 
-  function handleDeleteAccount() {
+  async function handleDeleteAccount() {
     setDeleteConfirmVisible(false);
-    deleteAccount.mutate();
+    setDeleteAccountFailed(false);
+    try {
+      await deleteAccount.mutateAsync();
+    } catch {
+      setDeleteAccountFailed(true);
+    }
   }
 
   return (
@@ -56,6 +71,7 @@ export function AccountSection() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('settings.editAccount')}
+            disabled={deleteAccount.isPending}
             onPress={() => router.push('/settings/account-edit')}
             style={({ pressed }) => [
               styles.row,
@@ -77,7 +93,7 @@ export function AccountSection() {
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            disabled={signOut.isPending}
+            disabled={signOut.isPending || deleteAccount.isPending}
             onPress={() => signOut.mutate()}
             style={[styles.row, { backgroundColor: theme.backgroundElement }]}
           >
@@ -95,6 +111,18 @@ export function AccountSection() {
               {t('settings.deleteAccount')}
             </ThemedText>
           </Pressable>
+          {deleteAccountFailed && (
+            <View style={styles.deleteAccountErrorRow}>
+              <ThemedText type="small" style={[styles.deleteAccountText, { flexShrink: 1 }]}>
+                {t('settings.deleteAccountError')}
+              </ThemedText>
+              <Pressable onPress={handleDeleteAccount} accessibilityRole="button">
+                <ThemedText type="smallBold" style={styles.deleteAccountText}>
+                  {t('settings.retry')}
+                </ThemedText>
+              </Pressable>
+            </View>
+          )}
         </View>
       ) : (
         <View style={styles.list}>
@@ -106,6 +134,11 @@ export function AccountSection() {
             <ThemedText type="default">{t('settings.signIn')}</ThemedText>
           </Pressable>
         </View>
+      )}
+      {deleteAccount.isPending && (
+        <ThemedText type="small" themeColor="textSecondary" style={styles.deleteAccountStatus}>
+          {t('settings.deletingAccount')}
+        </ThemedText>
       )}
       <SignInModal visible={signInVisible} onClose={() => setSignInVisible(false)} />
       <DestructiveConfirmDialog
@@ -152,5 +185,14 @@ const styles = StyleSheet.create({
   },
   deleteAccountText: {
     color: '#FF3B30',
+  },
+  deleteAccountErrorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+  },
+  deleteAccountStatus: {
+    paddingHorizontal: Spacing.three,
   },
 });
