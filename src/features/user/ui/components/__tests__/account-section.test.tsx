@@ -224,11 +224,13 @@ describe('AccountSection', () => {
     await waitFor(() => expect(mockDeleteAccount.mutateAsync).toHaveBeenCalledTimes(2));
   });
 
-  it('退会処理の後始末でログイン状態が外れても、エラーと再試行は表示され続ける', async () => {
+  it('退会処理の後始末でログイン状態が外れたら、再試行できないエラー表示は出さない', async () => {
     mockCurrentUser = USER;
     mockDeleteAccount.mutateAsync.mockImplementation(() => {
       // サーバー側の削除は成立し、ローカルのログアウトは先に反映されたが、
       // 後始末（SecureStore 削除等）の失敗で mutation 自体は失敗した想定（#542 と同じ経路）。
+      // ログアウト済みでアクセストークンが無いため、ここで「失敗・再試行」を出しても
+      // 再試行は常に 401 で失敗し続ける。削除自体は成立しているので誤情報にもなる。
       mockCurrentUser = null;
       return Promise.reject(new Error('secure-store failed'));
     });
@@ -237,16 +239,14 @@ describe('AccountSection', () => {
     fireEvent.press(screen.getByText('settings.deleteAccount'));
     fireEvent.press(screen.getByTestId('destructive-confirm-dialog-confirm'));
 
-    await waitFor(() => expect(screen.getByText('settings.deleteAccountError')).toBeTruthy());
-    expect(screen.getByText('settings.retry')).toBeTruthy();
+    await waitFor(() => expect(screen.getByText('settings.signIn')).toBeTruthy());
+    expect(screen.queryByText('settings.deleteAccountError')).toBeNull();
+    expect(screen.queryByText('settings.retry')).toBeNull();
   });
 
-  it('退会失敗後に別アカウントでログインすると、前のアカウントの失敗表示を持ち越さない', async () => {
+  it('退会に失敗したまま別アカウントでログインすると、前のアカウントの失敗表示を持ち越さない', async () => {
     mockCurrentUser = USER;
-    mockDeleteAccount.mutateAsync.mockImplementation(() => {
-      mockCurrentUser = null;
-      return Promise.reject(new Error('secure-store failed'));
-    });
+    mockDeleteAccount.mutateAsync.mockRejectedValueOnce(new Error('network down'));
     const { rerender } = render(<AccountSection />);
 
     fireEvent.press(screen.getByText('settings.deleteAccount'));

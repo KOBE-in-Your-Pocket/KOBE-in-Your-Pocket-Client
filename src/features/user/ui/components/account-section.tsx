@@ -111,6 +111,18 @@ export function AccountSection() {
               {t('settings.deleteAccount')}
             </ThemedText>
           </Pressable>
+          {deleteAccountFailed && (
+            <View style={styles.deleteAccountErrorRow}>
+              <ThemedText type="small" style={[styles.deleteAccountText, { flexShrink: 1 }]}>
+                {t('settings.deleteAccountError')}
+              </ThemedText>
+              <Pressable onPress={handleDeleteAccount} accessibilityRole="button">
+                <ThemedText type="smallBold" style={styles.deleteAccountText}>
+                  {t('settings.retry')}
+                </ThemedText>
+              </Pressable>
+            </View>
+          )}
         </View>
       ) : (
         <View style={styles.list}>
@@ -127,18 +139,6 @@ export function AccountSection() {
         <ThemedText type="small" themeColor="textSecondary" style={styles.deleteAccountStatus}>
           {t('settings.deletingAccount')}
         </ThemedText>
-      )}
-      {deleteAccountFailed && (
-        <View style={styles.deleteAccountErrorRow}>
-          <ThemedText type="small" style={[styles.deleteAccountText, { flexShrink: 1 }]}>
-            {t('settings.deleteAccountError')}
-          </ThemedText>
-          <Pressable onPress={handleDeleteAccount} accessibilityRole="button">
-            <ThemedText type="smallBold" style={styles.deleteAccountText}>
-              {t('settings.retry')}
-            </ThemedText>
-          </Pressable>
-        </View>
       )}
       <SignInModal visible={signInVisible} onClose={() => setSignInVisible(false)} />
       <DestructiveConfirmDialog
