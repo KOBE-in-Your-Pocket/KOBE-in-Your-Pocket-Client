@@ -60,6 +60,11 @@
       "iconLibraryClose": "閉じる",
       "notSignedIn": "アカウントを編集するにはログインが必要です。"
     },
+    "deleteAccount": "アカウント削除（退会）",
+    "deleteAccountConfirm": "アカウント削除",
+    "deleteAccountConfirmTitle": "アカウントを削除しますか？",
+    "deleteAccountConfirmMessage": "投稿したレビューも削除されます。この操作は元に戻せません。",
+    "cancel": "キャンセル",
     "about": "このアプリについて",
     "privacyPolicy": "プライバシーポリシー",
     "credits": "クレジット",

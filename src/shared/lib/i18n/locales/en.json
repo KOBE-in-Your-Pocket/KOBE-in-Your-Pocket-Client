@@ -60,6 +60,11 @@
       "iconLibraryClose": "Close",
       "notSignedIn": "Sign in to edit your account."
     },
+    "deleteAccount": "Delete Account",
+    "deleteAccountConfirm": "Delete Account",
+    "deleteAccountConfirmTitle": "Delete your account?",
+    "deleteAccountConfirmMessage": "Your posted reviews will also be deleted. This action can't be undone.",
+    "cancel": "Cancel",
     "about": "About",
     "privacyPolicy": "Privacy Policy",
     "credits": "Credits",
