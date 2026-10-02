@@ -5,7 +5,6 @@ import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -37,7 +36,7 @@ import { confirmOpenDirections } from '@/shared/lib/directions';
 import { useCurrentLocation } from '@/shared/lib/geo';
 import { useTheme } from '@/shared/lib/theme';
 import { useIsAdult } from '@/shared/store';
-import { ThemedText, ThemedView } from '@/shared/ui';
+import { DestructiveConfirmDialog, ThemedText, ThemedView } from '@/shared/ui';
 
 function BackButton({ label }: { label: string }) {
   const insets = useSafeAreaInsets();
@@ -88,6 +87,7 @@ function ReviewCard({
   const [saveFailed, setSaveFailed] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteFailed, setDeleteFailed] = useState(false);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
 
   const canSave = editRating > 0 && editComment.trim() !== '' && !isSaving;
 
@@ -291,22 +291,9 @@ function ReviewCard({
               style={dropdownStyles.item}
               onPress={() => {
                 setMenuOpen(false);
-                // 三点リーダーの Modal を閉じてから Alert を出す（同時だと iOS で Alert が出ないことがある）。
+                // 三点リーダーの Modal を閉じてから確認ダイアログを出す（同時だと iOS で Alert が出ないことがある）。
                 // 0ms だとネイティブ側の Modal 終了処理と競合する可能性があるため、安全マージンを持たせる。
-                setTimeout(() => {
-                  Alert.alert(
-                    t('tourism.reviewCard.deleteConfirmTitle'),
-                    t('tourism.reviewCard.deleteConfirmMessage'),
-                    [
-                      { text: t('tourism.reviewCard.cancel'), style: 'cancel' },
-                      {
-                        text: t('tourism.reviewCard.delete'),
-                        style: 'destructive',
-                        onPress: handleDelete,
-                      },
-                    ],
-                  );
-                }, 100);
+                setTimeout(() => setDeleteConfirmVisible(true), 100);
               }}
             >
               <SymbolView
@@ -321,6 +308,18 @@ function ReviewCard({
           </ThemedView>
         </Modal>
       )}
+      <DestructiveConfirmDialog
+        visible={deleteConfirmVisible}
+        title={t('tourism.reviewCard.deleteConfirmTitle')}
+        message={t('tourism.reviewCard.deleteConfirmMessage')}
+        cancelLabel={t('tourism.reviewCard.cancel')}
+        confirmLabel={t('tourism.reviewCard.delete')}
+        onConfirm={() => {
+          setDeleteConfirmVisible(false);
+          void handleDelete();
+        }}
+        onCancel={() => setDeleteConfirmVisible(false)}
+      />
     </>
   );
 }

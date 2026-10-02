@@ -2,12 +2,12 @@ import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { IS_USER_CONTENT_ENABLED, Spacing } from '@/shared/config';
 import { useTheme } from '@/shared/lib/theme';
 import { useIsAdult } from '@/shared/store';
-import { ThemedText } from '@/shared/ui';
+import { DestructiveConfirmDialog, ThemedText } from '@/shared/ui';
 
 import { useSignOut } from '../../application/use-sign-out';
 import { useCurrentUser } from '../../application/use-current-user';
@@ -33,28 +33,15 @@ export function AccountSection() {
   const signOut = useSignOut();
   const isAdult = useIsAdult();
   const [signInVisible, setSignInVisible] = useState(false);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
 
   if (!IS_USER_CONTENT_ENABLED || !isAdult) {
     return null;
   }
 
   function handleDeleteAccount() {
+    setDeleteConfirmVisible(false);
     // #542 で退会 API への接続とローカル状態の初期化を行う。
-  }
-
-  function confirmDeleteAccount() {
-    Alert.alert(
-      t('settings.deleteAccountConfirmTitle'),
-      t('settings.deleteAccountConfirmMessage'),
-      [
-        { text: t('settings.cancel'), style: 'cancel' },
-        {
-          text: t('settings.deleteAccountConfirm'),
-          style: 'destructive',
-          onPress: handleDeleteAccount,
-        },
-      ],
-    );
   }
 
   return (
@@ -98,7 +85,7 @@ export function AccountSection() {
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            onPress={confirmDeleteAccount}
+            onPress={() => setDeleteConfirmVisible(true)}
             style={[styles.row, { backgroundColor: theme.backgroundElement }]}
           >
             <ThemedText type="default" style={styles.deleteAccountText}>
@@ -118,6 +105,15 @@ export function AccountSection() {
         </View>
       )}
       <SignInModal visible={signInVisible} onClose={() => setSignInVisible(false)} />
+      <DestructiveConfirmDialog
+        visible={deleteConfirmVisible}
+        title={t('settings.deleteAccountConfirmTitle')}
+        message={t('settings.deleteAccountConfirmMessage')}
+        cancelLabel={t('settings.cancel')}
+        confirmLabel={t('settings.deleteAccountConfirm')}
+        onConfirm={handleDeleteAccount}
+        onCancel={() => setDeleteConfirmVisible(false)}
+      />
     </View>
   );
 }

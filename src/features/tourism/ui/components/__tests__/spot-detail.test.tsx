@@ -1,5 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { Alert, Text as MockText, View as MockView, View as RNView } from 'react-native';
+import {
+  Pressable as MockPressable,
+  Text as MockText,
+  View as MockView,
+  View as RNView,
+} from 'react-native';
 
 import { SpotDetailContent } from '../spot-detail';
 
@@ -104,6 +109,36 @@ jest.mock('@/shared/config', () => ({
 jest.mock('@/shared/ui', () => ({
   ThemedText: ({ children }: { children: ReactNode }) => <MockText>{children}</MockText>,
   ThemedView: ({ children }: { children: ReactNode }) => <MockView>{children}</MockView>,
+  // 確認ダイアログは表示状態とボタン操作だけ再現する（Alert / Compose の描画は共通ダイアログ側のテストで検証）。
+  DestructiveConfirmDialog: ({
+    visible,
+    title,
+    message,
+    cancelLabel,
+    confirmLabel,
+    onConfirm,
+    onCancel,
+  }: {
+    visible: boolean;
+    title: string;
+    message: string;
+    cancelLabel: string;
+    confirmLabel: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+  }) =>
+    visible ? (
+      <MockView testID="destructive-confirm-dialog">
+        <MockText>{title}</MockText>
+        <MockText>{message}</MockText>
+        <MockPressable testID="destructive-confirm-dialog-cancel" onPress={onCancel}>
+          <MockText>{cancelLabel}</MockText>
+        </MockPressable>
+        <MockPressable testID="destructive-confirm-dialog-confirm" onPress={onConfirm}>
+          <MockText>{confirmLabel}</MockText>
+        </MockPressable>
+      </MockView>
+    ) : null,
 }));
 
 /**
@@ -265,22 +300,19 @@ describe('SpotDetailContent', () => {
       jest.restoreAllMocks();
     });
 
-    /** メニューから「削除」を押して確認ダイアログを開く。Alert.alert の呼び出し引数を返す。 */
+    /** メニューから「削除」を押して確認ダイアログを開く（メニューを閉じてから少し遅れて表示される）。 */
     async function openDeleteConfirm() {
-      const alertSpy = jest.spyOn(Alert, 'alert');
       fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
       fireEvent.press(screen.getByText('tourism.reviewCard.delete'));
 
-      await waitFor(() => expect(alertSpy).toHaveBeenCalled(), ASYNC_TIMEOUT);
-      return alertSpy;
+      await waitFor(
+        () => expect(screen.getByTestId('destructive-confirm-dialog')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
     }
 
-    function pressAlertButton(alertSpy: jest.SpyInstance, buttonText: string) {
-      const [, , buttons] = alertSpy.mock.calls[0];
-      const button = (buttons as { text?: string; onPress?: () => void }[]).find(
-        (b) => b.text === buttonText,
-      );
-      button?.onPress?.();
+    function pressDialogButton(button: 'confirm' | 'cancel') {
+      fireEvent.press(screen.getByTestId(`destructive-confirm-dialog-${button}`));
     }
 
     it('削除メニューを押しただけでは確認ダイアログを出すのみで、まだ削除しない', async () => {
@@ -296,8 +328,8 @@ describe('SpotDetailContent', () => {
       mockDeleteReviewAsync.mockResolvedValue(undefined);
       render(<SpotDetailContent spot={mockSpot} />);
 
-      const alertSpy = await openDeleteConfirm();
-      pressAlertButton(alertSpy, 'tourism.reviewCard.delete');
+      await openDeleteConfirm();
+      pressDialogButton('confirm');
 
       await waitFor(
         () => expect(mockDeleteReviewAsync).toHaveBeenCalledWith('review-1'),
@@ -309,9 +341,10 @@ describe('SpotDetailContent', () => {
       mockDeleteReviewAsync.mockResolvedValue(undefined);
       render(<SpotDetailContent spot={mockSpot} />);
 
-      const alertSpy = await openDeleteConfirm();
-      pressAlertButton(alertSpy, 'tourism.reviewCard.cancel');
+      await openDeleteConfirm();
+      pressDialogButton('cancel');
 
+      expect(screen.queryByTestId('destructive-confirm-dialog')).toBeNull();
       expect(mockDeleteReviewAsync).not.toHaveBeenCalled();
     });
 
@@ -324,8 +357,8 @@ describe('SpotDetailContent', () => {
       );
       render(<SpotDetailContent spot={mockSpot} />);
 
-      const alertSpy = await openDeleteConfirm();
-      pressAlertButton(alertSpy, 'tourism.reviewCard.delete');
+      await openDeleteConfirm();
+      pressDialogButton('confirm');
 
       await waitFor(
         () => expect(screen.getByText('tourism.reviewCard.deleting')).toBeTruthy(),
@@ -341,8 +374,8 @@ describe('SpotDetailContent', () => {
       mockDeleteReviewAsync.mockRejectedValueOnce(new Error('network down'));
       render(<SpotDetailContent spot={mockSpot} />);
 
-      const alertSpy = await openDeleteConfirm();
-      pressAlertButton(alertSpy, 'tourism.reviewCard.delete');
+      await openDeleteConfirm();
+      pressDialogButton('confirm');
 
       await waitFor(
         () => expect(screen.getByText('tourism.reviewCard.deleteError')).toBeTruthy(),
