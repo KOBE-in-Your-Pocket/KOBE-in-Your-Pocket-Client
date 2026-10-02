@@ -215,4 +215,21 @@ describe('AccountSection', () => {
 
     await waitFor(() => expect(mockDeleteAccount.mutateAsync).toHaveBeenCalledTimes(2));
   });
+
+  it('退会処理の後始末でログイン状態が外れても、エラーと再試行は表示され続ける', async () => {
+    mockCurrentUser = USER;
+    mockDeleteAccount.mutateAsync.mockImplementation(() => {
+      // サーバー側の削除は成立し、ローカルのログアウトは先に反映されたが、
+      // 後始末（SecureStore 削除等）の失敗で mutation 自体は失敗した想定（#542 と同じ経路）。
+      mockCurrentUser = null;
+      return Promise.reject(new Error('secure-store failed'));
+    });
+    render(<AccountSection />);
+
+    fireEvent.press(screen.getByText('settings.deleteAccount'));
+    fireEvent.press(screen.getByTestId('destructive-confirm-dialog-confirm'));
+
+    await waitFor(() => expect(screen.getByText('settings.deleteAccountError')).toBeTruthy());
+    expect(screen.getByText('settings.retry')).toBeTruthy();
+  });
 });
