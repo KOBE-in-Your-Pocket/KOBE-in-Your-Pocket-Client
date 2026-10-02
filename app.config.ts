@@ -55,11 +55,13 @@ export default (): ExpoConfig => ({
   slug: 'KOBE-in-Your-Poket-Client',
   version: '1.0.0',
   orientation: 'portrait',
-  icon: './assets/images/icon.png',
+  icon: './assets/images/app-icon.png',
   scheme: 'kobeinyourpoketclient',
   userInterfaceStyle: 'automatic',
   ios: {
-    icon: './assets/expo.icon',
+    // ここに Expo テンプレート既定の `./assets/expo.icon`（Icon Composer バンドル）を
+    // 指定していたため、ビルド 2 のアイコンが Expo ロゴになっていた。上の `icon`
+    // （./assets/images/app-icon.png）を使わせるため、iOS 側の指定は外す。
     bundleIdentifier: iosBundleIdentifier,
     ...(iosAppleTeamId ? { appleTeamId: iosAppleTeamId } : {}),
     infoPlist: {
