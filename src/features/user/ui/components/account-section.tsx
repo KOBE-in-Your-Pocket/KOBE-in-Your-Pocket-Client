@@ -43,7 +43,6 @@ export function AccountSection() {
 
   function handleDeleteAccount() {
     setDeleteConfirmVisible(false);
-    // #542 で退会 API への接続とローカル状態の初期化を行う。
     deleteAccount.mutate();
   }
 
@@ -88,9 +87,8 @@ export function AccountSection() {
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            onPress={() => setDeleteConfirmVisible(true)}
             disabled={deleteAccount.isPending}
-            onPress={confirmDeleteAccount}
+            onPress={() => setDeleteConfirmVisible(true)}
             style={[styles.row, { backgroundColor: theme.backgroundElement }]}
           >
             <ThemedText type="default" style={styles.deleteAccountText}>

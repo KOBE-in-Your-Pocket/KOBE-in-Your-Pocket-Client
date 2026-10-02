@@ -180,18 +180,12 @@ describe('AccountSection', () => {
 
   it('確認ダイアログで「削除」を選ぶと退会処理を実行する', () => {
     mockCurrentUser = USER;
-    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     render(<AccountSection />);
 
     fireEvent.press(screen.getByText('settings.deleteAccount'));
-    const [, , buttons] = alertSpy.mock.calls[0];
-    const confirmButton = (buttons as { text?: string; onPress?: () => void }[]).find(
-      (b) => b.text === 'settings.deleteAccountConfirm',
-    );
-    confirmButton?.onPress?.();
+    fireEvent.press(screen.getByTestId('destructive-confirm-dialog-confirm'));
 
     expect(mockDeleteAccount.mutate).toHaveBeenCalled();
-
-    alertSpy.mockRestore();
+    expect(screen.queryByTestId('destructive-confirm-dialog')).toBeNull();
   });
 });
