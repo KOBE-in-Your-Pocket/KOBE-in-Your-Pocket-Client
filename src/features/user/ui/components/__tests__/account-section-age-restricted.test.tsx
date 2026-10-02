@@ -74,6 +74,7 @@ describe('AccountSection（18歳未満）', () => {
 
     expect(screen.queryByLabelText('settings.editAccount')).toBeNull();
     expect(screen.queryByText('settings.signOut')).toBeNull();
+    expect(screen.queryByText('settings.deleteAccount')).toBeNull();
   });
 
   it('成人ならサインイン導線を表示する', () => {

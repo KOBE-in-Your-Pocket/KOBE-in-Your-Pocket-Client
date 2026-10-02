@@ -68,5 +68,6 @@ describe('AccountSection（IS_USER_CONTENT_ENABLED = false）', () => {
 
     expect(screen.queryByLabelText('settings.editAccount')).toBeNull();
     expect(screen.queryByText('settings.signOut')).toBeNull();
+    expect(screen.queryByText('settings.deleteAccount')).toBeNull();
   });
 });
