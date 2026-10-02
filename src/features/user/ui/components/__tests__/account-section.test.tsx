@@ -2,7 +2,7 @@ import '@testing-library/jest-native/extend-expect';
 
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
-import { Alert, Text as MockText } from 'react-native';
+import { Pressable as MockPressable, Text as MockText, View as MockView } from 'react-native';
 
 import type { PublicUser } from '../../../domain/public-user';
 import { AccountSection } from '../account-section';
@@ -30,6 +30,36 @@ jest.mock('@/shared/lib/theme', () => ({
 
 jest.mock('@/shared/ui', () => ({
   ThemedText: ({ children }: { children?: ReactNode }) => <MockText>{children}</MockText>,
+  // 確認ダイアログは表示状態とボタン操作だけ再現する（Alert / Compose の描画は共通ダイアログ側のテストで検証）。
+  DestructiveConfirmDialog: ({
+    visible,
+    title,
+    message,
+    cancelLabel,
+    confirmLabel,
+    onConfirm,
+    onCancel,
+  }: {
+    visible: boolean;
+    title: string;
+    message: string;
+    cancelLabel: string;
+    confirmLabel: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+  }) =>
+    visible ? (
+      <MockView testID="destructive-confirm-dialog">
+        <MockText>{title}</MockText>
+        <MockText>{message}</MockText>
+        <MockPressable testID="destructive-confirm-dialog-cancel" onPress={onCancel}>
+          <MockText>{cancelLabel}</MockText>
+        </MockPressable>
+        <MockPressable testID="destructive-confirm-dialog-confirm" onPress={onConfirm}>
+          <MockText>{confirmLabel}</MockText>
+        </MockPressable>
+      </MockView>
+    ) : null,
 }));
 
 jest.mock('react-i18next', () => ({
@@ -121,40 +151,41 @@ describe('AccountSection', () => {
 
   it('ログイン済み時は「アカウント削除（退会）」をタップすると確認ダイアログを表示する（表示前には出さない）', () => {
     mockCurrentUser = USER;
-    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     render(<AccountSection />);
 
-    expect(alertSpy).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('destructive-confirm-dialog')).toBeNull();
 
     fireEvent.press(screen.getByText('settings.deleteAccount'));
 
-    expect(alertSpy).toHaveBeenCalledTimes(1);
-    const [title, message, buttons] = alertSpy.mock.calls[0];
-    expect(title).toBe('settings.deleteAccountConfirmTitle');
-    expect(message).toBe('settings.deleteAccountConfirmMessage');
-    // キャンセル側に onPress が無いこと（キャンセルでは何も実行されない）まで含めて検証する。
-    expect(buttons).toEqual([
-      { text: 'settings.cancel', style: 'cancel' },
-      expect.objectContaining({ text: 'settings.deleteAccountConfirm', style: 'destructive' }),
-    ]);
+    expect(screen.getByTestId('destructive-confirm-dialog')).toBeTruthy();
+    expect(screen.getByText('settings.deleteAccountConfirmTitle')).toBeTruthy();
+    expect(screen.getByText('settings.deleteAccountConfirmMessage')).toBeTruthy();
+    expect(screen.getByText('settings.cancel')).toBeTruthy();
+    expect(screen.getByText('settings.deleteAccountConfirm')).toBeTruthy();
+  });
 
-    alertSpy.mockRestore();
+  it('確認ダイアログをキャンセルすると閉じ、再度タップで改めて表示する', () => {
+    mockCurrentUser = USER;
+    render(<AccountSection />);
+
+    fireEvent.press(screen.getByText('settings.deleteAccount'));
+    fireEvent.press(screen.getByTestId('destructive-confirm-dialog-cancel'));
+
+    expect(screen.queryByTestId('destructive-confirm-dialog')).toBeNull();
+
+    fireEvent.press(screen.getByText('settings.deleteAccount'));
+
+    expect(screen.getByTestId('destructive-confirm-dialog')).toBeTruthy();
   });
 
   it('確認ダイアログで「削除」を選ぶと退会処理を実行する', () => {
     mockCurrentUser = USER;
-    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
     render(<AccountSection />);
 
     fireEvent.press(screen.getByText('settings.deleteAccount'));
-    const [, , buttons] = alertSpy.mock.calls[0];
-    const confirmButton = (buttons as { text?: string; onPress?: () => void }[]).find(
-      (b) => b.text === 'settings.deleteAccountConfirm',
-    );
-    confirmButton?.onPress?.();
+    fireEvent.press(screen.getByTestId('destructive-confirm-dialog-confirm'));
 
     expect(mockDeleteAccount.mutate).toHaveBeenCalled();
-
-    alertSpy.mockRestore();
+    expect(screen.queryByTestId('destructive-confirm-dialog')).toBeNull();
   });
 });

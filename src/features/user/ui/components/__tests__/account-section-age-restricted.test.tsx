@@ -27,6 +27,7 @@ jest.mock('@/shared/lib/theme', () => ({
 
 jest.mock('@/shared/ui', () => ({
   ThemedText: ({ children }: { children?: ReactNode }) => <MockText>{children}</MockText>,
+  DestructiveConfirmDialog: () => null,
 }));
 
 jest.mock('react-i18next', () => ({

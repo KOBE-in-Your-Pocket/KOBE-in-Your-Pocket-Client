@@ -2,6 +2,10 @@ export { AnimatedIcon, AnimatedSplashOverlay } from './branding/animated-icon';
 export { SegmentedControl, type Segment } from './segmented-control/segmented-control';
 export { AppProviders } from './providers/app-providers';
 export { Collapsible } from './components/collapsible';
+export {
+  DestructiveConfirmDialog,
+  type DestructiveConfirmDialogProps,
+} from './components/destructive-confirm-dialog';
 export { ExternalLink } from './components/external-link';
 export {
   LocationPermissionNotice,
