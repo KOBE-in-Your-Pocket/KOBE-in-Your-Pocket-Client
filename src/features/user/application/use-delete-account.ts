@@ -23,16 +23,13 @@ type DeleteAccountDeps = {
  * エラーを伝播する。サーバーにアカウントが残ったままローカルだけ消えるのを防ぐため。
  * 404 はすでに削除済みとして成功扱いにする（backend #182 がこのケースを冪等にしていないため、
  * レスポンス受信前の通信切断等からの再試行で起こり得る）。
- *
- * 戻り値は削除前に自分がレビューを投稿していたスポット ID の一覧（呼び出し側のキャッシュ
- * 無効化用。backend が本人のレビューも削除するため）。
  */
 export async function performDeleteAccount(
   deps: DeleteAccountDeps = {
     userGateway: defaultUserGateway,
     sessionStore: defaultSessionStore,
   },
-): Promise<string[]> {
+): Promise<void> {
   try {
     await deps.userGateway.deleteCurrentUser();
   } catch (error) {
@@ -51,8 +48,6 @@ export async function performDeleteAccount(
     // 未 configure などで失敗しても退会自体は成立しているためローカルの後始末は完了させる。
   }
 
-  const affectedSpotIds = Object.keys(useReviewStore.getState().submittedReviews);
-
   try {
     // 進行中のサインイン書き込みと交錯して古いセッションが残らないよう直列化する。
     await enqueueSessionWrite(() => deps.sessionStore.clearPersistedSession());
@@ -60,23 +55,17 @@ export async function performDeleteAccount(
     useAuthStore.getState().logout();
     useReviewStore.getState().clearSubmittedReviews();
   }
-
-  return affectedSpotIds;
 }
 
-/** 退会を実行する mutation。成功したら自分の投稿があったスポットのキャッシュを無効化する。 */
+/** 退会を実行する mutation。成功したらレビュー一覧・評価件数のキャッシュを全スポット分無効化する。 */
 export function useDeleteAccount() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: () => performDeleteAccount(),
-    onSuccess: (affectedSpotIds) => {
-      for (const spotId of affectedSpotIds) {
-        void queryClient.invalidateQueries({ queryKey: [...SPOT_REVIEWS_QUERY_KEY, spotId] });
-      }
-      if (affectedSpotIds.length > 0) {
-        void queryClient.invalidateQueries({ queryKey: SPOTS_QUERY_KEY });
-      }
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: SPOT_REVIEWS_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: SPOTS_QUERY_KEY });
     },
   });
 }

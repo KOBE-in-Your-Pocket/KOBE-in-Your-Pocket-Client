@@ -64,8 +64,8 @@ describe('performDeleteAccount', () => {
     });
   }
 
-  it('成功時に削除 API・Google サインアウト・永続化削除・ストア初期化を行い、投稿のあったスポット ID を返す', async () => {
-    await expect(run()).resolves.toEqual(['spot-a']);
+  it('成功時に削除 API・Google サインアウト・永続化削除・ストア初期化を行う', async () => {
+    await run();
 
     expect(deleteCurrentUser).toHaveBeenCalled();
     expect(GoogleSignin.signOut).toHaveBeenCalled();
@@ -152,7 +152,7 @@ describe('useDeleteAccount', () => {
     (GoogleSignin.signOut as jest.Mock).mockResolvedValue(null);
   });
 
-  it('成功したら投稿のあったスポットのレビュー一覧・評価件数のキャッシュを無効化する', async () => {
+  it('成功したらレビュー一覧・評価件数のキャッシュを全スポット分無効化する', async () => {
     const { queryClient, wrapper } = createWrapper();
     const invalidate = jest.spyOn(queryClient, 'invalidateQueries');
     const { result } = renderHook(() => useDeleteAccount(), { wrapper });
@@ -160,11 +160,11 @@ describe('useDeleteAccount', () => {
     result.current.mutate();
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(invalidate).toHaveBeenCalledWith({ queryKey: [...SPOT_REVIEWS_QUERY_KEY, 'spot-a'] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: SPOT_REVIEWS_QUERY_KEY });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: SPOTS_QUERY_KEY });
   });
 
-  it('投稿が無ければキャッシュ無効化は呼ばない', async () => {
+  it('今回のセッションで投稿していなくてもキャッシュを無効化する（過去セッションの投稿分の漏れ対策）', async () => {
     useReviewStore.setState({ submittedReviews: {} });
     const { queryClient, wrapper } = createWrapper();
     const invalidate = jest.spyOn(queryClient, 'invalidateQueries');
@@ -173,6 +173,7 @@ describe('useDeleteAccount', () => {
     result.current.mutate();
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(invalidate).not.toHaveBeenCalled();
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: SPOT_REVIEWS_QUERY_KEY });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: SPOTS_QUERY_KEY });
   });
 });
