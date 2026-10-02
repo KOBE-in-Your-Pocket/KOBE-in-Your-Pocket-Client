@@ -1,5 +1,4 @@
-import { Host } from '@expo/ui';
-import { AlertDialog, Text, TextButton } from '@expo/ui/jetpack-compose';
+import { AlertDialog, Host, Text, TextButton } from '@expo/ui/jetpack-compose';
 
 import type { DestructiveConfirmDialogProps } from './destructive-confirm-dialog.types';
 
@@ -40,8 +39,9 @@ export function DestructiveConfirmDialog({
           </TextButton>
         </AlertDialog.DismissButton>
         <AlertDialog.ConfirmButton>
+          {/* 文字色は TextButton の contentColor を Text が引き継ぐ。Text 側で color を指定すると上書きされる。 */}
           <TextButton onClick={onConfirm} colors={{ contentColor: DESTRUCTIVE_COLOR }}>
-            <Text color={DESTRUCTIVE_COLOR}>{confirmLabel}</Text>
+            <Text>{confirmLabel}</Text>
           </TextButton>
         </AlertDialog.ConfirmButton>
       </AlertDialog>

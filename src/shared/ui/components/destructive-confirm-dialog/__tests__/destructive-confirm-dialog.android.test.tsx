@@ -6,10 +6,6 @@ import { DestructiveConfirmDialog } from '../destructive-confirm-dialog.android'
 import type { ReactNode } from 'react';
 
 // Jetpack Compose のネイティブビューは Jest 上で描画できないため、構造と props だけ再現する。
-jest.mock('@expo/ui', () => ({
-  Host: ({ children }: { children: ReactNode }) => <MockView>{children}</MockView>,
-}));
-
 jest.mock('@expo/ui/jetpack-compose', () => {
   const Slot = ({ children }: { children: ReactNode }) => <MockView>{children}</MockView>;
   const AlertDialog = ({
@@ -30,11 +26,22 @@ jest.mock('@expo/ui/jetpack-compose', () => {
   AlertDialog.DismissButton = Slot;
   return {
     AlertDialog,
-    Text: ({ children, color }: { children: ReactNode; color?: string }) => (
-      <MockText testID={color ? `text-color-${color}` : undefined}>{children}</MockText>
-    ),
-    TextButton: ({ children, onClick }: { children: ReactNode; onClick?: () => void }) => (
-      <MockPressable accessibilityRole="button" onPress={onClick}>
+    Host: Slot,
+    Text: ({ children }: { children: ReactNode }) => <MockText>{children}</MockText>,
+    TextButton: ({
+      children,
+      onClick,
+      colors,
+    }: {
+      children: ReactNode;
+      onClick?: () => void;
+      colors?: { contentColor?: string };
+    }) => (
+      <MockPressable
+        accessibilityRole="button"
+        testID={colors?.contentColor ? `button-content-color-${colors.contentColor}` : undefined}
+        onPress={onClick}
+      >
         {children}
       </MockPressable>
     ),
@@ -75,7 +82,7 @@ describe('DestructiveConfirmDialog（Android）', () => {
     expect(screen.getByText('タイトル')).toBeTruthy();
     expect(screen.getByText('本文')).toBeTruthy();
     expect(screen.getByText('キャンセル')).toBeTruthy();
-    expect(screen.getByTestId('text-color-#FF3B30')).toHaveTextContent('削除');
+    expect(screen.getByTestId('button-content-color-#FF3B30')).toHaveTextContent('削除');
   });
 
   it('実行ボタンでは onConfirm だけを呼ぶ', () => {
