@@ -113,4 +113,13 @@ describe('useReviewStore', () => {
       iconUrl: 'hanako.png',
     });
   });
+
+  it('clearSubmittedReviews で全スポット分の投稿済みレビューが消える', () => {
+    useReviewStore.getState().addReview('spot-a', makeReview({ id: 'r1' }));
+    useReviewStore.getState().addReview('spot-b', makeReview({ id: 'r2' }));
+
+    useReviewStore.getState().clearSubmittedReviews();
+
+    expect(useReviewStore.getState().submittedReviews).toEqual({});
+  });
 });

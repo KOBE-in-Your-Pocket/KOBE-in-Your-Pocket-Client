@@ -25,6 +25,8 @@ type ReviewStoreState = {
     authorId: string,
     authorInfo: Pick<Review['author'], 'name' | 'iconUrl'>,
   ) => void;
+  /** 投稿済みレビューを全スポット分まとめて消す（退会時。#542）。 */
+  clearSubmittedReviews: () => void;
 };
 
 /**
@@ -74,4 +76,5 @@ export const useReviewStore = create<ReviewStoreState>((set) => ({
         ]),
       ),
     })),
+  clearSubmittedReviews: () => set({ submittedReviews: {} }),
 }));

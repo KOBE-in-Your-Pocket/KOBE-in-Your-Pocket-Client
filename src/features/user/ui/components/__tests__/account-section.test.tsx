@@ -74,6 +74,7 @@ jest.mock('expo-router', () => ({
 
 let mockCurrentUser: PublicUser | null;
 const mockSignOut = { mutate: jest.fn(), isPending: false };
+const mockDeleteAccount = { mutate: jest.fn(), isPending: false };
 
 jest.mock('../../../application/use-current-user', () => ({
   useCurrentUser: () => mockCurrentUser,
@@ -81,6 +82,10 @@ jest.mock('../../../application/use-current-user', () => ({
 
 jest.mock('../../../application/use-sign-out', () => ({
   useSignOut: () => mockSignOut,
+}));
+
+jest.mock('../../../application/use-delete-account', () => ({
+  useDeleteAccount: () => mockDeleteAccount,
 }));
 
 // SignInModal は重い依存（Google ボタン・認証フック）を含むため表示状態だけ検証する。
@@ -171,5 +176,22 @@ describe('AccountSection', () => {
     fireEvent.press(screen.getByText('settings.deleteAccount'));
 
     expect(screen.getByTestId('destructive-confirm-dialog')).toBeTruthy();
+  });
+
+  it('確認ダイアログで「削除」を選ぶと退会処理を実行する', () => {
+    mockCurrentUser = USER;
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    render(<AccountSection />);
+
+    fireEvent.press(screen.getByText('settings.deleteAccount'));
+    const [, , buttons] = alertSpy.mock.calls[0];
+    const confirmButton = (buttons as { text?: string; onPress?: () => void }[]).find(
+      (b) => b.text === 'settings.deleteAccountConfirm',
+    );
+    confirmButton?.onPress?.();
+
+    expect(mockDeleteAccount.mutate).toHaveBeenCalled();
+
+    alertSpy.mockRestore();
   });
 });

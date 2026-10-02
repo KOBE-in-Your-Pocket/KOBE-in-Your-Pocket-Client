@@ -9,6 +9,7 @@ import { useTheme } from '@/shared/lib/theme';
 import { useIsAdult } from '@/shared/store';
 import { DestructiveConfirmDialog, ThemedText } from '@/shared/ui';
 
+import { useDeleteAccount } from '../../application/use-delete-account';
 import { useSignOut } from '../../application/use-sign-out';
 import { useCurrentUser } from '../../application/use-current-user';
 import { SignInModal } from './sign-in-modal';
@@ -31,6 +32,7 @@ export function AccountSection() {
   const theme = useTheme();
   const currentUser = useCurrentUser();
   const signOut = useSignOut();
+  const deleteAccount = useDeleteAccount();
   const isAdult = useIsAdult();
   const [signInVisible, setSignInVisible] = useState(false);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
@@ -42,6 +44,7 @@ export function AccountSection() {
   function handleDeleteAccount() {
     setDeleteConfirmVisible(false);
     // #542 で退会 API への接続とローカル状態の初期化を行う。
+    deleteAccount.mutate();
   }
 
   return (
@@ -86,6 +89,8 @@ export function AccountSection() {
           <Pressable
             accessibilityRole="button"
             onPress={() => setDeleteConfirmVisible(true)}
+            disabled={deleteAccount.isPending}
+            onPress={confirmDeleteAccount}
             style={[styles.row, { backgroundColor: theme.backgroundElement }]}
           >
             <ThemedText type="default" style={styles.deleteAccountText}>

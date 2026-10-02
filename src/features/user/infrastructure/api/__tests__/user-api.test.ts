@@ -1,6 +1,6 @@
 import { apiFetch } from '@/shared/lib/api';
 
-import { fetchCurrentUser } from '../user-api';
+import { deleteCurrentUser, fetchCurrentUser } from '../user-api';
 
 jest.mock('@/shared/lib/api', () => ({
   apiFetch: jest.fn(),
@@ -41,5 +41,21 @@ describe('fetchCurrentUser', () => {
     const user = await fetchCurrentUser();
 
     expect(user.iconUrl).toBe('');
+  });
+});
+
+describe('deleteCurrentUser', () => {
+  beforeEach(() => {
+    mockApiFetch.mockReset();
+    mockApiFetch.mockResolvedValue(undefined);
+  });
+
+  it('認証付きで DELETE /users/me を呼ぶ', async () => {
+    await deleteCurrentUser();
+
+    expect(mockApiFetch).toHaveBeenCalledWith('/api/v1/users/me', {
+      method: 'DELETE',
+      auth: true,
+    });
   });
 });

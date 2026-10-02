@@ -48,6 +48,10 @@ jest.mock('../../../application/use-sign-out', () => ({
   useSignOut: () => ({ mutate: jest.fn(), isPending: false }),
 }));
 
+jest.mock('../../../application/use-delete-account', () => ({
+  useDeleteAccount: () => ({ mutate: jest.fn(), isPending: false }),
+}));
+
 jest.mock('../sign-in-modal', () => ({
   SignInModal: ({ visible }: { visible: boolean }) =>
     visible ? <MockText>sign-in-modal-visible</MockText> : null,
