@@ -1,6 +1,6 @@
 import '@testing-library/jest-native/extend-expect';
 
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import { Pressable as MockPressable, Text as MockText, View as MockView } from 'react-native';
 
@@ -74,7 +74,7 @@ jest.mock('expo-router', () => ({
 
 let mockCurrentUser: PublicUser | null;
 const mockSignOut = { mutate: jest.fn(), isPending: false };
-const mockDeleteAccount = { mutate: jest.fn(), isPending: false };
+const mockDeleteAccount = { mutate: jest.fn(), mutateAsync: jest.fn(), isPending: false };
 
 jest.mock('../../../application/use-current-user', () => ({
   useCurrentUser: () => mockCurrentUser,
@@ -178,14 +178,41 @@ describe('AccountSection', () => {
     expect(screen.getByTestId('destructive-confirm-dialog')).toBeTruthy();
   });
 
-  it('確認ダイアログで「削除」を選ぶと退会処理を実行する', () => {
+  it('退会処理中は「削除中...」を表示する', () => {
     mockCurrentUser = USER;
+    mockDeleteAccount.isPending = true;
+    render(<AccountSection />);
+
+    expect(screen.getByText('settings.deletingAccount')).toBeTruthy();
+
+    mockDeleteAccount.isPending = false;
+  });
+
+  it('確認ダイアログで「削除」を選ぶと退会処理を実行する', async () => {
+    mockCurrentUser = USER;
+    mockDeleteAccount.mutateAsync.mockResolvedValue(undefined);
     render(<AccountSection />);
 
     fireEvent.press(screen.getByText('settings.deleteAccount'));
     fireEvent.press(screen.getByTestId('destructive-confirm-dialog-confirm'));
 
-    expect(mockDeleteAccount.mutate).toHaveBeenCalled();
     expect(screen.queryByTestId('destructive-confirm-dialog')).toBeNull();
+    await waitFor(() => expect(mockDeleteAccount.mutateAsync).toHaveBeenCalled());
+  });
+
+  it('退会に失敗したらエラーを表示し、再試行で退会処理を再度呼ぶ', async () => {
+    mockCurrentUser = USER;
+    mockDeleteAccount.mutateAsync.mockRejectedValueOnce(new Error('network down'));
+    render(<AccountSection />);
+
+    fireEvent.press(screen.getByText('settings.deleteAccount'));
+    fireEvent.press(screen.getByTestId('destructive-confirm-dialog-confirm'));
+
+    await waitFor(() => expect(screen.getByText('settings.deleteAccountError')).toBeTruthy());
+
+    mockDeleteAccount.mutateAsync.mockResolvedValueOnce(undefined);
+    fireEvent.press(screen.getByText('settings.retry'));
+
+    await waitFor(() => expect(mockDeleteAccount.mutateAsync).toHaveBeenCalledTimes(2));
   });
 });
