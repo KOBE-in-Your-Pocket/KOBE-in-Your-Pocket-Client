@@ -104,6 +104,7 @@ describe('AccountSection', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockCurrentUser = null;
+    mockDeleteAccount.isPending = false;
     // アカウント欄そのものの挙動を検証するため成人として描画する。
     // 18歳未満で何も出さないことは account-section-age-restricted.test.tsx で検証する。
     useAgeRestrictionStore.setState({ isAdult: true });
@@ -184,8 +185,15 @@ describe('AccountSection', () => {
     render(<AccountSection />);
 
     expect(screen.getByText('settings.deletingAccount')).toBeTruthy();
+  });
 
-    mockDeleteAccount.isPending = false;
+  it('退会処理中はログアウト・アカウント編集も押せない', () => {
+    mockCurrentUser = USER;
+    mockDeleteAccount.isPending = true;
+    render(<AccountSection />);
+
+    expect(screen.getByRole('button', { name: 'settings.signOut' })).toBeDisabled();
+    expect(screen.getByLabelText('settings.editAccount')).toBeDisabled();
   });
 
   it('確認ダイアログで「削除」を選ぶと退会処理を実行する', async () => {
@@ -231,5 +239,24 @@ describe('AccountSection', () => {
 
     await waitFor(() => expect(screen.getByText('settings.deleteAccountError')).toBeTruthy());
     expect(screen.getByText('settings.retry')).toBeTruthy();
+  });
+
+  it('退会失敗後に別アカウントでログインすると、前のアカウントの失敗表示を持ち越さない', async () => {
+    mockCurrentUser = USER;
+    mockDeleteAccount.mutateAsync.mockImplementation(() => {
+      mockCurrentUser = null;
+      return Promise.reject(new Error('secure-store failed'));
+    });
+    const { rerender } = render(<AccountSection />);
+
+    fireEvent.press(screen.getByText('settings.deleteAccount'));
+    fireEvent.press(screen.getByTestId('destructive-confirm-dialog-confirm'));
+
+    await waitFor(() => expect(screen.getByText('settings.deleteAccountError')).toBeTruthy());
+
+    mockCurrentUser = { id: 'user-2', name: '別のユーザー', iconUrl: '' };
+    rerender(<AccountSection />);
+
+    await waitFor(() => expect(screen.queryByText('settings.deleteAccountError')).toBeNull());
   });
 });

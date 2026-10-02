@@ -37,6 +37,15 @@ export function AccountSection() {
   const [signInVisible, setSignInVisible] = useState(false);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
   const [deleteAccountFailed, setDeleteAccountFailed] = useState(false);
+  const [lastCurrentUser, setLastCurrentUser] = useState(currentUser);
+
+  // currentUser が変わる（ログアウト・別アカウントでのログイン）たびに、
+  // 前のアカウントの退会失敗表示を持ち越さない。再試行ボタンが別人のアカウントに
+  // 対して実行されてしまうのを防ぐため。
+  if (currentUser !== lastCurrentUser) {
+    setLastCurrentUser(currentUser);
+    setDeleteAccountFailed(false);
+  }
 
   if (!IS_USER_CONTENT_ENABLED || !isAdult) {
     return null;
@@ -62,6 +71,7 @@ export function AccountSection() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('settings.editAccount')}
+            disabled={deleteAccount.isPending}
             onPress={() => router.push('/settings/account-edit')}
             style={({ pressed }) => [
               styles.row,
@@ -83,7 +93,7 @@ export function AccountSection() {
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            disabled={signOut.isPending}
+            disabled={signOut.isPending || deleteAccount.isPending}
             onPress={() => signOut.mutate()}
             style={[styles.row, { backgroundColor: theme.backgroundElement }]}
           >
