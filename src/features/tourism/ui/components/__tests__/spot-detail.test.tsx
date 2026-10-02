@@ -314,5 +314,45 @@ describe('SpotDetailContent', () => {
 
       expect(mockDeleteReviewAsync).not.toHaveBeenCalled();
     });
+
+    it('削除中はラベルを表示する', async () => {
+      let resolveDelete: () => void = () => {};
+      mockDeleteReviewAsync.mockReturnValue(
+        new Promise<void>((resolve) => {
+          resolveDelete = resolve;
+        }),
+      );
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      const alertSpy = await openDeleteConfirm();
+      pressAlertButton(alertSpy, 'tourism.reviewCard.delete');
+
+      await waitFor(
+        () => expect(screen.getByText('tourism.reviewCard.deleting')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
+      // 削除中は三点リーダーメニュー自体を出さない（編集に入れてしまわないように）。
+      expect(screen.queryByLabelText('tourism.reviewCard.openMenu')).toBeNull();
+
+      await waitFor(() => resolveDelete(), ASYNC_TIMEOUT);
+    });
+
+    it('削除に失敗したらエラーを表示し、再試行で削除 mutation を再度呼ぶ', async () => {
+      mockDeleteReviewAsync.mockRejectedValueOnce(new Error('network down'));
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      const alertSpy = await openDeleteConfirm();
+      pressAlertButton(alertSpy, 'tourism.reviewCard.delete');
+
+      await waitFor(
+        () => expect(screen.getByText('tourism.reviewCard.deleteError')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
+
+      mockDeleteReviewAsync.mockResolvedValueOnce(undefined);
+      fireEvent.press(screen.getByText('tourism.reviewCard.retry'));
+
+      await waitFor(() => expect(mockDeleteReviewAsync).toHaveBeenCalledTimes(2), ASYNC_TIMEOUT);
+    });
   });
 });

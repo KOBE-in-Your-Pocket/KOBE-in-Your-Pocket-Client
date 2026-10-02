@@ -1,6 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 
+import { ApiError } from '@/shared/lib/api';
+
 import { deleteReview } from '../../infrastructure/api/review-api';
 import { useReviewStore } from '../../store/use-review-store';
 import { useDeleteReview } from '../use-delete-review';
@@ -91,6 +93,28 @@ describe('useDeleteReview', () => {
 
   it('削除に失敗したらローカルストアを書き換えずエラーになる', async () => {
     deleteReviewMock.mockRejectedValue(new Error('network down'));
+    const { wrapper } = createWrapper();
+    const { result } = renderHook(() => useDeleteReview('spot-a'), { wrapper });
+
+    result.current.mutate('review-1');
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(useReviewStore.getState().submittedReviews['spot-a']).toEqual([EXISTING_REVIEW]);
+  });
+
+  it('404（すでに削除済み）は成功扱いにしてローカルストアからも除去する', async () => {
+    deleteReviewMock.mockRejectedValue(new ApiError(404, 'NOT_FOUND', 'Review not found'));
+    const { wrapper } = createWrapper();
+    const { result } = renderHook(() => useDeleteReview('spot-a'), { wrapper });
+
+    result.current.mutate('review-1');
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(useReviewStore.getState().submittedReviews['spot-a']).toEqual([]);
+  });
+
+  it('404 以外の ApiError は成功扱いにせずエラーになる', async () => {
+    deleteReviewMock.mockRejectedValue(new ApiError(403, 'FORBIDDEN', 'Review is not owned'));
     const { wrapper } = createWrapper();
     const { result } = renderHook(() => useDeleteReview('spot-a'), { wrapper });
 

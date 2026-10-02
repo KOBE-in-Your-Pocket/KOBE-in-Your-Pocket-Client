@@ -114,7 +114,10 @@
       "saving": "Saving...",
       "saveError": "Could not update your review. Please try again later.",
       "deleteConfirmTitle": "Delete this review?",
-      "deleteConfirmMessage": "This action can't be undone."
+      "deleteConfirmMessage": "This action can't be undone.",
+      "deleting": "Deleting...",
+      "deleteError": "Could not delete your review. Please try again later.",
+      "retry": "Retry"
     },
     "reviewFilter": {
       "all": "All"

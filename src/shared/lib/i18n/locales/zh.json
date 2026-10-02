@@ -114,7 +114,10 @@
       "saving": "保存中...",
       "saveError": "无法更新评论。请稍后再试。",
       "deleteConfirmTitle": "要删除这条评论吗？",
-      "deleteConfirmMessage": "删除后将无法恢复。"
+      "deleteConfirmMessage": "删除后将无法恢复。",
+      "deleting": "删除中...",
+      "deleteError": "无法删除评论。请稍后再试。",
+      "retry": "重试"
     },
     "reviewFilter": {
       "all": "全部"
