@@ -152,6 +152,6 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   deleteAccountText: {
-    color: '#D45B45',
+    color: '#FF3B30',
   },
 });
