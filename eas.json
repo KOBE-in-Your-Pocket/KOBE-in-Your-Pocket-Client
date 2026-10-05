@@ -52,7 +52,12 @@
   "submit": {
     "production": {
       "android": {
-        "track": "internal"
+        "track": "production"
+      }
+    },
+    "closed-testing": {
+      "android": {
+        "track": "alpha"
       }
     }
   }
