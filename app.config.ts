@@ -101,6 +101,20 @@ export default (): ExpoConfig => ({
     },
     package: 'com.kobeinyourpocket.client',
     predictiveBackGestureEnabled: false,
+    // Expo の既定マニフェストは「OPTIONAL PERMISSIONS, REMOVE WHATEVER YOU DO NOT NEED」として
+    // 下記を入れてくる（@expo/config-plugins の withAndroidBaseMods）。どれも使っていないため外す。
+    // Play ストアの掲載ページには宣言した権限がそのまま並ぶので、使わない権限を残すと
+    // 利用者には「なぜ必要なのか」が説明できないものとして見える。
+    //
+    // SYSTEM_ALERT_WINDOW を外すと、Android の dev client で開発メニューの
+    // フローティングバブルが出なくなる（端末を振る / adb shell input keyevent 82 で開ける）。
+    // 位置情報（ACCESS_COARSE/FINE_LOCATION）は expo-location プラグインが付けるので触らない。
+    blockedPermissions: [
+      'android.permission.SYSTEM_ALERT_WINDOW',
+      'android.permission.VIBRATE',
+      'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.WRITE_EXTERNAL_STORAGE',
+    ],
   },
   web: {
     output: 'static',
