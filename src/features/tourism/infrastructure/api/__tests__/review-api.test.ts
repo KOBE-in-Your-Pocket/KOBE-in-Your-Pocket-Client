@@ -1,6 +1,6 @@
 import { apiFetch } from '@/shared/lib/api';
 
-import { fetchReviews, postReview, updateReview } from '../review-api';
+import { deleteReview, fetchReviews, postReview, updateReview } from '../review-api';
 
 jest.mock('@/shared/lib/api', () => ({
   apiFetch: jest.fn(),
@@ -208,5 +208,36 @@ describe('updateReview', () => {
       postedAt: '2025-05-01T00:00:00.000Z',
       language: 'ja',
     });
+  });
+});
+
+describe('deleteReview', () => {
+  beforeEach(() => {
+    mockApiFetch.mockReset();
+    mockApiFetch.mockResolvedValue(undefined);
+  });
+
+  it('認証付きで DELETE する', async () => {
+    await deleteReview('nankinmachi', 'review-1');
+
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      '/api/v1/tourism/spots/nankinmachi/reviews/review-1',
+      {
+        method: 'DELETE',
+        auth: true,
+      },
+    );
+  });
+
+  it('spotId と reviewId を URL エンコードする', async () => {
+    await deleteReview('spot/with space', 'review/1');
+
+    expect(mockApiFetch.mock.calls[0][0]).toBe(
+      '/api/v1/tourism/spots/spot%2Fwith%20space/reviews/review%2F1',
+    );
+  });
+
+  it('204 相当（undefined）のレスポンスでも例外にせず resolve する', async () => {
+    await expect(deleteReview('nankinmachi', 'review-1')).resolves.toBeUndefined();
   });
 });

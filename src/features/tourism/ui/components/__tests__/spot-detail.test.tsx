@@ -1,5 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
-import { Text as MockText, View as MockView, View as RNView } from 'react-native';
+import {
+  Pressable as MockPressable,
+  Text as MockText,
+  View as MockView,
+  View as RNView,
+} from 'react-native';
 
 import { SpotDetailContent } from '../spot-detail';
 
@@ -26,6 +31,7 @@ const mockUseSpotReviews = jest.fn();
 const mockUseCurrentUser = jest.fn();
 const mockUseCurrentLocation = jest.fn();
 const mockUpdateReviewAsync = jest.fn();
+const mockDeleteReviewAsync = jest.fn();
 
 jest.mock('../../../application/use-spot-reviews', () => ({
   useSpotReviews: (spotId: string) => mockUseSpotReviews(spotId),
@@ -36,7 +42,7 @@ jest.mock('../../../application/use-update-review', () => ({
 }));
 
 jest.mock('../../../application/use-delete-review', () => ({
-  useDeleteReview: () => jest.fn(),
+  useDeleteReview: () => ({ mutateAsync: mockDeleteReviewAsync }),
 }));
 
 jest.mock('@/features/manner', () => ({
@@ -103,6 +109,36 @@ jest.mock('@/shared/config', () => ({
 jest.mock('@/shared/ui', () => ({
   ThemedText: ({ children }: { children: ReactNode }) => <MockText>{children}</MockText>,
   ThemedView: ({ children }: { children: ReactNode }) => <MockView>{children}</MockView>,
+  // 確認ダイアログは表示状態とボタン操作だけ再現する（Alert / Compose の描画は共通ダイアログ側のテストで検証）。
+  DestructiveConfirmDialog: ({
+    visible,
+    title,
+    message,
+    cancelLabel,
+    confirmLabel,
+    onConfirm,
+    onCancel,
+  }: {
+    visible: boolean;
+    title: string;
+    message: string;
+    cancelLabel: string;
+    confirmLabel: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+  }) =>
+    visible ? (
+      <MockView testID="destructive-confirm-dialog">
+        <MockText>{title}</MockText>
+        <MockText>{message}</MockText>
+        <MockPressable testID="destructive-confirm-dialog-cancel" onPress={onCancel}>
+          <MockText>{cancelLabel}</MockText>
+        </MockPressable>
+        <MockPressable testID="destructive-confirm-dialog-confirm" onPress={onConfirm}>
+          <MockText>{confirmLabel}</MockText>
+        </MockPressable>
+      </MockView>
+    ) : null,
 }));
 
 /**
@@ -140,6 +176,7 @@ function openEditor() {
 describe('SpotDetailContent', () => {
   beforeEach(() => {
     mockUpdateReviewAsync.mockReset();
+    mockDeleteReviewAsync.mockReset();
     mockUseSpotReviews.mockReturnValue({ data: [], isPending: false });
     mockUseCurrentUser.mockReturnValue({ name: 'test-user' });
     mockUseCurrentLocation.mockReturnValue({ coords: null });
@@ -249,6 +286,106 @@ describe('SpotDetailContent', () => {
 
       expect(screen.getByText(OWN_REVIEW.comment)).toBeTruthy();
       expect(screen.queryByLabelText('tourism.reviewCard.openMenu')).toBeNull();
+    });
+  });
+
+  describe('自分のレビューの削除', () => {
+    beforeEach(() => {
+      stubMeasureInWindow();
+      mockUseSpotReviews.mockReturnValue({ data: [OWN_REVIEW], isPending: false });
+      mockUseCurrentUser.mockReturnValue(OWN_REVIEW.author);
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    /** メニューから「削除」を押して確認ダイアログを開く（メニューを閉じてから少し遅れて表示される）。 */
+    async function openDeleteConfirm() {
+      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
+      fireEvent.press(screen.getByText('tourism.reviewCard.delete'));
+
+      await waitFor(
+        () => expect(screen.getByTestId('destructive-confirm-dialog')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
+    }
+
+    function pressDialogButton(button: 'confirm' | 'cancel') {
+      fireEvent.press(screen.getByTestId(`destructive-confirm-dialog-${button}`));
+    }
+
+    it('削除メニューを押しただけでは確認ダイアログを出すのみで、まだ削除しない', async () => {
+      mockDeleteReviewAsync.mockResolvedValue(undefined);
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      await openDeleteConfirm();
+
+      expect(mockDeleteReviewAsync).not.toHaveBeenCalled();
+    });
+
+    it('確認ダイアログで「削除」を選ぶと reviewId を渡して削除 mutation を呼ぶ', async () => {
+      mockDeleteReviewAsync.mockResolvedValue(undefined);
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      await openDeleteConfirm();
+      pressDialogButton('confirm');
+
+      await waitFor(
+        () => expect(mockDeleteReviewAsync).toHaveBeenCalledWith('review-1'),
+        ASYNC_TIMEOUT,
+      );
+    });
+
+    it('確認ダイアログで「キャンセル」を選ぶと削除しない', async () => {
+      mockDeleteReviewAsync.mockResolvedValue(undefined);
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      await openDeleteConfirm();
+      pressDialogButton('cancel');
+
+      expect(screen.queryByTestId('destructive-confirm-dialog')).toBeNull();
+      expect(mockDeleteReviewAsync).not.toHaveBeenCalled();
+    });
+
+    it('削除中はラベルを表示する', async () => {
+      let resolveDelete: () => void = () => {};
+      mockDeleteReviewAsync.mockReturnValue(
+        new Promise<void>((resolve) => {
+          resolveDelete = resolve;
+        }),
+      );
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      await openDeleteConfirm();
+      pressDialogButton('confirm');
+
+      await waitFor(
+        () => expect(screen.getByText('tourism.reviewCard.deleting')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
+      // 削除中は三点リーダーメニュー自体を出さない（編集に入れてしまわないように）。
+      expect(screen.queryByLabelText('tourism.reviewCard.openMenu')).toBeNull();
+
+      await waitFor(() => resolveDelete(), ASYNC_TIMEOUT);
+    });
+
+    it('削除に失敗したらエラーを表示し、再試行で削除 mutation を再度呼ぶ', async () => {
+      mockDeleteReviewAsync.mockRejectedValueOnce(new Error('network down'));
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      await openDeleteConfirm();
+      pressDialogButton('confirm');
+
+      await waitFor(
+        () => expect(screen.getByText('tourism.reviewCard.deleteError')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
+
+      mockDeleteReviewAsync.mockResolvedValueOnce(undefined);
+      fireEvent.press(screen.getByText('tourism.reviewCard.retry'));
+
+      await waitFor(() => expect(mockDeleteReviewAsync).toHaveBeenCalledTimes(2), ASYNC_TIMEOUT);
     });
   });
 });

@@ -36,7 +36,7 @@ import { confirmOpenDirections } from '@/shared/lib/directions';
 import { useCurrentLocation } from '@/shared/lib/geo';
 import { useTheme } from '@/shared/lib/theme';
 import { useIsAdult } from '@/shared/store';
-import { ThemedText, ThemedView } from '@/shared/ui';
+import { DestructiveConfirmDialog, ThemedText, ThemedView } from '@/shared/ui';
 
 function BackButton({ label }: { label: string }) {
   const insets = useSafeAreaInsets();
@@ -71,7 +71,8 @@ function ReviewCard({
   isOwn: boolean;
   /** 保存は backend への PUT。完了を待って編集モードを閉じるため Promise を返す。 */
   onUpdate: (changes: ReviewEdit) => Promise<unknown>;
-  onDelete: () => void;
+  /** 削除は backend への DELETE。失敗を検知できるよう Promise を返す。 */
+  onDelete: () => Promise<unknown>;
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -84,8 +85,24 @@ function ReviewCard({
   const [editComment, setEditComment] = useState(review.comment);
   const [isSaving, setIsSaving] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteFailed, setDeleteFailed] = useState(false);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
 
   const canSave = editRating > 0 && editComment.trim() !== '' && !isSaving;
+
+  async function handleDelete() {
+    if (isDeleting) return;
+    setIsDeleting(true);
+    setDeleteFailed(false);
+    try {
+      await onDelete();
+    } catch {
+      setDeleteFailed(true);
+    } finally {
+      setIsDeleting(false);
+    }
+  }
 
   function openMenu() {
     menuAnchorRef.current?.measureInWindow((x, _y, w, h) => {
@@ -210,7 +227,7 @@ function ReviewCard({
             />
             <ThemedText type="smallBold">{review.rating.value.toFixed(1)}</ThemedText>
           </View>
-          {isOwn && (
+          {isOwn && !isDeleting && (
             <View ref={menuAnchorRef}>
               <Pressable
                 onPress={openMenu}
@@ -230,6 +247,23 @@ function ReviewCard({
         <ThemedText type="small" themeColor="textSecondary" style={styles.reviewComment}>
           {review.comment}
         </ThemedText>
+        {isDeleting && (
+          <ThemedText type="small" themeColor="textSecondary">
+            {t('tourism.reviewCard.deleting')}
+          </ThemedText>
+        )}
+        {deleteFailed && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
+            <ThemedText type="small" style={{ color: '#D45B45', flexShrink: 1 }}>
+              {t('tourism.reviewCard.deleteError')}
+            </ThemedText>
+            <Pressable onPress={handleDelete} accessibilityRole="button">
+              <ThemedText type="smallBold" style={{ color: '#D45B45' }}>
+                {t('tourism.reviewCard.retry')}
+              </ThemedText>
+            </Pressable>
+          </View>
+        )}
       </ThemedView>
 
       {menuOpen && (
@@ -257,7 +291,9 @@ function ReviewCard({
               style={dropdownStyles.item}
               onPress={() => {
                 setMenuOpen(false);
-                onDelete();
+                // 三点リーダーの Modal を閉じてから確認ダイアログを出す（同時だと iOS で Alert が出ないことがある）。
+                // 0ms だとネイティブ側の Modal 終了処理と競合する可能性があるため、安全マージンを持たせる。
+                setTimeout(() => setDeleteConfirmVisible(true), 100);
               }}
             >
               <SymbolView
@@ -272,6 +308,18 @@ function ReviewCard({
           </ThemedView>
         </Modal>
       )}
+      <DestructiveConfirmDialog
+        visible={deleteConfirmVisible}
+        title={t('tourism.reviewCard.deleteConfirmTitle')}
+        message={t('tourism.reviewCard.deleteConfirmMessage')}
+        cancelLabel={t('tourism.reviewCard.cancel')}
+        confirmLabel={t('tourism.reviewCard.delete')}
+        onConfirm={() => {
+          setDeleteConfirmVisible(false);
+          void handleDelete();
+        }}
+        onCancel={() => setDeleteConfirmVisible(false)}
+      />
     </>
   );
 }
@@ -404,7 +452,7 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
                 // 18歳未満も同様に投稿できないため、メニューを出す条件から外す。
                 isOwn={IS_USER_CONTENT_ENABLED && isAdult && review.author.id === currentUser?.id}
                 onUpdate={(changes) => updateReview.mutateAsync({ reviewId: review.id, changes })}
-                onDelete={() => deleteReview(review.id)}
+                onDelete={() => deleteReview.mutateAsync(review.id)}
               />
             ))
           ) : (

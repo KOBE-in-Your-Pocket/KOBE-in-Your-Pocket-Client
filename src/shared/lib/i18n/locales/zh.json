@@ -60,6 +60,14 @@
       "iconLibraryClose": "关闭",
       "notSignedIn": "编辑账户前请先登录。"
     },
+    "deleteAccount": "删除账户（注销）",
+    "deleteAccountConfirm": "删除账户",
+    "deleteAccountConfirmTitle": "要删除账户吗？",
+    "deleteAccountConfirmMessage": "您发布的评价也会被删除。此操作无法撤销。",
+    "deleteAccountError": "无法删除账户。请稍后再试。",
+    "deletingAccount": "删除中...",
+    "retry": "重试",
+    "cancel": "取消",
     "about": "关于本应用",
     "privacyPolicy": "隐私政策",
     "credits": "鸣谢",
@@ -109,9 +117,15 @@
       "edit": "编辑",
       "save": "保存",
       "delete": "删除",
+      "cancel": "取消",
       "openMenu": "打开菜单",
       "saving": "保存中...",
-      "saveError": "无法更新评论。请稍后再试。"
+      "saveError": "无法更新评论。请稍后再试。",
+      "deleteConfirmTitle": "要删除这条评论吗？",
+      "deleteConfirmMessage": "删除后将无法恢复。",
+      "deleting": "删除中...",
+      "deleteError": "无法删除评论。请稍后再试。",
+      "retry": "重试"
     },
     "reviewFilter": {
       "all": "全部"

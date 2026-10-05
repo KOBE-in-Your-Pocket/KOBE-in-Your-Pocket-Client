@@ -60,6 +60,14 @@
       "iconLibraryClose": "閉じる",
       "notSignedIn": "アカウントを編集するにはログインが必要です。"
     },
+    "deleteAccount": "アカウント削除（退会）",
+    "deleteAccountConfirm": "アカウント削除",
+    "deleteAccountConfirmTitle": "アカウントを削除しますか？",
+    "deleteAccountConfirmMessage": "投稿したレビューも削除されます。この操作は元に戻せません。",
+    "deleteAccountError": "アカウントを削除できませんでした。時間をおいて再度お試しください。",
+    "deletingAccount": "削除中...",
+    "retry": "再試行",
+    "cancel": "キャンセル",
     "about": "このアプリについて",
     "privacyPolicy": "プライバシーポリシー",
     "credits": "クレジット",
@@ -109,9 +117,15 @@
       "edit": "編集",
       "save": "保存",
       "delete": "削除",
+      "cancel": "キャンセル",
       "openMenu": "メニューを開く",
       "saving": "保存中...",
-      "saveError": "レビューを更新できませんでした。時間をおいて再度お試しください。"
+      "saveError": "レビューを更新できませんでした。時間をおいて再度お試しください。",
+      "deleteConfirmTitle": "レビューを削除しますか？",
+      "deleteConfirmMessage": "削除すると元に戻せません。",
+      "deleting": "削除中...",
+      "deleteError": "レビューを削除できませんでした。時間をおいて再度お試しください。",
+      "retry": "再試行"
     },
     "reviewFilter": {
       "all": "すべて"

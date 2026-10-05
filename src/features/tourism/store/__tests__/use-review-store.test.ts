@@ -55,6 +55,24 @@ describe('useReviewStore', () => {
     expect(useReviewStore.getState().submittedReviews['spot-a'][0].comment).toBe('orig');
   });
 
+  it('deleteReview で id 一致のレビューだけが除去される', () => {
+    useReviewStore.getState().addReview('spot-a', makeReview({ id: 'r1' }));
+    useReviewStore.getState().addReview('spot-a', makeReview({ id: 'r2' }));
+
+    useReviewStore.getState().deleteReview('spot-a', 'r1');
+
+    expect(useReviewStore.getState().submittedReviews['spot-a'].map((r) => r.id)).toEqual(['r2']);
+  });
+
+  it('存在しない spot / id の deleteReview は no-op', () => {
+    useReviewStore.getState().addReview('spot-a', makeReview({ id: 'r1' }));
+
+    useReviewStore.getState().deleteReview('spot-x', 'r1');
+    useReviewStore.getState().deleteReview('spot-a', 'zzz');
+
+    expect(useReviewStore.getState().submittedReviews['spot-a'].map((r) => r.id)).toEqual(['r1']);
+  });
+
   it('updateAuthorInfo で全スポット横断で author.id 一致のレビューの author.name / iconUrl が更新される', () => {
     useReviewStore
       .getState()
@@ -94,5 +112,14 @@ describe('useReviewStore', () => {
       name: 'Hanako',
       iconUrl: 'hanako.png',
     });
+  });
+
+  it('clearSubmittedReviews で全スポット分の投稿済みレビューが消える', () => {
+    useReviewStore.getState().addReview('spot-a', makeReview({ id: 'r1' }));
+    useReviewStore.getState().addReview('spot-b', makeReview({ id: 'r2' }));
+
+    useReviewStore.getState().clearSubmittedReviews();
+
+    expect(useReviewStore.getState().submittedReviews).toEqual({});
   });
 });

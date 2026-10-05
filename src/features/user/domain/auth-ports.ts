@@ -26,7 +26,8 @@ export type PersistedUserStore = {
   updatePersistedUser(user: PublicUser): Promise<void>;
 };
 
-/** ユーザー情報の取得 API を抽象化するポート。 */
+/** ユーザー情報の取得・削除 API を抽象化するポート。 */
 export type UserGateway = {
   fetchCurrentUser(): Promise<PublicUser>;
+  deleteCurrentUser(): Promise<void>;
 };

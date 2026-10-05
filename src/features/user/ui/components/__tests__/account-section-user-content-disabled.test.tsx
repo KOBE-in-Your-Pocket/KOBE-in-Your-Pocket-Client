@@ -24,6 +24,7 @@ jest.mock('@/shared/lib/theme', () => ({
 
 jest.mock('@/shared/ui', () => ({
   ThemedText: ({ children }: { children?: ReactNode }) => <MockText>{children}</MockText>,
+  DestructiveConfirmDialog: () => null,
 }));
 
 jest.mock('react-i18next', () => ({
@@ -42,6 +43,10 @@ jest.mock('../../../application/use-current-user', () => ({
 
 jest.mock('../../../application/use-sign-out', () => ({
   useSignOut: () => ({ mutate: jest.fn(), isPending: false }),
+}));
+
+jest.mock('../../../application/use-delete-account', () => ({
+  useDeleteAccount: () => ({ mutate: jest.fn(), isPending: false }),
 }));
 
 jest.mock('../sign-in-modal', () => ({
@@ -68,5 +73,6 @@ describe('AccountSection（IS_USER_CONTENT_ENABLED = false）', () => {
 
     expect(screen.queryByLabelText('settings.editAccount')).toBeNull();
     expect(screen.queryByText('settings.signOut')).toBeNull();
+    expect(screen.queryByText('settings.deleteAccount')).toBeNull();
   });
 });

@@ -7,8 +7,9 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { IS_USER_CONTENT_ENABLED, Spacing } from '@/shared/config';
 import { useTheme } from '@/shared/lib/theme';
 import { useIsAdult } from '@/shared/store';
-import { ThemedText } from '@/shared/ui';
+import { DestructiveConfirmDialog, ThemedText } from '@/shared/ui';
 
+import { useDeleteAccount } from '../../application/use-delete-account';
 import { useSignOut } from '../../application/use-sign-out';
 import { useCurrentUser } from '../../application/use-current-user';
 import { SignInModal } from './sign-in-modal';
@@ -31,11 +32,33 @@ export function AccountSection() {
   const theme = useTheme();
   const currentUser = useCurrentUser();
   const signOut = useSignOut();
+  const deleteAccount = useDeleteAccount();
   const isAdult = useIsAdult();
   const [signInVisible, setSignInVisible] = useState(false);
+  const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [deleteAccountFailed, setDeleteAccountFailed] = useState(false);
+  const [lastCurrentUser, setLastCurrentUser] = useState(currentUser);
+
+  // currentUser が変わる（ログアウト・別アカウントでのログイン）たびに、
+  // 前のアカウントの退会失敗表示を持ち越さない。再試行ボタンが別人のアカウントに
+  // 対して実行されてしまうのを防ぐため。
+  if (currentUser !== lastCurrentUser) {
+    setLastCurrentUser(currentUser);
+    setDeleteAccountFailed(false);
+  }
 
   if (!IS_USER_CONTENT_ENABLED || !isAdult) {
     return null;
+  }
+
+  async function handleDeleteAccount() {
+    setDeleteConfirmVisible(false);
+    setDeleteAccountFailed(false);
+    try {
+      await deleteAccount.mutateAsync();
+    } catch {
+      setDeleteAccountFailed(true);
+    }
   }
 
   return (
@@ -48,6 +71,7 @@ export function AccountSection() {
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t('settings.editAccount')}
+            disabled={deleteAccount.isPending}
             onPress={() => router.push('/settings/account-edit')}
             style={({ pressed }) => [
               styles.row,
@@ -69,7 +93,7 @@ export function AccountSection() {
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            disabled={signOut.isPending}
+            disabled={signOut.isPending || deleteAccount.isPending}
             onPress={() => signOut.mutate()}
             style={[styles.row, { backgroundColor: theme.backgroundElement }]}
           >
@@ -77,6 +101,28 @@ export function AccountSection() {
               {t('settings.signOut')}
             </ThemedText>
           </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            disabled={deleteAccount.isPending}
+            onPress={() => setDeleteConfirmVisible(true)}
+            style={[styles.row, { backgroundColor: theme.backgroundElement }]}
+          >
+            <ThemedText type="default" style={styles.deleteAccountText}>
+              {t('settings.deleteAccount')}
+            </ThemedText>
+          </Pressable>
+          {deleteAccountFailed && (
+            <View style={styles.deleteAccountErrorRow}>
+              <ThemedText type="small" style={[styles.deleteAccountText, { flexShrink: 1 }]}>
+                {t('settings.deleteAccountError')}
+              </ThemedText>
+              <Pressable onPress={handleDeleteAccount} accessibilityRole="button">
+                <ThemedText type="smallBold" style={styles.deleteAccountText}>
+                  {t('settings.retry')}
+                </ThemedText>
+              </Pressable>
+            </View>
+          )}
         </View>
       ) : (
         <View style={styles.list}>
@@ -89,7 +135,21 @@ export function AccountSection() {
           </Pressable>
         </View>
       )}
+      {deleteAccount.isPending && (
+        <ThemedText type="small" themeColor="textSecondary" style={styles.deleteAccountStatus}>
+          {t('settings.deletingAccount')}
+        </ThemedText>
+      )}
       <SignInModal visible={signInVisible} onClose={() => setSignInVisible(false)} />
+      <DestructiveConfirmDialog
+        visible={deleteConfirmVisible}
+        title={t('settings.deleteAccountConfirmTitle')}
+        message={t('settings.deleteAccountConfirmMessage')}
+        cancelLabel={t('settings.cancel')}
+        confirmLabel={t('settings.deleteAccountConfirm')}
+        onConfirm={handleDeleteAccount}
+        onCancel={() => setDeleteConfirmVisible(false)}
+      />
     </View>
   );
 }
@@ -122,5 +182,17 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.85,
+  },
+  deleteAccountText: {
+    color: '#FF3B30',
+  },
+  deleteAccountErrorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    paddingHorizontal: Spacing.three,
+  },
+  deleteAccountStatus: {
+    paddingHorizontal: Spacing.three,
   },
 });

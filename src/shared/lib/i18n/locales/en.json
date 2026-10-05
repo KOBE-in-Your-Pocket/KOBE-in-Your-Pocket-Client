@@ -60,6 +60,14 @@
       "iconLibraryClose": "Close",
       "notSignedIn": "Sign in to edit your account."
     },
+    "deleteAccount": "Delete Account",
+    "deleteAccountConfirm": "Delete Account",
+    "deleteAccountConfirmTitle": "Delete your account?",
+    "deleteAccountConfirmMessage": "Your posted reviews will also be deleted. This action can't be undone.",
+    "deleteAccountError": "Could not delete your account. Please try again later.",
+    "deletingAccount": "Deleting...",
+    "retry": "Retry",
+    "cancel": "Cancel",
     "about": "About",
     "privacyPolicy": "Privacy Policy",
     "credits": "Credits",
@@ -109,9 +117,15 @@
       "edit": "Edit",
       "save": "Save",
       "delete": "Delete",
+      "cancel": "Cancel",
       "openMenu": "Open menu",
       "saving": "Saving...",
-      "saveError": "Could not update your review. Please try again later."
+      "saveError": "Could not update your review. Please try again later.",
+      "deleteConfirmTitle": "Delete this review?",
+      "deleteConfirmMessage": "This action can't be undone.",
+      "deleting": "Deleting...",
+      "deleteError": "Could not delete your review. Please try again later.",
+      "retry": "Retry"
     },
     "reviewFilter": {
       "all": "All"
