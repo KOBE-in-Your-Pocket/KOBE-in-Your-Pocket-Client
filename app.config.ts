@@ -94,10 +94,18 @@ export default (): ExpoConfig => ({
   },
   android: {
     adaptiveIcon: {
-      backgroundColor: '#E6F4FE',
+      // 前景はチームロゴ（app-icon.png）を Android のセーフゾーン（内側 66.7%）に収めたもの。
+      // ランチャーは前景を 108dp の層として扱い、内側 72dp しか必ず見える保証が無いため、
+      // 余白は画像側に持たせる必要がある。
+      //
+      // 背景は画像ではなく白一色。ロゴが白背景（透過なし）なので、背景色を白に揃えないと
+      // マスクの中でロゴの白い四角が浮いて見える。
+      //
+      // monochromeImage（Android 13 以降のテーマアイコン）は指定しない。Expo 既定の
+      // 素材が入ったままだとテーマアイコンを有効にした端末で Expo のロゴが出てしまう。
+      // 単色シルエットはロゴから機械的に作れないため、必要になったらデザインを用意する。
+      backgroundColor: '#FFFFFF',
       foregroundImage: './assets/images/android-icon-foreground.png',
-      backgroundImage: './assets/images/android-icon-background.png',
-      monochromeImage: './assets/images/android-icon-monochrome.png',
     },
     package: 'com.kobeinyourpocket.client',
     predictiveBackGestureEnabled: false,
