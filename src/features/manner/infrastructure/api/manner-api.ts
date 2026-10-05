@@ -14,7 +14,10 @@ type MannerItemResponse = {
   id: string;
   title: string;
   description: string;
-  icon: string;
+  /** アイコン識別キー。画像 URL のみの項目では null。 */
+  icon: string | null;
+  /** アップロードされたアイコン画像の URL。未設定なら null。 */
+  iconUrl: string | null;
   kind: string;
   scope: string;
   relatedSpotIds: string[];
@@ -64,6 +67,8 @@ function toMannerItem(response: MannerItemResponse): MannerItem {
     title: response.title,
     description: response.description,
     icon: response.icon,
+    // iconUrl 追加前の backend は項目ごと返さないため、undefined も null に揃える。
+    iconUrl: response.iconUrl ?? null,
     imageKey: response.icon,
     kind: toMannerKind(response.kind),
     scope: toMannerScope(response.scope),

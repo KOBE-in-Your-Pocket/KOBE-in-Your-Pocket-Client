@@ -18,6 +18,7 @@ describe('getManners', () => {
         title: 'Test',
         description: 'Description',
         icon: 'test',
+        iconUrl: null,
         imageKey: null,
         kind: 'manner',
         scope: 'local',

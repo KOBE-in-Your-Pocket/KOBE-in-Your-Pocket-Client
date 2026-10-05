@@ -12,6 +12,7 @@ const makeManner = (
   title: id,
   description: '',
   icon: id,
+  iconUrl: null,
   imageKey: null,
   scope,
   relatedSpotIds: [],
