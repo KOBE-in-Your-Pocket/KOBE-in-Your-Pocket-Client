@@ -12,6 +12,7 @@ const mockManner: MannerItem = {
   title: '食べ歩き禁止',
   description: '指定の飲食スペース以外での食べ歩きはご遠慮ください。',
   icon: 'no-eating-while-walking',
+  iconUrl: null,
   imageKey: null,
   kind: 'rule',
   scope: 'local',
