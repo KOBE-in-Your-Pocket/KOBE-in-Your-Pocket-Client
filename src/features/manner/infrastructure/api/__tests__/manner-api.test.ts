@@ -15,6 +15,7 @@ function response(overrides: Partial<Record<string, unknown>> = {}) {
     title: '食べ歩きは指定の場所で',
     description: '南京町では歩きながらの飲食を控える。',
     icon: 'food',
+    iconUrl: null,
     kind: 'manner',
     scope: 'local',
     relatedSpotIds: ['nankinmachi'],
@@ -42,6 +43,27 @@ describe('fetchManners', () => {
 
     expect(manner.icon).toBe('food');
     expect(manner.imageKey).toBe('food');
+  });
+
+  it('運営がアップロードした iconUrl を引き継ぐ', async () => {
+    mockApiFetch.mockResolvedValue([
+      response({ icon: null, iconUrl: 'https://cdn.example.com/manner/icon.png' }),
+    ]);
+
+    const [manner] = await fetchManners('ja');
+
+    expect(manner.iconUrl).toBe('https://cdn.example.com/manner/icon.png');
+    expect(manner.icon).toBeNull();
+    expect(manner.imageKey).toBeNull();
+  });
+
+  it('iconUrl を返さない backend でも null として扱う', async () => {
+    const { iconUrl: _omitted, ...withoutIconUrl } = response();
+    mockApiFetch.mockResolvedValue([withoutIconUrl]);
+
+    const [manner] = await fetchManners('ja');
+
+    expect(manner.iconUrl).toBeNull();
   });
 
   it('id / title / description / relatedSpotIds をそのまま引き継ぐ', async () => {

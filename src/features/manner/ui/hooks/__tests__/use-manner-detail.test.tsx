@@ -19,6 +19,7 @@ function makeManner(id: string, title: string): MannerItem {
     title,
     description: '',
     icon: 'test',
+    iconUrl: null,
     imageKey: null,
     kind: 'manner',
     scope: 'local',
