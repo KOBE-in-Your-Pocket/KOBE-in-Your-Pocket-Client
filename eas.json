@@ -50,6 +50,15 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "track": "production"
+      }
+    },
+    "closed-testing": {
+      "android": {
+        "track": "alpha"
+      }
+    }
   }
 }
