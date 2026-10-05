@@ -8,6 +8,7 @@ function manner(id: string, relatedSpotIds: string[]): MannerItem {
     title: id,
     description: id,
     icon: id,
+    iconUrl: null,
     imageKey: null,
     kind: 'manner',
     scope: 'local',

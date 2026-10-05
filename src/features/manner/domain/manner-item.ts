@@ -13,8 +13,16 @@ export type MannerItem = {
   title: string;
   /** 一覧カード等で表示する短い説明。 */
   description: string;
-  /** アイコン識別キー（アイコンコンポーネントへのマッピング用）。 */
-  icon: string;
+  /**
+   * アイコン識別キー（アイコンコンポーネントへのマッピング用）。
+   * 運営が画像だけを登録した項目では null（{@link iconUrl} で描く）。
+   */
+  icon: string | null;
+  /**
+   * 運営が管理画面からアップロードしたアイコン画像の URL。未設定なら null。
+   * あれば {@link imageKey} / {@link icon} より優先して表示する。
+   */
+  iconUrl: string | null;
   /**
    * ピクトグラム画像の参照キー（画像アセットへのマッピング用）。
    * 対応する画像が無い場合は null（UI 側で `icon` によるフォールバック表示を想定）。
