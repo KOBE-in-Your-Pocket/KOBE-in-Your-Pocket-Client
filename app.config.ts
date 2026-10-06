@@ -94,13 +94,35 @@ export default (): ExpoConfig => ({
   },
   android: {
     adaptiveIcon: {
-      backgroundColor: '#E6F4FE',
+      // 前景はチームロゴ（app-icon.png）を Android のセーフゾーン（内側 66.7%）に収めたもの。
+      // ランチャーは前景を 108dp の層として扱い、内側 72dp しか必ず見える保証が無いため、
+      // 余白は画像側に持たせる必要がある。
+      //
+      // 背景は画像ではなく白一色。ロゴが白背景（透過なし）なので、背景色を白に揃えないと
+      // マスクの中でロゴの白い四角が浮いて見える。
+      //
+      // monochromeImage（Android 13 以降のテーマアイコン）は指定しない。Expo 既定の
+      // 素材が入ったままだとテーマアイコンを有効にした端末で Expo のロゴが出てしまう。
+      // 単色シルエットはロゴから機械的に作れないため、必要になったらデザインを用意する。
+      backgroundColor: '#FFFFFF',
       foregroundImage: './assets/images/android-icon-foreground.png',
-      backgroundImage: './assets/images/android-icon-background.png',
-      monochromeImage: './assets/images/android-icon-monochrome.png',
     },
     package: 'com.kobeinyourpocket.client',
     predictiveBackGestureEnabled: false,
+    // Expo の既定マニフェストは「OPTIONAL PERMISSIONS, REMOVE WHATEVER YOU DO NOT NEED」として
+    // 下記を入れてくる（@expo/config-plugins の withAndroidBaseMods）。どれも使っていないため外す。
+    // Play ストアの掲載ページには宣言した権限がそのまま並ぶので、使わない権限を残すと
+    // 利用者には「なぜ必要なのか」が説明できないものとして見える。
+    //
+    // SYSTEM_ALERT_WINDOW を外すと、Android の dev client で開発メニューの
+    // フローティングバブルが出なくなる（端末を振る / adb shell input keyevent 82 で開ける）。
+    // 位置情報（ACCESS_COARSE/FINE_LOCATION）は expo-location プラグインが付けるので触らない。
+    blockedPermissions: [
+      'android.permission.SYSTEM_ALERT_WINDOW',
+      'android.permission.VIBRATE',
+      'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.WRITE_EXTERNAL_STORAGE',
+    ],
   },
   web: {
     output: 'static',
