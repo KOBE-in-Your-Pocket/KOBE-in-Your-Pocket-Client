@@ -127,7 +127,31 @@
       "deleteConfirmMessage": "삭제하면 되돌릴 수 없습니다.",
       "deleting": "삭제 중...",
       "deleteError": "리뷰를 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-      "retry": "다시 시도"
+      "retry": "다시 시도",
+      "report": "신고"
+    },
+    "reportModal": {
+      "title": "리뷰 신고",
+      "message": "신고 사유를 선택해 주세요. 운영팀이 확인합니다.",
+      "descriptionLabel": "추가 설명",
+      "descriptionOptional": "추가 설명 (선택)",
+      "descriptionRequired": "내용을 입력해 주세요 (필수)",
+      "cancel": "취소",
+      "submit": "신고하기",
+      "submitting": "전송 중...",
+      "error": "신고하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+      "reasons": {
+        "SPAM": "스팸・광고 목적",
+        "HARASSMENT": "비방・괴롭힘",
+        "HATE": "차별・혐오 표현",
+        "SEXUAL_OR_VIOLENT": "성적・폭력적인 내용",
+        "PERSONAL_INFO": "개인정보 게시",
+        "MISLEADING": "허위・장소와 무관한 내용",
+        "OTHER": "기타"
+      },
+      "reportedNotice": "신고가 접수되었습니다. 이 리뷰는 더 이상 표시되지 않습니다.",
+      "notFoundNotice": "이 리뷰는 이미 삭제되었습니다.",
+      "errorUnauthorized": "로그인이 만료되었습니다. 설정 화면에서 다시 로그인해 주세요."
     },
     "reviewFilter": {
       "all": "전체"

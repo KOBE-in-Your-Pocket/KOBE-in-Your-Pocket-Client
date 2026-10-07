@@ -127,7 +127,31 @@
       "deleteConfirmMessage": "This action can't be undone.",
       "deleting": "Deleting...",
       "deleteError": "Could not delete your review. Please try again later.",
-      "retry": "Retry"
+      "retry": "Retry",
+      "report": "Report"
+    },
+    "reportModal": {
+      "title": "Report review",
+      "message": "Choose a reason. Our team will review this report.",
+      "descriptionLabel": "Details",
+      "descriptionOptional": "Details (optional)",
+      "descriptionRequired": "Please describe the problem (required)",
+      "cancel": "Cancel",
+      "submit": "Report",
+      "submitting": "Sending...",
+      "error": "Could not send your report. Please try again later.",
+      "reasons": {
+        "SPAM": "Spam or advertising",
+        "HARASSMENT": "Abuse or harassment",
+        "HATE": "Discrimination or hate speech",
+        "SEXUAL_OR_VIOLENT": "Sexual or violent content",
+        "PERSONAL_INFO": "Personal information",
+        "MISLEADING": "False or unrelated to this spot",
+        "OTHER": "Other"
+      },
+      "reportedNotice": "Thanks. We've received your report, and this review is now hidden for you.",
+      "notFoundNotice": "This review has already been removed.",
+      "errorUnauthorized": "Your sign-in has expired. Please sign in again from Settings."
     },
     "reviewFilter": {
       "all": "All"

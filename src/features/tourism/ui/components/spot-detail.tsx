@@ -16,21 +16,25 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useDeleteReview } from '../../application/use-delete-review';
+import { type ReportOutcome, useReportReview } from '../../application/use-report-review';
 import { useSpotReviews } from '../../application/use-spot-reviews';
 import { useUpdateReview } from '../../application/use-update-review';
 
 import type { Review } from '../../domain/review';
 import type { Spot } from '../../domain/spot';
+import type { ReviewReportInput } from '../../infrastructure/api/review-api';
 
+import { useReportedReviewIds } from '../../store/use-reported-review-store';
 import type { ReviewEdit } from '../../store/use-review-store';
 
 import { RATING_STAR_COLOR, styles } from '../styles/spot-detail.styles';
 
 import { ReviewForm } from './review-form';
+import { ReportReviewModal } from './report-review-modal';
 import { ReviewLanguageFilter, type ReviewLangFilter } from './review-language-filter';
 
 import { SpotMannerSection } from '@/features/manner';
-import { useCurrentUser, UserAvatar } from '@/features/user';
+import { SignInModal, useCurrentUser, UserAvatar } from '@/features/user';
 import { IS_USER_CONTENT_ENABLED, Spacing } from '@/shared/config';
 import { confirmOpenDirections } from '@/shared/lib/directions';
 import { useCurrentLocation } from '@/shared/lib/geo';
@@ -64,15 +68,21 @@ const REVIEW_AVATAR_SIZE = 36;
 function ReviewCard({
   review,
   isOwn,
+  canReport,
+  isAuthenticated,
   onUpdate,
   onDelete,
+  onReport,
+  onRequireSignIn,
 }: {
   review: Review;
   isOwn: boolean;
-  /** 保存は backend への PUT。完了を待って編集モードを閉じるため Promise を返す。 */
+  canReport: boolean;
+  isAuthenticated: boolean;
   onUpdate: (changes: ReviewEdit) => Promise<unknown>;
-  /** 削除は backend への DELETE。失敗を検知できるよう Promise を返す。 */
   onDelete: () => Promise<unknown>;
+  onReport: (input: ReviewReportInput) => Promise<unknown>;
+  onRequireSignIn: () => void;
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -88,6 +98,9 @@ function ReviewCard({
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteFailed, setDeleteFailed] = useState(false);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [reportVisible, setReportVisible] = useState(false);
+
+  const showMenu = (isOwn || canReport) && !isDeleting;
 
   const canSave = editRating > 0 && editComment.trim() !== '' && !isSaving;
 
@@ -102,6 +115,16 @@ function ReviewCard({
     } finally {
       setIsDeleting(false);
     }
+  }
+
+  function handleReportPress() {
+    setMenuOpen(false);
+    if (!isAuthenticated) {
+      onRequireSignIn();
+      return;
+    }
+    // Modal を閉じてから開く。同時だと iOS で競合して出ないため 100ms 待つ。
+    setTimeout(() => setReportVisible(true), 100);
   }
 
   function openMenu() {
@@ -227,7 +250,7 @@ function ReviewCard({
             />
             <ThemedText type="smallBold">{review.rating.value.toFixed(1)}</ThemedText>
           </View>
-          {isOwn && !isDeleting && (
+          {showMenu && (
             <View ref={menuAnchorRef}>
               <Pressable
                 onPress={openMenu}
@@ -273,38 +296,52 @@ function ReviewCard({
             type="backgroundElement"
             style={[dropdownStyles.menu, { top: menuPos.top, right: menuPos.right }]}
           >
-            <Pressable
-              style={dropdownStyles.item}
-              onPress={() => {
-                setMenuOpen(false);
-                setEditing(true);
-              }}
-            >
-              <SymbolView
-                name={{ ios: 'pencil', android: 'edit', web: 'edit' }}
-                tintColor={theme.text}
-                size={16}
-              />
-              <ThemedText type="smallBold">{t('tourism.reviewCard.edit')}</ThemedText>
-            </Pressable>
-            <Pressable
-              style={dropdownStyles.item}
-              onPress={() => {
-                setMenuOpen(false);
-                // 三点リーダーの Modal を閉じてから確認ダイアログを出す（同時だと iOS で Alert が出ないことがある）。
-                // 0ms だとネイティブ側の Modal 終了処理と競合する可能性があるため、安全マージンを持たせる。
-                setTimeout(() => setDeleteConfirmVisible(true), 100);
-              }}
-            >
-              <SymbolView
-                name={{ ios: 'trash', android: 'delete', web: 'delete' }}
-                tintColor="#D45B45"
-                size={16}
-              />
-              <ThemedText type="smallBold" style={{ color: '#D45B45' }}>
-                {t('tourism.reviewCard.delete')}
-              </ThemedText>
-            </Pressable>
+            {isOwn ? (
+              <>
+                <Pressable
+                  style={dropdownStyles.item}
+                  onPress={() => {
+                    setMenuOpen(false);
+                    setEditing(true);
+                  }}
+                >
+                  <SymbolView
+                    name={{ ios: 'pencil', android: 'edit', web: 'edit' }}
+                    tintColor={theme.text}
+                    size={16}
+                  />
+                  <ThemedText type="smallBold">{t('tourism.reviewCard.edit')}</ThemedText>
+                </Pressable>
+                <Pressable
+                  style={dropdownStyles.item}
+                  onPress={() => {
+                    setMenuOpen(false);
+                    // Modal を閉じてから確認を出す。同時だと iOS で競合して出ないため 100ms 待つ。
+                    setTimeout(() => setDeleteConfirmVisible(true), 100);
+                  }}
+                >
+                  <SymbolView
+                    name={{ ios: 'trash', android: 'delete', web: 'delete' }}
+                    tintColor="#D45B45"
+                    size={16}
+                  />
+                  <ThemedText type="smallBold" style={{ color: '#D45B45' }}>
+                    {t('tourism.reviewCard.delete')}
+                  </ThemedText>
+                </Pressable>
+              </>
+            ) : (
+              <Pressable style={dropdownStyles.item} onPress={handleReportPress}>
+                <SymbolView
+                  name={{ ios: 'flag', android: 'flag', web: 'flag' }}
+                  tintColor="#D45B45"
+                  size={16}
+                />
+                <ThemedText type="smallBold" style={{ color: '#D45B45' }}>
+                  {t('tourism.reviewCard.report')}
+                </ThemedText>
+              </Pressable>
+            )}
           </ThemedView>
         </Modal>
       )}
@@ -319,6 +356,12 @@ function ReviewCard({
           void handleDelete();
         }}
         onCancel={() => setDeleteConfirmVisible(false)}
+      />
+      <ReportReviewModal
+        visible={reportVisible}
+        onCancel={() => setReportVisible(false)}
+        onSubmit={onReport}
+        onSubmitted={() => setReportVisible(false)}
       />
     </>
   );
@@ -358,110 +401,148 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
   const isAdult = useIsAdult();
   const updateReview = useUpdateReview(spot.id);
   const deleteReview = useDeleteReview(spot.id);
+  const reportReview = useReportReview(spot.id);
+  const reportedReviewIds = useReportedReviewIds(currentUser?.id);
+  const [signInVisible, setSignInVisible] = useState(false);
+  const [reportNotice, setReportNotice] = useState<ReportOutcome | null>(null);
 
   const handleOpenDirections = useCallback(() => {
     confirmOpenDirections(t, spot.coordinates, { origin: coords });
   }, [spot.coordinates, coords, t]);
 
-  const filteredReviews =
-    reviewLang === 'all'
-      ? (reviews ?? [])
-      : (reviews ?? []).filter((r) => r.language === reviewLang);
+  const filteredReviews = (reviews ?? []).filter(
+    (r) => (reviewLang === 'all' || r.language === reviewLang) && !reportedReviewIds.includes(r.id),
+  );
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContent}>
-      <View style={styles.hero}>
-        <Image source={{ uri: spot.media.imageUrl }} style={styles.heroImage} contentFit="cover" />
-        <BackButton label={t('tourism.spotDetail.back')} />
-      </View>
-
-      <View style={styles.body}>
-        <View style={styles.metaRow}>
-          <ThemedText style={styles.category}>{spot.category.label}</ThemedText>
-          {spot.rating ? (
-            <View style={styles.ratingRow}>
-              <SymbolView
-                tintColor={RATING_STAR_COLOR}
-                name={{ ios: 'star.fill', android: 'star', web: 'star' }}
-                size={14}
-              />
-              <ThemedText type="smallBold">{spot.rating.value.toFixed(1)}</ThemedText>
-            </View>
-          ) : null}
+    <>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.hero}>
+          <Image
+            source={{ uri: spot.media.imageUrl }}
+            style={styles.heroImage}
+            contentFit="cover"
+          />
+          <BackButton label={t('tourism.spotDetail.back')} />
         </View>
 
-        <ThemedText type="subtitle" style={styles.name}>
-          {spot.name}
-        </ThemedText>
-
-        <View style={styles.hoursRow}>
-          <SymbolView
-            tintColor={theme.textSecondary}
-            name={{ ios: 'clock', android: 'schedule', web: 'schedule' }}
-            size={14}
-          />
-          <ThemedText type="small" themeColor="textSecondary">
-            {spot.businessHours}
-          </ThemedText>
-        </View>
-
-        <ThemedText themeColor="textSecondary" style={styles.description}>
-          {spot.description}
-        </ThemedText>
-
-        <Pressable
-          style={styles.routeButton}
-          onPress={handleOpenDirections}
-          accessibilityRole="button"
-          accessibilityLabel={t('tourism.spotDetail.openDirectionsButton')}
-        >
-          <SymbolView
-            tintColor="#FFFFFF"
-            name={{
-              ios: 'arrow.triangle.turn.up.right.diamond.fill',
-              android: 'directions',
-              web: 'directions',
-            }}
-            size={16}
-          />
-          <ThemedText style={styles.routeButtonText}>
-            {t('tourism.spotDetail.openDirectionsButton')}
-          </ThemedText>
-        </Pressable>
-
-        <SpotMannerSection spotId={spot.id} />
-
-        <View style={styles.section}>
-          <View style={styles.sectionTitleRow}>
-            <View style={[styles.sectionTitleDivider, { backgroundColor: theme.textSecondary }]} />
-            <ThemedText type="smallBold" style={styles.sectionTitle}>
-              {t('tourism.spotDetail.reviews')}
-            </ThemedText>
-            <View style={[styles.sectionTitleDivider, { backgroundColor: theme.textSecondary }]} />
+        <View style={styles.body}>
+          <View style={styles.metaRow}>
+            <ThemedText style={styles.category}>{spot.category.label}</ThemedText>
+            {spot.rating ? (
+              <View style={styles.ratingRow}>
+                <SymbolView
+                  tintColor={RATING_STAR_COLOR}
+                  name={{ ios: 'star.fill', android: 'star', web: 'star' }}
+                  size={14}
+                />
+                <ThemedText type="smallBold">{spot.rating.value.toFixed(1)}</ThemedText>
+              </View>
+            ) : null}
           </View>
-          <ReviewForm spotId={spot.id} />
-          <ReviewLanguageFilter value={reviewLang} onChange={setReviewLang} />
-          {isReviewsPending ? (
-            <ActivityIndicator />
-          ) : filteredReviews.length > 0 ? (
-            filteredReviews.map((review) => (
-              <ReviewCard
-                key={review.id}
-                review={review}
-                // ユーザー投稿を止めているときは閲覧のみ（#306）。投稿できない以上、編集・削除メニューも出さない。
-                // 18歳未満も同様に投稿できないため、メニューを出す条件から外す。
-                isOwn={IS_USER_CONTENT_ENABLED && isAdult && review.author.id === currentUser?.id}
-                onUpdate={(changes) => updateReview.mutateAsync({ reviewId: review.id, changes })}
-                onDelete={() => deleteReview.mutateAsync(review.id)}
-              />
-            ))
-          ) : (
+
+          <ThemedText type="subtitle" style={styles.name}>
+            {spot.name}
+          </ThemedText>
+
+          <View style={styles.hoursRow}>
+            <SymbolView
+              tintColor={theme.textSecondary}
+              name={{ ios: 'clock', android: 'schedule', web: 'schedule' }}
+              size={14}
+            />
             <ThemedText type="small" themeColor="textSecondary">
-              {t('tourism.spotDetail.noReviews')}
+              {spot.businessHours}
             </ThemedText>
-          )}
+          </View>
+
+          <ThemedText themeColor="textSecondary" style={styles.description}>
+            {spot.description}
+          </ThemedText>
+
+          <Pressable
+            style={styles.routeButton}
+            onPress={handleOpenDirections}
+            accessibilityRole="button"
+            accessibilityLabel={t('tourism.spotDetail.openDirectionsButton')}
+          >
+            <SymbolView
+              tintColor="#FFFFFF"
+              name={{
+                ios: 'arrow.triangle.turn.up.right.diamond.fill',
+                android: 'directions',
+                web: 'directions',
+              }}
+              size={16}
+            />
+            <ThemedText style={styles.routeButtonText}>
+              {t('tourism.spotDetail.openDirectionsButton')}
+            </ThemedText>
+          </Pressable>
+
+          <SpotMannerSection spotId={spot.id} />
+
+          <View style={styles.section}>
+            <View style={styles.sectionTitleRow}>
+              <View
+                style={[styles.sectionTitleDivider, { backgroundColor: theme.textSecondary }]}
+              />
+              <ThemedText type="smallBold" style={styles.sectionTitle}>
+                {t('tourism.spotDetail.reviews')}
+              </ThemedText>
+              <View
+                style={[styles.sectionTitleDivider, { backgroundColor: theme.textSecondary }]}
+              />
+            </View>
+            <ReviewForm spotId={spot.id} />
+            <ReviewLanguageFilter value={reviewLang} onChange={setReviewLang} />
+            {reportNotice && (
+              <ThemedText type="small" themeColor="textSecondary">
+                {t(
+                  reportNotice === 'reported'
+                    ? 'tourism.reportModal.reportedNotice'
+                    : 'tourism.reportModal.notFoundNotice',
+                )}
+              </ThemedText>
+            )}
+            {isReviewsPending ? (
+              <ActivityIndicator />
+            ) : filteredReviews.length > 0 ? (
+              filteredReviews.map((review) => {
+                // 18歳未満・未投稿機能では編集/削除も出さない（#306）。
+                const isOwn =
+                  IS_USER_CONTENT_ENABLED && isAdult && review.author.id === currentUser?.id;
+                // author.id が無いのは V17 以前の投稿だけで、本人の投稿ではあり得ないため通報対象にする。
+                const canReport = IS_USER_CONTENT_ENABLED && isAdult && !isOwn;
+                return (
+                  <ReviewCard
+                    key={review.id}
+                    review={review}
+                    isOwn={isOwn}
+                    canReport={canReport}
+                    isAuthenticated={currentUser != null}
+                    onUpdate={(changes) =>
+                      updateReview.mutateAsync({ reviewId: review.id, changes })
+                    }
+                    onDelete={() => deleteReview.mutateAsync(review.id)}
+                    onReport={async (input) => {
+                      setReportNotice(
+                        await reportReview.mutateAsync({ reviewId: review.id, ...input }),
+                      );
+                    }}
+                    onRequireSignIn={() => setSignInVisible(true)}
+                  />
+                );
+              })
+            ) : (
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('tourism.spotDetail.noReviews')}
+              </ThemedText>
+            )}
+          </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+      <SignInModal visible={signInVisible} onClose={() => setSignInVisible(false)} />
+    </>
   );
 }

@@ -127,7 +127,31 @@
       "deleteConfirmMessage": "删除后将无法恢复。",
       "deleting": "删除中...",
       "deleteError": "无法删除评论。请稍后再试。",
-      "retry": "重试"
+      "retry": "重试",
+      "report": "举报"
+    },
+    "reportModal": {
+      "title": "举报评论",
+      "message": "请选择举报原因。运营团队将进行确认。",
+      "descriptionLabel": "补充说明",
+      "descriptionOptional": "补充说明（选填）",
+      "descriptionRequired": "请填写具体内容（必填）",
+      "cancel": "取消",
+      "submit": "举报",
+      "submitting": "发送中...",
+      "error": "举报失败，请稍后再试。",
+      "reasons": {
+        "SPAM": "垃圾信息・广告宣传",
+        "HARASSMENT": "诽谤中伤・骚扰",
+        "HATE": "歧视・仇恨言论",
+        "SEXUAL_OR_VIOLENT": "色情・暴力内容",
+        "PERSONAL_INFO": "泄露个人信息",
+        "MISLEADING": "虚假信息・与景点无关",
+        "OTHER": "其他"
+      },
+      "reportedNotice": "已收到您的举报。此评论将不再向您显示。",
+      "notFoundNotice": "此评论已被删除。",
+      "errorUnauthorized": "登录已过期，请在设置中重新登录。"
     },
     "reviewFilter": {
       "all": "全部"
