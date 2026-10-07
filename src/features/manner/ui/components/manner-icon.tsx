@@ -53,10 +53,10 @@ const ICON_MAP: Record<string, SymbolName> = {
 
 const DEFAULT_ICON: SymbolName = { ios: 'info.circle', android: 'info', web: 'info' };
 
-/** MannerItem 用のピクトグラムアイコン。未知の icon キーはデフォルトの info アイコンにフォールバックする。 */
+/** MannerItem 用のピクトグラムアイコン。未知・未設定の icon キーはデフォルトの info アイコンにフォールバックする。 */
 export function MannerIcon({ icon, size = 22 }: { icon: MannerItem['icon']; size?: number }) {
   const theme = useTheme();
-  const name = ICON_MAP[icon] ?? DEFAULT_ICON;
+  const name = (icon !== null ? ICON_MAP[icon] : undefined) ?? DEFAULT_ICON;
 
   return <SymbolView tintColor={theme.text} name={name} size={size} />;
 }

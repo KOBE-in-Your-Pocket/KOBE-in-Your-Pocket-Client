@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import { Text as MockText } from 'react-native';
 
 import { MannerPictogram } from '../manner-pictogram';
@@ -16,12 +16,16 @@ jest.mock('expo-image', () => ({
     source,
     style,
     contentFit,
+    onError,
   }: {
-    source: { testUri?: string };
+    source: { testUri?: string; uri?: string };
     style?: { width?: number; height?: number; borderRadius?: number };
     contentFit?: string;
+    onError?: () => void;
   }) => (
-    <MockText>{`image:${source?.testUri}:${style?.width}:${style?.height}:${style?.borderRadius}:${contentFit}`}</MockText>
+    <MockText
+      onPress={onError}
+    >{`image:${source?.uri ?? source?.testUri}:${style?.width}:${style?.height}:${style?.borderRadius}:${contentFit}`}</MockText>
   ),
 }));
 
@@ -35,7 +39,11 @@ describe('MannerPictogram', () => {
   it('imageKey が画像アセットに対応している場合は画像を size に応じたスタイルで表示する（一覧: size=40）', () => {
     render(
       <MannerPictogram
-        manner={{ icon: 'no-eating-while-walking', imageKey: 'no-eating-while-walking' }}
+        manner={{
+          iconUrl: null,
+          icon: 'no-eating-while-walking',
+          imageKey: 'no-eating-while-walking',
+        }}
         size={40}
       />,
     );
@@ -49,7 +57,7 @@ describe('MannerPictogram', () => {
   it('imageKey が画像アセットに対応している場合は画像を size に応じたスタイルで表示する（スポット詳細: size=32）', () => {
     render(
       <MannerPictogram
-        manner={{ icon: 'put-trash-in-bin', imageKey: 'put-trash-in-bin' }}
+        manner={{ iconUrl: null, icon: 'put-trash-in-bin', imageKey: 'put-trash-in-bin' }}
         size={32}
       />,
     );
@@ -63,7 +71,7 @@ describe('MannerPictogram', () => {
   ])('端数を含む size=%i でも borderRadius が size/2（%s）になる', (size, expectedBorderRadius) => {
     render(
       <MannerPictogram
-        manner={{ icon: 'show-consideration', imageKey: 'show-consideration' }}
+        manner={{ iconUrl: null, icon: 'show-consideration', imageKey: 'show-consideration' }}
         size={size}
       />,
     );
@@ -77,7 +85,10 @@ describe('MannerPictogram', () => {
 
   it('imageKey が null の場合は既存の MannerIcon にフォールバックする', () => {
     render(
-      <MannerPictogram manner={{ icon: 'no-white-clothes-in-kinsen', imageKey: null }} size={40} />,
+      <MannerPictogram
+        manner={{ iconUrl: null, icon: 'no-white-clothes-in-kinsen', imageKey: null }}
+        size={40}
+      />,
     );
 
     expect(screen.getByText('icon:no-white-clothes-in-kinsen:22')).toBeTruthy();
@@ -86,7 +97,10 @@ describe('MannerPictogram', () => {
 
   it('imageKey が画像アセットに対応していない場合は既存の MannerIcon にフォールバックする', () => {
     render(
-      <MannerPictogram manner={{ icon: 'unknown-icon', imageKey: 'unknown-key' }} size={32} />,
+      <MannerPictogram
+        manner={{ iconUrl: null, icon: 'unknown-icon', imageKey: 'unknown-key' }}
+        size={32}
+      />,
     );
 
     expect(screen.getByText('icon:unknown-icon:18')).toBeTruthy();
@@ -96,10 +110,59 @@ describe('MannerPictogram', () => {
   it.each(['constructor', 'toString', '__proto__'])(
     'Object.prototype 由来のプロパティと衝突する imageKey（%s）にもフォールバックする',
     (imageKey) => {
-      render(<MannerPictogram manner={{ icon: 'safe-icon', imageKey }} size={40} />);
+      render(<MannerPictogram manner={{ iconUrl: null, icon: 'safe-icon', imageKey }} size={40} />);
 
       expect(screen.getByText('icon:safe-icon:22')).toBeTruthy();
       expect(screen.queryByText(/^image:/)).toBeNull();
     },
   );
+
+  describe('iconUrl（管理画面からアップロードした画像）', () => {
+    const ICON_URL = 'https://cdn.example.com/manner/icon.png';
+
+    it('iconUrl があれば imageKey より優先してリモート画像を表示する', () => {
+      render(
+        <MannerPictogram
+          manner={{ iconUrl: ICON_URL, icon: 'put-trash-in-bin', imageKey: 'put-trash-in-bin' }}
+          size={40}
+        />,
+      );
+
+      expect(screen.getByText(`image:${ICON_URL}:40:40:20:cover`)).toBeTruthy();
+    });
+
+    it('icon キーが無い（画像だけ登録された）項目でも iconUrl で表示する', () => {
+      render(
+        <MannerPictogram manner={{ iconUrl: ICON_URL, icon: null, imageKey: null }} size={72} />,
+      );
+
+      expect(screen.getByText(`image:${ICON_URL}:72:72:36:cover`)).toBeTruthy();
+      expect(screen.queryByText(/^icon:/)).toBeNull();
+    });
+
+    it('iconUrl の読み込みに失敗したら同梱画像へフォールバックする', () => {
+      render(
+        <MannerPictogram
+          manner={{ iconUrl: ICON_URL, icon: 'put-trash-in-bin', imageKey: 'put-trash-in-bin' }}
+          size={32}
+        />,
+      );
+
+      fireEvent.press(screen.getByText(`image:${ICON_URL}:32:32:16:cover`));
+
+      expect(
+        screen.getByText(`image:${testUriOf('put-trash-in-bin')}:32:32:16:cover`),
+      ).toBeTruthy();
+    });
+
+    it('iconUrl の読み込みに失敗し同梱画像も無ければ MannerIcon にフォールバックする', () => {
+      render(
+        <MannerPictogram manner={{ iconUrl: ICON_URL, icon: null, imageKey: null }} size={40} />,
+      );
+
+      fireEvent.press(screen.getByText(`image:${ICON_URL}:40:40:20:cover`));
+
+      expect(screen.getByText('icon:null:22')).toBeTruthy();
+    });
+  });
 });

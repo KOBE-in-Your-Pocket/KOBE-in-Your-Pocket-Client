@@ -13,6 +13,7 @@ function makeManner(relatedSpotIds: string[]): MannerItem {
     title: '食べ歩き禁止',
     description: '説明',
     icon: 'test',
+    iconUrl: null,
     imageKey: null,
     kind: 'rule',
     scope: 'local',
