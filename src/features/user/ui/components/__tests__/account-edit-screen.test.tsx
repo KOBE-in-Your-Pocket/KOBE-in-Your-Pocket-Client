@@ -32,6 +32,12 @@ jest.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }: { children?: ReactNode }) => <MockView>{children}</MockView>,
 }));
 
+const mockUpdateCurrentUser = jest.fn();
+jest.mock('../../../infrastructure/api/user-api', () => ({
+  ...jest.requireActual('../../../infrastructure/api/user-api'),
+  updateCurrentUser: (request: { name?: string }) => mockUpdateCurrentUser(request),
+}));
+
 jest.mock('expo-image', () => ({ Image: () => null }));
 jest.mock('expo-symbols', () => ({ SymbolView: () => null }));
 jest.mock('expo-router', () => ({
@@ -52,6 +58,11 @@ function renderScreen() {
 describe('AccountEditScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockUpdateCurrentUser.mockImplementation(async (request: { name?: string }) => ({
+      id: USER.id,
+      name: request.name ?? USER.name,
+      iconUrl: USER.iconUrl,
+    }));
     useAuthStore.setState({
       currentUser: USER,
       accessToken: 'access-token',

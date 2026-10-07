@@ -1,14 +1,24 @@
 import { apiFetch } from '@/shared/lib/api';
 
+import type { ProfileUpdateRequest } from '../../domain/profile-edits';
 import type { PublicUser } from '../../domain/public-user';
 
-/** `GET /api/v1/users/me` のレスポンス（backend `PublicUserResponse`）。 */
+/** `GET /api/v1/users/me` と `PATCH /api/v1/users/me` のレスポンス（backend `PublicUserResponse`）。 */
 type PublicUserResponse = {
   id: string;
   name: string;
   /** アイコン未設定時は null。 */
   iconUrl: string | null;
 };
+
+function toPublicUser(response: PublicUserResponse): PublicUser {
+  return {
+    id: response.id,
+    name: response.name,
+    // PublicUser.iconUrl は string のため、未設定は空文字に寄せる（auth-api と同じ扱い）。
+    iconUrl: response.iconUrl ?? '',
+  };
+}
 
 /**
  * ログイン中のユーザーを backend から取得する。
@@ -19,12 +29,23 @@ type PublicUserResponse = {
 export async function fetchCurrentUser(): Promise<PublicUser> {
   const response = await apiFetch<PublicUserResponse>('/api/v1/users/me', { auth: true });
 
-  return {
-    id: response.id,
-    name: response.name,
-    // PublicUser.iconUrl は string のため、未設定は空文字に寄せる（auth-api と同じ扱い）。
-    iconUrl: response.iconUrl ?? '',
-  };
+  return toPublicUser(response);
+}
+
+/**
+ * ログイン中のユーザーのプロフィールを部分更新する（表示名・アイコン）。
+ *
+ * `PATCH /api/v1/users/me` は認証必須。送ったフィールドだけが変わる。応答は更新後の
+ * ユーザー情報（backend #183）。
+ */
+export async function updateCurrentUser(request: ProfileUpdateRequest): Promise<PublicUser> {
+  const response = await apiFetch<PublicUserResponse>('/api/v1/users/me', {
+    method: 'PATCH',
+    body: request,
+    auth: true,
+  });
+
+  return toPublicUser(response);
 }
 
 /**

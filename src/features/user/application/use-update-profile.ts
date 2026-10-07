@@ -2,46 +2,74 @@ import { useMutation } from '@tanstack/react-query';
 
 import { useReviewStore } from '@/features/tourism/store/use-review-store';
 
-import type { PersistedUserStore } from '../domain/auth-ports';
-import { normalizeProfileEdits, type ProfileEdits } from '../domain/profile-edits';
+import type { PersistedUserStore, UserGateway } from '../domain/auth-ports';
+import {
+  normalizeProfileEdits,
+  type ProfileEdits,
+  type ProfileUpdateRequest,
+} from '../domain/profile-edits';
 import { useAuthStore } from '../store/use-auth-store';
-import { defaultPersistedUserStore } from './auth-deps';
-import { enqueueSessionWrite } from './session-operation';
+import { defaultPersistedUserStore, defaultUserGateway } from './auth-deps';
+import {
+  enqueueSessionWrite,
+  getSessionGeneration,
+  isSessionGenerationCurrent,
+} from './session-operation';
 
 type UpdateProfileDeps = {
   persistedUserStore: PersistedUserStore;
+  userGateway: Pick<UserGateway, 'updateCurrentUser'>;
 };
 
 /**
  * アカウント編集内容（表示名・アイコン）を保存する。
  *
- * backend にプロフィール更新 API が未提供のため（#402 時点）、更新は
- * ローカル（認証ストア + 永続化済みセッション）にのみ反映する。
- * API が提供されたら deps にゲートウェイを追加してここから呼び出す。
+ * 表示名は `PATCH /api/v1/users/me` で保存し、応答の値をストアと永続化に反映する。
+ * 送信に失敗したときはストアも永続化も変えず、例外を呼び出し側へ伝える。
  *
- * 既知の制約: セッション再発行（/auth/refresh）はサーバー側のユーザー情報を
- * 返すため、次回のセッション復元時にローカルの編集内容はサーバー側の値で
- * 上書きされる。backend API 提供までの割り切り。
+ * アイコンは backend に URL を送れないため（画像の差し替えは #546 の
+ * `POST /api/v1/users/me/icon`）、当面は編集値をローカルにだけ反映する。
+ * この値はサーバーに保存されないため、次回起動時のユーザー同期で戻る（#546 で解消）。
+ * 未設定に戻す場合（空文字）のみ PATCH で送る。
  *
  * 合わせて、自分が投稿済みのレビュー（useReviewStore の submittedReviews）の
  * author.name / author.iconUrl もその場で書き換える（#516 暫定対応）。
  */
 export async function performProfileUpdate(
   edits: ProfileEdits,
-  deps: UpdateProfileDeps = { persistedUserStore: defaultPersistedUserStore },
+  deps: UpdateProfileDeps = {
+    persistedUserStore: defaultPersistedUserStore,
+    userGateway: defaultUserGateway,
+  },
 ): Promise<void> {
   const normalized = normalizeProfileEdits(edits);
   if (normalized === null) {
     throw new Error('表示名が不正です');
   }
 
-  const { currentUser, updateCurrentUser } = useAuthStore.getState();
+  const { currentUser } = useAuthStore.getState();
   if (currentUser === null) {
     throw new Error('未ログインのためプロフィールを更新できません');
   }
 
-  const updated = { ...currentUser, ...normalized };
-  updateCurrentUser(updated);
+  const request: ProfileUpdateRequest = { name: normalized.name };
+  if (normalized.iconUrl === '') {
+    request.iconUrl = '';
+  }
+  const generation = getSessionGeneration();
+  const saved = await deps.userGateway.updateCurrentUser(request);
+
+  // 送信中にサインアウト・サインインがあった場合、古い応答でセッションを書き戻さない。
+  // 同じユーザーで再ログインした場合も世代で検出できるため、ID の比較は保険として残す。
+  if (
+    !isSessionGenerationCurrent(generation) ||
+    useAuthStore.getState().currentUser?.id !== currentUser.id
+  ) {
+    return;
+  }
+
+  const updated = { ...currentUser, name: saved.name, iconUrl: normalized.iconUrl };
+  useAuthStore.getState().updateCurrentUser(updated);
   useReviewStore.getState().updateAuthorInfo(updated.id, {
     name: updated.name,
     iconUrl: updated.iconUrl,

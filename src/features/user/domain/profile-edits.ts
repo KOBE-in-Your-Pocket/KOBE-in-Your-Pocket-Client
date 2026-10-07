@@ -3,6 +3,15 @@ import type { PublicUser } from './public-user';
 /** アカウント編集画面で編集できる項目。 */
 export type ProfileEdits = Pick<PublicUser, 'name' | 'iconUrl'>;
 
+/**
+ * `PATCH /api/v1/users/me` に送る部分更新。省略したフィールドは変更されない。
+ * `name` は常に送る。`iconUrl` は空文字（未設定に戻す）のみ送れる。画像の差し替えは別 API。
+ */
+export type ProfileUpdateRequest = {
+  name: string;
+  iconUrl?: '';
+};
+
 /** 表示名の最大文字数。 */
 export const MAX_DISPLAY_NAME_LENGTH = 50;
 
