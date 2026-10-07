@@ -132,4 +132,61 @@ describe('AccountEditScreen', () => {
     await waitFor(() => expect(router.back).toHaveBeenCalled());
     expect(useAuthStore.getState().currentUser?.iconUrl).not.toBe(USER.iconUrl);
   });
+
+  it('保存に失敗したらエラー文を表示し、画面を閉じず入力内容を残す', async () => {
+    mockUpdateCurrentUser.mockRejectedValue(new Error('network error'));
+    renderScreen();
+
+    fireEvent.changeText(
+      screen.getByPlaceholderText('settings.accountEdit.displayNamePlaceholder'),
+      '新しい名前',
+    );
+    fireEvent.press(screen.getByRole('button', { name: 'settings.accountEdit.save' }));
+
+    await waitFor(() => expect(screen.getByText('settings.accountEdit.saveError')).toBeTruthy());
+    expect(router.back).not.toHaveBeenCalled();
+    expect(screen.getByDisplayValue('新しい名前')).toBeTruthy();
+    expect(useAuthStore.getState().currentUser?.name).toBe(USER.name);
+  });
+
+  it('失敗後に表示名を書き換えるとエラー文が消える', async () => {
+    mockUpdateCurrentUser.mockRejectedValue(new Error('network error'));
+    renderScreen();
+    const nameInput = () =>
+      screen.getByPlaceholderText('settings.accountEdit.displayNamePlaceholder');
+
+    fireEvent.press(screen.getByRole('button', { name: 'settings.accountEdit.save' }));
+    await waitFor(() => expect(screen.getByText('settings.accountEdit.saveError')).toBeTruthy());
+
+    fireEvent.changeText(nameInput(), '書き換えた名前');
+    expect(screen.queryByText('settings.accountEdit.saveError')).toBeNull();
+  });
+
+  it('保存中は保存中の表示になり、保存ボタンは押せない', async () => {
+    mockUpdateCurrentUser.mockReturnValue(new Promise(() => {}));
+    renderScreen();
+
+    fireEvent.changeText(
+      screen.getByPlaceholderText('settings.accountEdit.displayNamePlaceholder'),
+      '新しい名前',
+    );
+    fireEvent.press(screen.getByRole('button', { name: 'settings.accountEdit.save' }));
+
+    await waitFor(() => expect(screen.getByText('settings.accountEdit.saving')).toBeTruthy());
+    expect(screen.getByRole('button', { name: 'settings.accountEdit.save' })).toBeDisabled();
+    expect(mockUpdateCurrentUser).toHaveBeenCalledTimes(1);
+  });
+
+  it('保存中は表示名を編集できない', async () => {
+    mockUpdateCurrentUser.mockReturnValue(new Promise(() => {}));
+    renderScreen();
+    const nameInput = () =>
+      screen.getByPlaceholderText('settings.accountEdit.displayNamePlaceholder');
+
+    fireEvent.changeText(nameInput(), '新しい名前');
+    fireEvent.press(screen.getByRole('button', { name: 'settings.accountEdit.save' }));
+
+    await waitFor(() => expect(screen.getByText('settings.accountEdit.saving')).toBeTruthy());
+    expect(nameInput().props.editable).toBe(false);
+  });
 });

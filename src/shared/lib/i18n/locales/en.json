@@ -53,6 +53,8 @@
       "displayName": "Display name",
       "displayNamePlaceholder": "Enter display name",
       "nameInvalid": "Display name must be 1–{{max}} characters",
+      "saving": "Saving...",
+      "saveError": "Could not save your changes. Please try again later.",
       "changeIcon": "Change icon",
       "iconLibraryTitle": "Choose a Photo",
       "iconLibraryDescription": "Pick a photo to use as your icon (mock photos)",
