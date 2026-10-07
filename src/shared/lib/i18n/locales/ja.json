@@ -130,6 +130,29 @@
       "retry": "再試行",
       "report": "通報"
     },
+    "reportModal": {
+      "title": "レビューを通報",
+      "message": "通報の理由を選んでください。内容は運営が確認します。",
+      "descriptionLabel": "補足説明",
+      "descriptionOptional": "補足説明（任意）",
+      "descriptionRequired": "内容を入力してください（必須）",
+      "cancel": "キャンセル",
+      "submit": "通報する",
+      "submitting": "送信中...",
+      "error": "通報できませんでした。時間をおいて再度お試しください。",
+      "reasons": {
+        "SPAM": "スパム・宣伝目的",
+        "HARASSMENT": "誹謗中傷・嫌がらせ",
+        "HATE": "差別的・ヘイト表現",
+        "SEXUAL_OR_VIOLENT": "性的・暴力的な内容",
+        "PERSONAL_INFO": "個人情報の掲載",
+        "MISLEADING": "虚偽・スポットと無関係な内容",
+        "OTHER": "その他"
+      },
+      "reportedNotice": "通報を受け付けました。このレビューは今後表示されません。",
+      "notFoundNotice": "このレビューはすでに削除されています。",
+      "errorUnauthorized": "ログインの有効期限が切れました。設定画面からログインし直してください。"
+    },
     "reviewFilter": {
       "all": "すべて"
     },

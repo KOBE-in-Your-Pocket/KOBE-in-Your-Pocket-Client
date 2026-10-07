@@ -2,6 +2,7 @@ import type { PublicUser } from '@/features/user';
 import { apiFetch } from '@/shared/lib/api';
 import type { SupportedLanguage } from '@/shared/lib/i18n';
 
+import type { ReportReason } from '../../domain/report-reason';
 import type { Review } from '../../domain/review';
 
 type ReviewAuthorResponse = {
@@ -112,5 +113,27 @@ export async function deleteReview(spotId: string, reviewId: string): Promise<vo
   await apiFetch<void>(
     `/api/v1/tourism/spots/${encodeURIComponent(spotId)}/reviews/${encodeURIComponent(reviewId)}`,
     { method: 'DELETE', auth: true },
+  );
+}
+
+export type ReviewReportInput = {
+  reason: ReportReason;
+  description: string;
+};
+
+/** `POST /api/v1/tourism/spots/:spotId/reviews/:reviewId/reports`（認証必須）。 */
+export async function reportReview(
+  spotId: string,
+  reviewId: string,
+  input: ReviewReportInput,
+): Promise<void> {
+  const description = input.description.trim();
+  await apiFetch<unknown>(
+    `/api/v1/tourism/spots/${encodeURIComponent(spotId)}/reviews/${encodeURIComponent(reviewId)}/reports`,
+    {
+      method: 'POST',
+      auth: true,
+      body: description === '' ? { reason: input.reason } : { reason: input.reason, description },
+    },
   );
 }

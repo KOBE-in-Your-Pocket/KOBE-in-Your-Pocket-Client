@@ -10,6 +10,8 @@ import { SpotDetailContent } from '../spot-detail';
 
 import { useAgeRestrictionStore } from '@/shared/store';
 
+import { useReportedReviewStore } from '../../../store/use-reported-review-store';
+
 import type { Spot } from '../../../domain/spot';
 import type { ReactNode } from 'react';
 
@@ -32,6 +34,7 @@ const mockUseCurrentUser = jest.fn();
 const mockUseCurrentLocation = jest.fn();
 const mockUpdateReviewAsync = jest.fn();
 const mockDeleteReviewAsync = jest.fn();
+const mockReportReviewAsync = jest.fn();
 
 jest.mock('../../../application/use-spot-reviews', () => ({
   useSpotReviews: (spotId: string) => mockUseSpotReviews(spotId),
@@ -43,6 +46,36 @@ jest.mock('../../../application/use-update-review', () => ({
 
 jest.mock('../../../application/use-delete-review', () => ({
   useDeleteReview: () => ({ mutateAsync: mockDeleteReviewAsync }),
+}));
+
+jest.mock('../../../application/use-report-review', () => ({
+  useReportReview: () => ({ mutateAsync: mockReportReviewAsync }),
+}));
+
+jest.mock('../report-review-modal', () => ({
+  ReportReviewModal: ({
+    visible,
+    onCancel,
+    onSubmit,
+    onSubmitted,
+  }: {
+    visible: boolean;
+    onCancel: () => void;
+    onSubmit: (input: { reason: string; description: string }) => Promise<unknown>;
+    onSubmitted: () => void;
+  }) =>
+    visible ? (
+      <MockView testID="report-review-modal">
+        <MockPressable testID="report-review-modal-cancel" onPress={onCancel} />
+        <MockPressable
+          testID="report-review-modal-submit"
+          onPress={async () => {
+            await onSubmit({ reason: 'SPAM', description: '' });
+            onSubmitted();
+          }}
+        />
+      </MockView>
+    ) : null,
 }));
 
 jest.mock('@/features/manner', () => ({
@@ -192,6 +225,8 @@ describe('SpotDetailContent', () => {
   beforeEach(() => {
     mockUpdateReviewAsync.mockReset();
     mockDeleteReviewAsync.mockReset();
+    mockReportReviewAsync.mockReset();
+    useReportedReviewStore.setState({ reportedReviewIds: {} });
     mockUseSpotReviews.mockReturnValue({ data: [], isPending: false });
     mockUseCurrentUser.mockReturnValue({ name: 'test-user' });
     mockUseCurrentLocation.mockReturnValue({ coords: null });
@@ -415,11 +450,142 @@ describe('SpotDetailContent', () => {
       jest.restoreAllMocks();
     });
 
-    it('通報導線は #539 まで出さないため、メニューを出さない', () => {
+    it('他人のレビューのメニューには通報だけを出し、編集・削除は出さない', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
+
+      expect(screen.getByText('tourism.reviewCard.report')).toBeTruthy();
+      expect(screen.queryByText('tourism.reviewCard.edit')).toBeNull();
+      expect(screen.queryByText('tourism.reviewCard.delete')).toBeNull();
+    });
+
+    it('未ログインで通報を押すとサインインを促す', () => {
+      mockUseCurrentUser.mockReturnValue(null);
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
+      fireEvent.press(screen.getByText('tourism.reviewCard.report'));
+
+      expect(screen.getByTestId('sign-in-modal')).toBeTruthy();
+      expect(screen.queryByTestId('report-review-modal')).toBeNull();
+    });
+
+    it('18歳未満には他人のレビューでも通報メニューを出さない', () => {
+      useAgeRestrictionStore.setState({ isAdult: false });
+
       render(<SpotDetailContent spot={mockSpot} />);
 
       expect(screen.getByText(OTHERS_REVIEW.comment)).toBeTruthy();
       expect(screen.queryByLabelText('tourism.reviewCard.openMenu')).toBeNull();
+    });
+
+    it('author_user_id が無いレビュー（V17 以前の投稿）にも通報メニューを出す', () => {
+      const reviewWithoutAuthorId = {
+        ...OTHERS_REVIEW,
+        author: { ...OTHERS_REVIEW.author, id: '' },
+      };
+      mockUseSpotReviews.mockReturnValue({ data: [reviewWithoutAuthorId], isPending: false });
+
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
+
+      expect(screen.getByText('tourism.reviewCard.report')).toBeTruthy();
+    });
+
+    it('ログイン中に通報を押すと通報モーダルを開く', async () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
+      fireEvent.press(screen.getByText('tourism.reviewCard.report'));
+
+      await waitFor(
+        () => expect(screen.getByTestId('report-review-modal')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
+      expect(screen.queryByTestId('sign-in-modal')).toBeNull();
+    });
+
+    async function submitReport() {
+      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
+      fireEvent.press(screen.getByText('tourism.reviewCard.report'));
+      await waitFor(
+        () => expect(screen.getByTestId('report-review-modal')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
+      fireEvent.press(screen.getByTestId('report-review-modal-submit'));
+    }
+
+    it('送信すると reviewId と理由を渡して通報し、そのレビューを隠して受付表示を出す', async () => {
+      mockReportReviewAsync.mockImplementation(async ({ reviewId }: { reviewId: string }) => {
+        useReportedReviewStore.getState().markReported(VIEWER.id, reviewId);
+        return 'reported';
+      });
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      await submitReport();
+
+      await waitFor(
+        () => expect(screen.getByText('tourism.reportModal.reportedNotice')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
+      expect(mockReportReviewAsync).toHaveBeenCalledWith({
+        reviewId: OTHERS_REVIEW.id,
+        reason: 'SPAM',
+        description: '',
+      });
+      expect(screen.queryByText(OTHERS_REVIEW.comment)).toBeNull();
+      expect(screen.queryByTestId('report-review-modal')).toBeNull();
+    });
+
+    it('レビューがすでに削除されていたら、その旨を表示する', async () => {
+      mockReportReviewAsync.mockImplementation(async ({ reviewId }: { reviewId: string }) => {
+        useReportedReviewStore.getState().markReported(VIEWER.id, reviewId);
+        return 'notFound';
+      });
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      await submitReport();
+
+      await waitFor(
+        () => expect(screen.getByText('tourism.reportModal.notFoundNotice')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
+      expect(screen.queryByText(OTHERS_REVIEW.comment)).toBeNull();
+    });
+
+    it('通報済みのレビューは開き直しても表示しない', () => {
+      useReportedReviewStore.setState({ reportedReviewIds: { [VIEWER.id]: [OTHERS_REVIEW.id] } });
+
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      expect(screen.queryByText(OTHERS_REVIEW.comment)).toBeNull();
+      expect(screen.getByText('tourism.spotDetail.noReviews')).toBeTruthy();
+    });
+
+    it('別のアカウントが通報した記録では隠さない', () => {
+      useReportedReviewStore.setState({ reportedReviewIds: { 'other-user': [OTHERS_REVIEW.id] } });
+
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      expect(screen.getByText(OTHERS_REVIEW.comment)).toBeTruthy();
+      expect(screen.getByLabelText('tourism.reviewCard.openMenu')).toBeTruthy();
+    });
+
+    it('モーダルをキャンセルすると通報しない', async () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
+      fireEvent.press(screen.getByText('tourism.reviewCard.report'));
+      await waitFor(
+        () => expect(screen.getByTestId('report-review-modal')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
+      fireEvent.press(screen.getByTestId('report-review-modal-cancel'));
+
+      expect(screen.queryByTestId('report-review-modal')).toBeNull();
+      expect(mockReportReviewAsync).not.toHaveBeenCalled();
     });
   });
 });

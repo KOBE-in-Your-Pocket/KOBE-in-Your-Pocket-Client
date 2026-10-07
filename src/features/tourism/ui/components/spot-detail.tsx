@@ -16,17 +16,21 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useDeleteReview } from '../../application/use-delete-review';
+import { type ReportOutcome, useReportReview } from '../../application/use-report-review';
 import { useSpotReviews } from '../../application/use-spot-reviews';
 import { useUpdateReview } from '../../application/use-update-review';
 
 import type { Review } from '../../domain/review';
 import type { Spot } from '../../domain/spot';
+import type { ReviewReportInput } from '../../infrastructure/api/review-api';
 
+import { useReportedReviewIds } from '../../store/use-reported-review-store';
 import type { ReviewEdit } from '../../store/use-review-store';
 
 import { RATING_STAR_COLOR, styles } from '../styles/spot-detail.styles';
 
 import { ReviewForm } from './review-form';
+import { ReportReviewModal } from './report-review-modal';
 import { ReviewLanguageFilter, type ReviewLangFilter } from './review-language-filter';
 
 import { SpotMannerSection } from '@/features/manner';
@@ -68,6 +72,7 @@ function ReviewCard({
   isAuthenticated,
   onUpdate,
   onDelete,
+  onReport,
   onRequireSignIn,
 }: {
   review: Review;
@@ -76,6 +81,7 @@ function ReviewCard({
   isAuthenticated: boolean;
   onUpdate: (changes: ReviewEdit) => Promise<unknown>;
   onDelete: () => Promise<unknown>;
+  onReport: (input: ReviewReportInput) => Promise<unknown>;
   onRequireSignIn: () => void;
 }) {
   const { t } = useTranslation();
@@ -92,6 +98,7 @@ function ReviewCard({
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteFailed, setDeleteFailed] = useState(false);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
+  const [reportVisible, setReportVisible] = useState(false);
 
   const showMenu = (isOwn || canReport) && !isDeleting;
 
@@ -112,10 +119,12 @@ function ReviewCard({
 
   function handleReportPress() {
     setMenuOpen(false);
-    // 通報は当面ログイン必須。理由入力は #539、送信は #540 で追加する。
     if (!isAuthenticated) {
       onRequireSignIn();
+      return;
     }
+    // Modal を閉じてから開く。同時だと iOS で競合して出ないため 100ms 待つ。
+    setTimeout(() => setReportVisible(true), 100);
   }
 
   function openMenu() {
@@ -348,6 +357,12 @@ function ReviewCard({
         }}
         onCancel={() => setDeleteConfirmVisible(false)}
       />
+      <ReportReviewModal
+        visible={reportVisible}
+        onCancel={() => setReportVisible(false)}
+        onSubmit={onReport}
+        onSubmitted={() => setReportVisible(false)}
+      />
     </>
   );
 }
@@ -386,16 +401,18 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
   const isAdult = useIsAdult();
   const updateReview = useUpdateReview(spot.id);
   const deleteReview = useDeleteReview(spot.id);
+  const reportReview = useReportReview(spot.id);
+  const reportedReviewIds = useReportedReviewIds(currentUser?.id);
   const [signInVisible, setSignInVisible] = useState(false);
+  const [reportNotice, setReportNotice] = useState<ReportOutcome | null>(null);
 
   const handleOpenDirections = useCallback(() => {
     confirmOpenDirections(t, spot.coordinates, { origin: coords });
   }, [spot.coordinates, coords, t]);
 
-  const filteredReviews =
-    reviewLang === 'all'
-      ? (reviews ?? [])
-      : (reviews ?? []).filter((r) => r.language === reviewLang);
+  const filteredReviews = (reviews ?? []).filter(
+    (r) => (reviewLang === 'all' || r.language === reviewLang) && !reportedReviewIds.includes(r.id),
+  );
 
   return (
     <>
@@ -479,6 +496,15 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
             </View>
             <ReviewForm spotId={spot.id} />
             <ReviewLanguageFilter value={reviewLang} onChange={setReviewLang} />
+            {reportNotice && (
+              <ThemedText type="small" themeColor="textSecondary">
+                {t(
+                  reportNotice === 'reported'
+                    ? 'tourism.reportModal.reportedNotice'
+                    : 'tourism.reportModal.notFoundNotice',
+                )}
+              </ThemedText>
+            )}
             {isReviewsPending ? (
               <ActivityIndicator />
             ) : filteredReviews.length > 0 ? (
@@ -486,8 +512,8 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
                 // 18歳未満・未投稿機能では編集/削除も出さない（#306）。
                 const isOwn =
                   IS_USER_CONTENT_ENABLED && isAdult && review.author.id === currentUser?.id;
-                // 通報導線は #539 で有効化するまで出さない。
-                const canReport = false;
+                // author.id が無いのは V17 以前の投稿だけで、本人の投稿ではあり得ないため通報対象にする。
+                const canReport = IS_USER_CONTENT_ENABLED && isAdult && !isOwn;
                 return (
                   <ReviewCard
                     key={review.id}
@@ -499,6 +525,11 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
                       updateReview.mutateAsync({ reviewId: review.id, changes })
                     }
                     onDelete={() => deleteReview.mutateAsync(review.id)}
+                    onReport={async (input) => {
+                      setReportNotice(
+                        await reportReview.mutateAsync({ reviewId: review.id, ...input }),
+                      );
+                    }}
                     onRequireSignIn={() => setSignInVisible(true)}
                   />
                 );
