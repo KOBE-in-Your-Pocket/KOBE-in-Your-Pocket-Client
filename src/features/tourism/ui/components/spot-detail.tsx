@@ -16,11 +16,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useDeleteReview } from '../../application/use-delete-review';
-import { useReportReview } from '../../application/use-report-review';
 import { useSpotReviews } from '../../application/use-spot-reviews';
 import { useUpdateReview } from '../../application/use-update-review';
 
-import { hasIdentifiedAuthor, type Review } from '../../domain/review';
+import type { Review } from '../../domain/review';
 import type { Spot } from '../../domain/spot';
 
 import type { ReviewEdit } from '../../store/use-review-store';
@@ -69,23 +68,14 @@ function ReviewCard({
   isAuthenticated,
   onUpdate,
   onDelete,
-  onReport,
   onRequireSignIn,
 }: {
   review: Review;
-  /** 自分のレビューか。true なら編集 / 削除メニューを出す。 */
   isOwn: boolean;
-  /** 他人のレビューで通報を出せるか。自分のレビューには出さない。 */
   canReport: boolean;
-  /** ログイン中か。未ログインで通報を押した場合はサインインへ誘導する。 */
   isAuthenticated: boolean;
-  /** 保存は backend への PUT。完了を待って編集モードを閉じるため Promise を返す。 */
   onUpdate: (changes: ReviewEdit) => Promise<unknown>;
-  /** 削除は backend への DELETE。失敗を検知できるよう Promise を返す。 */
   onDelete: () => Promise<unknown>;
-  /** 通報は backend への送信。失敗を検知できるよう Promise を返す。 */
-  onReport: () => Promise<unknown>;
-  /** 未ログイン時にサインインモーダルを開く。 */
   onRequireSignIn: () => void;
 }) {
   const { t } = useTranslation();
@@ -102,14 +92,8 @@ function ReviewCard({
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteFailed, setDeleteFailed] = useState(false);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
-  const [reportConfirmVisible, setReportConfirmVisible] = useState(false);
-  const [isReporting, setIsReporting] = useState(false);
-  const [reportFailed, setReportFailed] = useState(false);
-  const [reported, setReported] = useState(false);
 
-  // 三点リーダーを出す条件。自分＝編集 / 削除、他人＝通報。
-  // 削除中・通報処理中・通報済みの間は出さない（別の操作に入ってしまわないように）。
-  const showMenu = (isOwn || canReport) && !isDeleting && !isReporting && !reported;
+  const showMenu = (isOwn || canReport) && !isDeleting;
 
   const canSave = editRating > 0 && editComment.trim() !== '' && !isSaving;
 
@@ -128,26 +112,9 @@ function ReviewCard({
 
   function handleReportPress() {
     setMenuOpen(false);
-    // 通報は当面ログイン必須（#538）。未ログインならサインインへ誘導する。
+    // 通報は当面ログイン必須。理由入力は #539、送信は #540 で追加する。
     if (!isAuthenticated) {
       onRequireSignIn();
-      return;
-    }
-    // 削除と同じ理由（iOS で Modal 終了と競合させない）で、閉じてから遅らせて確認を出す。
-    setTimeout(() => setReportConfirmVisible(true), 100);
-  }
-
-  async function handleReport() {
-    if (isReporting) return;
-    setIsReporting(true);
-    setReportFailed(false);
-    try {
-      await onReport();
-      setReported(true);
-    } catch {
-      setReportFailed(true);
-    } finally {
-      setIsReporting(false);
     }
   }
 
@@ -311,28 +278,6 @@ function ReviewCard({
             </Pressable>
           </View>
         )}
-        {isReporting && (
-          <ThemedText type="small" themeColor="textSecondary">
-            {t('tourism.reviewCard.reporting')}
-          </ThemedText>
-        )}
-        {reported && (
-          <ThemedText type="small" themeColor="textSecondary">
-            {t('tourism.reviewCard.reportSuccess')}
-          </ThemedText>
-        )}
-        {reportFailed && (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: Spacing.two }}>
-            <ThemedText type="small" style={{ color: '#D45B45', flexShrink: 1 }}>
-              {t('tourism.reviewCard.reportError')}
-            </ThemedText>
-            <Pressable onPress={handleReport} accessibilityRole="button">
-              <ThemedText type="smallBold" style={{ color: '#D45B45' }}>
-                {t('tourism.reviewCard.retry')}
-              </ThemedText>
-            </Pressable>
-          </View>
-        )}
       </ThemedView>
 
       {menuOpen && (
@@ -362,8 +307,7 @@ function ReviewCard({
                   style={dropdownStyles.item}
                   onPress={() => {
                     setMenuOpen(false);
-                    // 三点リーダーの Modal を閉じてから確認ダイアログを出す（同時だと iOS で Alert が出ないことがある）。
-                    // 0ms だとネイティブ側の Modal 終了処理と競合する可能性があるため、安全マージンを持たせる。
+                    // Modal を閉じてから確認を出す。同時だと iOS で競合して出ないため 100ms 待つ。
                     setTimeout(() => setDeleteConfirmVisible(true), 100);
                   }}
                 >
@@ -404,18 +348,6 @@ function ReviewCard({
         }}
         onCancel={() => setDeleteConfirmVisible(false)}
       />
-      <DestructiveConfirmDialog
-        visible={reportConfirmVisible}
-        title={t('tourism.reviewCard.reportConfirmTitle')}
-        message={t('tourism.reviewCard.reportConfirmMessage')}
-        cancelLabel={t('tourism.reviewCard.cancel')}
-        confirmLabel={t('tourism.reviewCard.report')}
-        onConfirm={() => {
-          setReportConfirmVisible(false);
-          void handleReport();
-        }}
-        onCancel={() => setReportConfirmVisible(false)}
-      />
     </>
   );
 }
@@ -454,7 +386,6 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
   const isAdult = useIsAdult();
   const updateReview = useUpdateReview(spot.id);
   const deleteReview = useDeleteReview(spot.id);
-  const reportReview = useReportReview(spot.id);
   const [signInVisible, setSignInVisible] = useState(false);
 
   const handleOpenDirections = useCallback(() => {
@@ -552,14 +483,11 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
               <ActivityIndicator />
             ) : filteredReviews.length > 0 ? (
               filteredReviews.map((review) => {
-                // v1 は閲覧のみ（#306）。投稿できない以上、編集・削除・通報メニューも出さない。
-                // 18歳未満も同様にメニューを出す条件から外す。どちらの場合も閲覧はできる。
+                // 18歳未満・未投稿機能では編集/削除も出さない（#306）。
                 const isOwn =
                   IS_USER_CONTENT_ENABLED && isAdult && review.author.id === currentUser?.id;
-                // 他人のレビューには通報を出す。未ログインでも出し、押したらサインインへ誘導する（#538）。
-                // 投稿者を特定できないレビュー（V17 以前の author_user_id NULL 投稿）には出さない（#490）。
-                const canReport =
-                  IS_USER_CONTENT_ENABLED && isAdult && hasIdentifiedAuthor(review) && !isOwn;
+                // 通報導線は #539 で有効化するまで出さない。
+                const canReport = false;
                 return (
                   <ReviewCard
                     key={review.id}
@@ -571,7 +499,6 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
                       updateReview.mutateAsync({ reviewId: review.id, changes })
                     }
                     onDelete={() => deleteReview.mutateAsync(review.id)}
-                    onReport={() => reportReview.mutateAsync(review.id)}
                     onRequireSignIn={() => setSignInVisible(true)}
                   />
                 );

@@ -32,7 +32,6 @@ const mockUseCurrentUser = jest.fn();
 const mockUseCurrentLocation = jest.fn();
 const mockUpdateReviewAsync = jest.fn();
 const mockDeleteReviewAsync = jest.fn();
-const mockReportReviewAsync = jest.fn();
 
 jest.mock('../../../application/use-spot-reviews', () => ({
   useSpotReviews: (spotId: string) => mockUseSpotReviews(spotId),
@@ -44,10 +43,6 @@ jest.mock('../../../application/use-update-review', () => ({
 
 jest.mock('../../../application/use-delete-review', () => ({
   useDeleteReview: () => ({ mutateAsync: mockDeleteReviewAsync }),
-}));
-
-jest.mock('../../../application/use-report-review', () => ({
-  useReportReview: () => ({ mutateAsync: mockReportReviewAsync }),
 }));
 
 jest.mock('@/features/manner', () => ({
@@ -197,7 +192,6 @@ describe('SpotDetailContent', () => {
   beforeEach(() => {
     mockUpdateReviewAsync.mockReset();
     mockDeleteReviewAsync.mockReset();
-    mockReportReviewAsync.mockReset();
     mockUseSpotReviews.mockReturnValue({ data: [], isPending: false });
     mockUseCurrentUser.mockReturnValue({ name: 'test-user' });
     mockUseCurrentLocation.mockReturnValue({ coords: null });
@@ -410,7 +404,7 @@ describe('SpotDetailContent', () => {
     });
   });
 
-  describe('他人のレビューの通報', () => {
+  describe('他人のレビュー', () => {
     beforeEach(() => {
       stubMeasureInWindow();
       mockUseSpotReviews.mockReturnValue({ data: [OTHERS_REVIEW], isPending: false });
@@ -421,115 +415,7 @@ describe('SpotDetailContent', () => {
       jest.restoreAllMocks();
     });
 
-    /** メニューから「通報」を押して確認ダイアログを開く。 */
-    async function openReportConfirm() {
-      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
-      fireEvent.press(screen.getByText('tourism.reviewCard.report'));
-
-      await waitFor(
-        () => expect(screen.getByTestId('destructive-confirm-dialog')).toBeTruthy(),
-        ASYNC_TIMEOUT,
-      );
-    }
-
-    function pressDialogButton(button: 'confirm' | 'cancel') {
-      fireEvent.press(screen.getByTestId(`destructive-confirm-dialog-${button}`));
-    }
-
-    it('他人のレビューのメニューには通報だけを出し、編集・削除は出さない', () => {
-      render(<SpotDetailContent spot={mockSpot} />);
-
-      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
-
-      expect(screen.getByText('tourism.reviewCard.report')).toBeTruthy();
-      expect(screen.queryByText('tourism.reviewCard.edit')).toBeNull();
-      expect(screen.queryByText('tourism.reviewCard.delete')).toBeNull();
-    });
-
-    it('通報メニューを押しただけでは確認ダイアログを出すのみで、まだ通報しない', async () => {
-      mockReportReviewAsync.mockResolvedValue(undefined);
-      render(<SpotDetailContent spot={mockSpot} />);
-
-      await openReportConfirm();
-
-      expect(mockReportReviewAsync).not.toHaveBeenCalled();
-    });
-
-    it('確認ダイアログで「通報」を選ぶと reviewId を渡して通報し、受付表示を出す', async () => {
-      mockReportReviewAsync.mockResolvedValue(undefined);
-      render(<SpotDetailContent spot={mockSpot} />);
-
-      await openReportConfirm();
-      pressDialogButton('confirm');
-
-      await waitFor(
-        () => expect(mockReportReviewAsync).toHaveBeenCalledWith('review-2'),
-        ASYNC_TIMEOUT,
-      );
-      await waitFor(
-        () => expect(screen.getByText('tourism.reviewCard.reportSuccess')).toBeTruthy(),
-        ASYNC_TIMEOUT,
-      );
-    });
-
-    it('確認ダイアログで「キャンセル」を選ぶと通報しない', async () => {
-      mockReportReviewAsync.mockResolvedValue(undefined);
-      render(<SpotDetailContent spot={mockSpot} />);
-
-      await openReportConfirm();
-      pressDialogButton('cancel');
-
-      expect(screen.queryByTestId('destructive-confirm-dialog')).toBeNull();
-      expect(mockReportReviewAsync).not.toHaveBeenCalled();
-    });
-
-    it('通報に失敗したらエラーを表示し、再試行で通報を再度呼ぶ', async () => {
-      mockReportReviewAsync.mockRejectedValueOnce(new Error('network down'));
-      render(<SpotDetailContent spot={mockSpot} />);
-
-      await openReportConfirm();
-      pressDialogButton('confirm');
-
-      await waitFor(
-        () => expect(screen.getByText('tourism.reviewCard.reportError')).toBeTruthy(),
-        ASYNC_TIMEOUT,
-      );
-
-      mockReportReviewAsync.mockResolvedValueOnce(undefined);
-      fireEvent.press(screen.getByText('tourism.reviewCard.retry'));
-
-      await waitFor(() => expect(mockReportReviewAsync).toHaveBeenCalledTimes(2), ASYNC_TIMEOUT);
-    });
-
-    it('未ログインで通報を押すとサインインを促し、通報は送信しない', () => {
-      mockUseCurrentUser.mockReturnValue(null);
-      render(<SpotDetailContent spot={mockSpot} />);
-
-      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
-      fireEvent.press(screen.getByText('tourism.reviewCard.report'));
-
-      expect(screen.getByTestId('sign-in-modal')).toBeTruthy();
-      expect(mockReportReviewAsync).not.toHaveBeenCalled();
-    });
-
-    it('18歳未満には他人のレビューでも通報メニューを出さない', () => {
-      useAgeRestrictionStore.setState({ isAdult: false });
-
-      render(<SpotDetailContent spot={mockSpot} />);
-
-      expect(screen.getByText(OTHERS_REVIEW.comment)).toBeTruthy();
-      expect(screen.queryByLabelText('tourism.reviewCard.openMenu')).toBeNull();
-    });
-
-    it('author_user_id が無いレビュー（V17 以前の投稿）には通報メニューを出さない', () => {
-      // author.id が欠けると API は空文字で補う（UNKNOWN_AUTHOR_ID）。
-      // 本人判定ができないため通報を出さない（#490）。
-      const reviewWithoutAuthorId = {
-        ...OTHERS_REVIEW,
-        author: { ...OTHERS_REVIEW.author, id: '' },
-      };
-      mockUseSpotReviews.mockReturnValue({ data: [reviewWithoutAuthorId], isPending: false });
-
+    it('通報導線は #539 まで出さないため、メニューを出さない', () => {
       render(<SpotDetailContent spot={mockSpot} />);
 
       expect(screen.getByText(OTHERS_REVIEW.comment)).toBeTruthy();

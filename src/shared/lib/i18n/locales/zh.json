@@ -126,12 +126,7 @@
       "deleting": "删除中...",
       "deleteError": "无法删除评论。请稍后再试。",
       "retry": "重试",
-      "report": "举报",
-      "reportConfirmTitle": "要举报这条评论吗？",
-      "reportConfirmMessage": "将作为不当内容向运营团队举报。",
-      "reporting": "举报中...",
-      "reportSuccess": "举报已收到。",
-      "reportError": "无法举报该评论。请稍后再试。"
+      "report": "举报"
     },
     "reviewFilter": {
       "all": "全部"

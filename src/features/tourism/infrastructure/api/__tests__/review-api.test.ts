@@ -1,6 +1,6 @@
 import { apiFetch } from '@/shared/lib/api';
 
-import { deleteReview, fetchReviews, postReview, reportReview, updateReview } from '../review-api';
+import { deleteReview, fetchReviews, postReview, updateReview } from '../review-api';
 
 jest.mock('@/shared/lib/api', () => ({
   apiFetch: jest.fn(),
@@ -239,36 +239,5 @@ describe('deleteReview', () => {
 
   it('204 相当（undefined）のレスポンスでも例外にせず resolve する', async () => {
     await expect(deleteReview('nankinmachi', 'review-1')).resolves.toBeUndefined();
-  });
-});
-
-describe('reportReview', () => {
-  beforeEach(() => {
-    mockApiFetch.mockReset();
-    mockApiFetch.mockResolvedValue(undefined);
-  });
-
-  it('認証付きで reports パスに POST する（ボディは送らない）', async () => {
-    await reportReview('nankinmachi', 'review-1');
-
-    expect(mockApiFetch).toHaveBeenCalledWith(
-      '/api/v1/tourism/spots/nankinmachi/reviews/review-1/reports',
-      {
-        method: 'POST',
-        auth: true,
-      },
-    );
-  });
-
-  it('spotId と reviewId を URL エンコードする', async () => {
-    await reportReview('spot/with space', 'review/1');
-
-    expect(mockApiFetch.mock.calls[0][0]).toBe(
-      '/api/v1/tourism/spots/spot%2Fwith%20space/reviews/review%2F1/reports',
-    );
-  });
-
-  it('204 相当（undefined）のレスポンスでも例外にせず resolve する', async () => {
-    await expect(reportReview('nankinmachi', 'review-1')).resolves.toBeUndefined();
   });
 });
