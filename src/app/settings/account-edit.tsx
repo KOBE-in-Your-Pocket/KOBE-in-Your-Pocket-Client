@@ -10,7 +10,7 @@ import { useIsAdult } from '@/shared/store';
  * app 層はルーティングのみを担う薄いシェル。画面の中身は user feature の
  * {@link AccountEditScreen} が持つ。
  *
- * v1 はアカウント機能を出さない（#306）。18歳未満にも出さない。設定画面からの導線は
+ * ユーザー投稿を止めているときはアカウント機能を出さない（#306）。18歳未満にも出さない。設定画面からの導線は
  * どちらの場合も消えているが、URL スキーム経由では到達できてしまうためここでも塞ぐ。
  */
 export default function AccountEditRoute() {
