@@ -125,7 +125,13 @@
       "deleteConfirmMessage": "削除すると元に戻せません。",
       "deleting": "削除中...",
       "deleteError": "レビューを削除できませんでした。時間をおいて再度お試しください。",
-      "retry": "再試行"
+      "retry": "再試行",
+      "report": "通報",
+      "reportConfirmTitle": "このレビューを通報しますか？",
+      "reportConfirmMessage": "不適切な内容として運営に報告します。",
+      "reporting": "通報中...",
+      "reportSuccess": "通報を受け付けました。",
+      "reportError": "通報できませんでした。時間をおいて再度お試しください。"
     },
     "reviewFilter": {
       "all": "すべて"

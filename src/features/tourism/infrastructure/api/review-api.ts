@@ -150,3 +150,19 @@ export async function deleteReview(spotId: string, reviewId: string): Promise<vo
     { method: 'DELETE', auth: true },
   );
 }
+
+/**
+ * 他人のレビューを不適切として通報する（#538）。
+ *
+ * TODO(#538 follow-up): backend の通報エンドポイントが未確定のため、現状は送信せず受理した
+ * ことにする。確定後に下記を実装して置き換える想定:
+ *   `POST /api/v1/tourism/spots/:spotId/reviews/:reviewId/reports`（認証必須）
+ *
+ * この段階で UI を先行実装しても実害がないのは、通報導線を含む UGC 機能全体が
+ * {@link IS_USER_CONTENT_ENABLED} で塞がれており（v1 は false）、実ユーザーには露出しないため。
+ */
+export async function reportReview(spotId: string, reviewId: string): Promise<void> {
+  // 実送信は後続 PR で配線する。引数は確定後にそのままパスへ渡すため受け取っておく。
+  void spotId;
+  void reviewId;
+}

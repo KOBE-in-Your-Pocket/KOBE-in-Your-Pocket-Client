@@ -125,7 +125,13 @@
       "deleteConfirmMessage": "This action can't be undone.",
       "deleting": "Deleting...",
       "deleteError": "Could not delete your review. Please try again later.",
-      "retry": "Retry"
+      "retry": "Retry",
+      "report": "Report",
+      "reportConfirmTitle": "Report this review?",
+      "reportConfirmMessage": "This review will be reported to our team as inappropriate.",
+      "reporting": "Reporting...",
+      "reportSuccess": "Thanks. We've received your report.",
+      "reportError": "Could not report this review. Please try again later."
     },
     "reviewFilter": {
       "all": "All"

@@ -125,7 +125,13 @@
       "deleteConfirmMessage": "삭제하면 되돌릴 수 없습니다.",
       "deleting": "삭제 중...",
       "deleteError": "리뷰를 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-      "retry": "다시 시도"
+      "retry": "다시 시도",
+      "report": "신고",
+      "reportConfirmTitle": "이 리뷰를 신고하시겠습니까?",
+      "reportConfirmMessage": "부적절한 콘텐츠로 운영팀에 신고됩니다.",
+      "reporting": "신고 중...",
+      "reportSuccess": "신고가 접수되었습니다.",
+      "reportError": "리뷰를 신고하지 못했습니다. 잠시 후 다시 시도해 주세요."
     },
     "reviewFilter": {
       "all": "전체"

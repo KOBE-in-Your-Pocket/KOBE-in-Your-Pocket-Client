@@ -32,6 +32,7 @@ const mockUseCurrentUser = jest.fn();
 const mockUseCurrentLocation = jest.fn();
 const mockUpdateReviewAsync = jest.fn();
 const mockDeleteReviewAsync = jest.fn();
+const mockReportReviewAsync = jest.fn();
 
 jest.mock('../../../application/use-spot-reviews', () => ({
   useSpotReviews: (spotId: string) => mockUseSpotReviews(spotId),
@@ -45,6 +46,10 @@ jest.mock('../../../application/use-delete-review', () => ({
   useDeleteReview: () => ({ mutateAsync: mockDeleteReviewAsync }),
 }));
 
+jest.mock('../../../application/use-report-review', () => ({
+  useReportReview: () => ({ mutateAsync: mockReportReviewAsync }),
+}));
+
 jest.mock('@/features/manner', () => ({
   SpotMannerSection: (props: { spotId: string }) => mockSpotMannerSection(props),
 }));
@@ -52,6 +57,9 @@ jest.mock('@/features/manner', () => ({
 jest.mock('@/features/user', () => ({
   useCurrentUser: () => mockUseCurrentUser(),
   UserAvatar: () => null,
+  // サインインへの誘導は visible のときだけ目印を出す（モーダル中身は user 側で検証）。
+  SignInModal: ({ visible }: { visible: boolean }) =>
+    visible ? <MockView testID="sign-in-modal" /> : null,
 }));
 
 jest.mock('@/shared/lib/geo', () => ({
@@ -156,6 +164,18 @@ const OWN_REVIEW = {
   language: 'ja' as const,
 };
 
+const OTHERS_REVIEW = {
+  id: 'review-2',
+  rating: { value: 4 },
+  comment: '他人のコメント',
+  author: { id: 'user-2', name: '別の人', iconUrl: '' },
+  postedAt: '2026-09-02T00:00:00.000Z',
+  language: 'ja' as const,
+};
+
+/** OTHERS_REVIEW の投稿者とは別の、ログイン中ユーザー。 */
+const VIEWER = { id: 'user-1', name: '荒川蓮', iconUrl: '' };
+
 /**
  * レビューカードのメニューは ref の `measureInWindow` で表示位置を測ってから開く。
  * jest-expo の View モックはこのメソッドがコールバックを呼ばないため、
@@ -177,6 +197,7 @@ describe('SpotDetailContent', () => {
   beforeEach(() => {
     mockUpdateReviewAsync.mockReset();
     mockDeleteReviewAsync.mockReset();
+    mockReportReviewAsync.mockReset();
     mockUseSpotReviews.mockReturnValue({ data: [], isPending: false });
     mockUseCurrentUser.mockReturnValue({ name: 'test-user' });
     mockUseCurrentLocation.mockReturnValue({ coords: null });
@@ -386,6 +407,118 @@ describe('SpotDetailContent', () => {
       fireEvent.press(screen.getByText('tourism.reviewCard.retry'));
 
       await waitFor(() => expect(mockDeleteReviewAsync).toHaveBeenCalledTimes(2), ASYNC_TIMEOUT);
+    });
+  });
+
+  describe('他人のレビューの通報', () => {
+    beforeEach(() => {
+      stubMeasureInWindow();
+      mockUseSpotReviews.mockReturnValue({ data: [OTHERS_REVIEW], isPending: false });
+      mockUseCurrentUser.mockReturnValue(VIEWER);
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    /** メニューから「通報」を押して確認ダイアログを開く。 */
+    async function openReportConfirm() {
+      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
+      fireEvent.press(screen.getByText('tourism.reviewCard.report'));
+
+      await waitFor(
+        () => expect(screen.getByTestId('destructive-confirm-dialog')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
+    }
+
+    function pressDialogButton(button: 'confirm' | 'cancel') {
+      fireEvent.press(screen.getByTestId(`destructive-confirm-dialog-${button}`));
+    }
+
+    it('他人のレビューのメニューには通報だけを出し、編集・削除は出さない', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
+
+      expect(screen.getByText('tourism.reviewCard.report')).toBeTruthy();
+      expect(screen.queryByText('tourism.reviewCard.edit')).toBeNull();
+      expect(screen.queryByText('tourism.reviewCard.delete')).toBeNull();
+    });
+
+    it('通報メニューを押しただけでは確認ダイアログを出すのみで、まだ通報しない', async () => {
+      mockReportReviewAsync.mockResolvedValue(undefined);
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      await openReportConfirm();
+
+      expect(mockReportReviewAsync).not.toHaveBeenCalled();
+    });
+
+    it('確認ダイアログで「通報」を選ぶと reviewId を渡して通報し、受付表示を出す', async () => {
+      mockReportReviewAsync.mockResolvedValue(undefined);
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      await openReportConfirm();
+      pressDialogButton('confirm');
+
+      await waitFor(
+        () => expect(mockReportReviewAsync).toHaveBeenCalledWith('review-2'),
+        ASYNC_TIMEOUT,
+      );
+      await waitFor(
+        () => expect(screen.getByText('tourism.reviewCard.reportSuccess')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
+    });
+
+    it('確認ダイアログで「キャンセル」を選ぶと通報しない', async () => {
+      mockReportReviewAsync.mockResolvedValue(undefined);
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      await openReportConfirm();
+      pressDialogButton('cancel');
+
+      expect(screen.queryByTestId('destructive-confirm-dialog')).toBeNull();
+      expect(mockReportReviewAsync).not.toHaveBeenCalled();
+    });
+
+    it('通報に失敗したらエラーを表示し、再試行で通報を再度呼ぶ', async () => {
+      mockReportReviewAsync.mockRejectedValueOnce(new Error('network down'));
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      await openReportConfirm();
+      pressDialogButton('confirm');
+
+      await waitFor(
+        () => expect(screen.getByText('tourism.reviewCard.reportError')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
+
+      mockReportReviewAsync.mockResolvedValueOnce(undefined);
+      fireEvent.press(screen.getByText('tourism.reviewCard.retry'));
+
+      await waitFor(() => expect(mockReportReviewAsync).toHaveBeenCalledTimes(2), ASYNC_TIMEOUT);
+    });
+
+    it('未ログインで通報を押すとサインインを促し、通報は送信しない', () => {
+      mockUseCurrentUser.mockReturnValue(null);
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
+      fireEvent.press(screen.getByText('tourism.reviewCard.report'));
+
+      expect(screen.getByTestId('sign-in-modal')).toBeTruthy();
+      expect(mockReportReviewAsync).not.toHaveBeenCalled();
+    });
+
+    it('18歳未満には他人のレビューでも通報メニューを出さない', () => {
+      useAgeRestrictionStore.setState({ isAdult: false });
+
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      expect(screen.getByText(OTHERS_REVIEW.comment)).toBeTruthy();
+      expect(screen.queryByLabelText('tourism.reviewCard.openMenu')).toBeNull();
     });
   });
 });
