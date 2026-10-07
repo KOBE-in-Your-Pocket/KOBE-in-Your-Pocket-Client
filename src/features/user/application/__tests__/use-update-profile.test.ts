@@ -1,16 +1,28 @@
 import { useReviewStore } from '@/features/tourism/store/use-review-store';
 
 import { useAuthStore } from '../../store/use-auth-store';
+import { bumpSessionGeneration } from '../session-operation';
 import { performProfileUpdate } from '../use-update-profile';
 
 const USER = { id: 'user-1', name: 'Google 太郎', iconUrl: '' };
+const ICON_URL = 'https://i.pravatar.cc/150?img=5';
 
 describe('performProfileUpdate', () => {
   const updatePersistedUser = jest.fn();
+  const updateCurrentUser = jest.fn();
+  const deps = {
+    persistedUserStore: { updatePersistedUser },
+    userGateway: { updateCurrentUser },
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
     updatePersistedUser.mockResolvedValue(undefined);
+    updateCurrentUser.mockImplementation(async (request: { name?: string }) => ({
+      id: 'user-1',
+      name: request.name ?? USER.name,
+      iconUrl: USER.iconUrl,
+    }));
     useAuthStore.setState({
       currentUser: USER,
       accessToken: 'access-token',
@@ -19,62 +31,114 @@ describe('performProfileUpdate', () => {
     useReviewStore.setState({ submittedReviews: {} });
   });
 
-  it('表示名（trim 済み）とアイコンをストアと永続化へ反映する', async () => {
-    await performProfileUpdate(
-      { name: '  新しい名前  ', iconUrl: 'https://i.pravatar.cc/150?img=5' },
-      { persistedUserStore: { updatePersistedUser } },
-    );
+  it('表示名（trim 済み）を PATCH し、応答の名前をストアと永続化へ反映する', async () => {
+    await performProfileUpdate({ name: '  新しい名前  ', iconUrl: '' }, deps);
 
-    const updated = {
-      id: 'user-1',
-      name: '新しい名前',
-      iconUrl: 'https://i.pravatar.cc/150?img=5',
-    };
+    expect(updateCurrentUser).toHaveBeenCalledWith({ name: '新しい名前', iconUrl: '' });
+    const updated = { id: 'user-1', name: '新しい名前', iconUrl: '' };
     expect(useAuthStore.getState().currentUser).toEqual(updated);
     expect(updatePersistedUser).toHaveBeenCalledWith(updated);
   });
 
-  it('トークンは変更しない', async () => {
-    await performProfileUpdate(
-      { name: '新しい名前', iconUrl: '' },
-      { persistedUserStore: { updatePersistedUser } },
-    );
+  it('アイコンの URL は送らず、編集値をローカルにだけ反映する', async () => {
+    await performProfileUpdate({ name: '新しい名前', iconUrl: ICON_URL }, deps);
 
-    expect(useAuthStore.getState().accessToken).toBe('access-token');
-    expect(useAuthStore.getState().refreshToken).toBe('refresh-token');
+    expect(updateCurrentUser).toHaveBeenCalledWith({ name: '新しい名前' });
+    expect(useAuthStore.getState().currentUser?.iconUrl).toBe(ICON_URL);
+    expect(updatePersistedUser).toHaveBeenCalledWith({
+      id: 'user-1',
+      name: '新しい名前',
+      iconUrl: ICON_URL,
+    });
   });
 
-  it('表示名が空白のみの場合はエラーにして何も更新しない', async () => {
-    await expect(
-      performProfileUpdate(
-        { name: '   ', iconUrl: '' },
-        { persistedUserStore: { updatePersistedUser } },
-      ),
-    ).rejects.toThrow();
+  it('アイコンを未設定にするときは、ローカルの値に関係なく iconUrl を空文字で送る', async () => {
+    useAuthStore.setState({ currentUser: { ...USER, iconUrl: ICON_URL } });
+
+    await performProfileUpdate({ name: 'Google 太郎', iconUrl: '' }, deps);
+
+    expect(updateCurrentUser).toHaveBeenCalledWith({ name: 'Google 太郎', iconUrl: '' });
+    expect(useAuthStore.getState().currentUser?.iconUrl).toBe('');
+  });
+
+  it('ローカルがすでに未設定でも、未設定の指定は空文字で送る', async () => {
+    await performProfileUpdate({ name: 'Google 太郎', iconUrl: '' }, deps);
+
+    expect(updateCurrentUser).toHaveBeenCalledWith({ name: 'Google 太郎', iconUrl: '' });
+  });
+
+  it('送信に失敗したらストアも永続化も変えず、例外を伝える', async () => {
+    updateCurrentUser.mockRejectedValue(new Error('network error'));
+
+    await expect(performProfileUpdate({ name: '新しい名前', iconUrl: '' }, deps)).rejects.toThrow(
+      'network error',
+    );
 
     expect(useAuthStore.getState().currentUser).toEqual(USER);
     expect(updatePersistedUser).not.toHaveBeenCalled();
   });
 
-  it('未ログイン時はエラーにする', async () => {
+  it('表示名が空白のみの場合は API を呼ばず、エラーにする', async () => {
+    await expect(performProfileUpdate({ name: '   ', iconUrl: '' }, deps)).rejects.toThrow();
+
+    expect(updateCurrentUser).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().currentUser).toEqual(USER);
+    expect(updatePersistedUser).not.toHaveBeenCalled();
+  });
+
+  it('未ログイン時は API を呼ばず、エラーにする', async () => {
     useAuthStore.getState().logout();
 
-    await expect(
-      performProfileUpdate(
-        { name: '新しい名前', iconUrl: '' },
-        { persistedUserStore: { updatePersistedUser } },
-      ),
-    ).rejects.toThrow();
+    await expect(performProfileUpdate({ name: '新しい名前', iconUrl: '' }, deps)).rejects.toThrow();
+
+    expect(updateCurrentUser).not.toHaveBeenCalled();
+    expect(updatePersistedUser).not.toHaveBeenCalled();
+  });
+
+  it('送信中にログアウトされていたら、古いユーザーをストアへ書き戻さない', async () => {
+    updateCurrentUser.mockImplementation(async () => {
+      useAuthStore.getState().logout();
+      return { id: 'user-1', name: '新しい名前', iconUrl: '' };
+    });
+
+    await performProfileUpdate({ name: '新しい名前', iconUrl: '' }, deps);
+
+    expect(useAuthStore.getState().currentUser).toBeNull();
+    expect(updatePersistedUser).not.toHaveBeenCalled();
+  });
+
+  it('送信中に別ユーザーでログインし直していたら、前のユーザーの値で上書きしない', async () => {
+    const OTHER_USER = { id: 'user-2', name: '別の人', iconUrl: '' };
+    updateCurrentUser.mockImplementation(async () => {
+      useAuthStore.setState({ currentUser: OTHER_USER });
+      return { id: 'user-1', name: '新しい名前', iconUrl: '' };
+    });
+
+    await performProfileUpdate({ name: '新しい名前', iconUrl: '' }, deps);
+
+    expect(useAuthStore.getState().currentUser).toEqual(OTHER_USER);
+    expect(updatePersistedUser).not.toHaveBeenCalled();
+  });
+
+  it('送信中に同じユーザーで再ログインしていたら、前の応答で上書きしない', async () => {
+    const RELOGGED_USER = { ...USER, name: '再ログイン後の名前' };
+    updateCurrentUser.mockImplementation(async () => {
+      useAuthStore.getState().logout();
+      bumpSessionGeneration();
+      useAuthStore.setState({ currentUser: RELOGGED_USER });
+      return { id: 'user-1', name: '新しい名前', iconUrl: '' };
+    });
+
+    await performProfileUpdate({ name: '新しい名前', iconUrl: '' }, deps);
+
+    expect(useAuthStore.getState().currentUser).toEqual(RELOGGED_USER);
     expect(updatePersistedUser).not.toHaveBeenCalled();
   });
 
   it('永続化に失敗してもストアの更新は維持する', async () => {
     updatePersistedUser.mockRejectedValue(new Error('secure-store failed'));
 
-    await performProfileUpdate(
-      { name: '新しい名前', iconUrl: '' },
-      { persistedUserStore: { updatePersistedUser } },
-    );
+    await performProfileUpdate({ name: '新しい名前', iconUrl: '' }, deps);
 
     expect(useAuthStore.getState().currentUser?.name).toBe('新しい名前');
   });
@@ -97,16 +161,13 @@ describe('performProfileUpdate', () => {
       language: 'ja',
     });
 
-    await performProfileUpdate(
-      { name: '新しい名前', iconUrl: 'https://i.pravatar.cc/150?img=5' },
-      { persistedUserStore: { updatePersistedUser } },
-    );
+    await performProfileUpdate({ name: '新しい名前', iconUrl: ICON_URL }, deps);
 
     const reviews = useReviewStore.getState().submittedReviews['spot-a'];
     expect(reviews.find((r) => r.id === 'r1')?.author).toEqual({
       id: USER.id,
       name: '新しい名前',
-      iconUrl: 'https://i.pravatar.cc/150?img=5',
+      iconUrl: ICON_URL,
     });
     expect(reviews.find((r) => r.id === 'r2')?.author).toEqual({
       id: 'other-user',

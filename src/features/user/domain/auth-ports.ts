@@ -1,4 +1,5 @@
 import type { AuthSession, EmailSignUpResult, PersistedSession } from './auth-session';
+import type { ProfileUpdateRequest } from './profile-edits';
 import type { PublicUser } from './public-user';
 
 /** backend 認証 API へのアクセスを抽象化するポート。 */
@@ -26,8 +27,9 @@ export type PersistedUserStore = {
   updatePersistedUser(user: PublicUser): Promise<void>;
 };
 
-/** ユーザー情報の取得・削除 API を抽象化するポート。 */
+/** ユーザー情報の取得・更新・削除 API を抽象化するポート。 */
 export type UserGateway = {
   fetchCurrentUser(): Promise<PublicUser>;
+  updateCurrentUser(request: ProfileUpdateRequest): Promise<PublicUser>;
   deleteCurrentUser(): Promise<void>;
 };
