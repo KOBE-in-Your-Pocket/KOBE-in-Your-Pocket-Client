@@ -11,7 +11,11 @@ import {
   signInWithGoogle,
   signUpWithEmail,
 } from '../infrastructure/api/auth-api';
-import { deleteCurrentUser, fetchCurrentUser } from '../infrastructure/api/user-api';
+import {
+  deleteCurrentUser,
+  fetchCurrentUser,
+  updateCurrentUser,
+} from '../infrastructure/api/user-api';
 import {
   clearPersistedSession,
   loadPersistedSession,
@@ -40,8 +44,9 @@ export const defaultPersistedUserStore: PersistedUserStore = {
   updatePersistedUser,
 };
 
-/** 本番用のユーザー取得・削除ゲートウェイ。 */
+/** 本番用のユーザー取得・更新・削除ゲートウェイ。 */
 export const defaultUserGateway: UserGateway = {
   fetchCurrentUser,
+  updateCurrentUser,
   deleteCurrentUser,
 };

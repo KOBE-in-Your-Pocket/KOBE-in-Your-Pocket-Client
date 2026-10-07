@@ -55,7 +55,7 @@ describe('performDeleteAccount', () => {
 
   function run() {
     return performDeleteAccount({
-      userGateway: { fetchCurrentUser, deleteCurrentUser },
+      userGateway: { fetchCurrentUser, updateCurrentUser: jest.fn(), deleteCurrentUser },
       sessionStore: {
         savePersistedSession: jest.fn(),
         loadPersistedSession: jest.fn(),
