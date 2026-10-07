@@ -448,7 +448,7 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
               <ReviewCard
                 key={review.id}
                 review={review}
-                // v1 は閲覧のみ（#306）。投稿できない以上、編集・削除メニューも出さない。
+                // ユーザー投稿を止めているときは閲覧のみ（#306）。投稿できない以上、編集・削除メニューも出さない。
                 // 18歳未満も同様に投稿できないため、メニューを出す条件から外す。
                 isOwn={IS_USER_CONTENT_ENABLED && isAdult && review.author.id === currentUser?.id}
                 onUpdate={(changes) => updateReview.mutateAsync({ reviewId: review.id, changes })}

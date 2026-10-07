@@ -88,7 +88,7 @@ export function ReviewForm({ spotId }: { spotId: string }) {
     setExpanded(false);
   }
 
-  // v1 では投稿機能そのものを出さない（#306）。案内も出さず、レビューは閲覧のみになる。
+  // ユーザー投稿を止めているときは投稿機能そのものを出さない（#306）。案内も出さず、レビューは閲覧のみになる。
   // 18歳未満にも出さない（子供の個人情報を扱わないため）。どちらの場合も閲覧はできる。
   if (!IS_USER_CONTENT_ENABLED || !isAdult) {
     return null;
