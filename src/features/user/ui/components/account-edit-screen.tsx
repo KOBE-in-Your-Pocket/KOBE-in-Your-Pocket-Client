@@ -18,6 +18,7 @@ import { UserAvatar } from './user-avatar';
 import type { PublicUser } from '../../domain/public-user';
 
 const SAVE_BUTTON_COLOR = '#D45B45';
+const ERROR_TEXT_COLOR = '#D45B45';
 const AVATAR_SIZE = 96;
 
 /**
@@ -153,7 +154,13 @@ function AccountEditForm({ currentUser }: { currentUser: PublicUser }) {
           placeholder={t('settings.accountEdit.displayNamePlaceholder')}
           placeholderTextColor={theme.textSecondary}
           value={name}
-          onChangeText={setName}
+          onChangeText={(value) => {
+            setName(value);
+            if (updateProfile.isError) {
+              updateProfile.reset();
+            }
+          }}
+          editable={!updateProfile.isPending}
           maxLength={MAX_DISPLAY_NAME_LENGTH}
         />
         {canSave ? null : (
@@ -161,6 +168,16 @@ function AccountEditForm({ currentUser }: { currentUser: PublicUser }) {
             {t('settings.accountEdit.nameInvalid', { max: MAX_DISPLAY_NAME_LENGTH })}
           </ThemedText>
         )}
+        {updateProfile.isPending ? (
+          <ThemedText type="small" themeColor="textSecondary">
+            {t('settings.accountEdit.saving')}
+          </ThemedText>
+        ) : null}
+        {updateProfile.isError ? (
+          <ThemedText type="small" accessibilityRole="alert" style={{ color: ERROR_TEXT_COLOR }}>
+            {t('settings.accountEdit.saveError')}
+          </ThemedText>
+        ) : null}
       </View>
 
       <IconLibraryModal

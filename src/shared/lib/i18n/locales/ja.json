@@ -53,6 +53,8 @@
       "displayName": "表示名",
       "displayNamePlaceholder": "表示名を入力",
       "nameInvalid": "表示名は1〜{{max}}文字で入力してください",
+      "saving": "保存中...",
+      "saveError": "保存できませんでした。時間をおいて再度お試しください。",
       "changeIcon": "アイコンを変更",
       "iconLibraryTitle": "写真を選択",
       "iconLibraryDescription": "アイコンに使う写真を選んでください（モック写真）",
