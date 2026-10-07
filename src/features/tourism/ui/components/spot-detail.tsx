@@ -20,7 +20,7 @@ import { useReportReview } from '../../application/use-report-review';
 import { useSpotReviews } from '../../application/use-spot-reviews';
 import { useUpdateReview } from '../../application/use-update-review';
 
-import type { Review } from '../../domain/review';
+import { hasIdentifiedAuthor, type Review } from '../../domain/review';
 import type { Spot } from '../../domain/spot';
 
 import type { ReviewEdit } from '../../store/use-review-store';
@@ -557,7 +557,9 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
                 const isOwn =
                   IS_USER_CONTENT_ENABLED && isAdult && review.author.id === currentUser?.id;
                 // 他人のレビューには通報を出す。未ログインでも出し、押したらサインインへ誘導する（#538）。
-                const canReport = IS_USER_CONTENT_ENABLED && isAdult && !isOwn;
+                // 投稿者を特定できないレビュー（V17 以前の author_user_id NULL 投稿）には出さない（#490）。
+                const canReport =
+                  IS_USER_CONTENT_ENABLED && isAdult && hasIdentifiedAuthor(review) && !isOwn;
                 return (
                   <ReviewCard
                     key={review.id}

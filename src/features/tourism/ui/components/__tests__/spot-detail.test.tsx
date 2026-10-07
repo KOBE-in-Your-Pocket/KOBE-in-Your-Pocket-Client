@@ -520,5 +520,20 @@ describe('SpotDetailContent', () => {
       expect(screen.getByText(OTHERS_REVIEW.comment)).toBeTruthy();
       expect(screen.queryByLabelText('tourism.reviewCard.openMenu')).toBeNull();
     });
+
+    it('author_user_id が無いレビュー（V17 以前の投稿）には通報メニューを出さない', () => {
+      // author.id が欠けると API は空文字で補う（UNKNOWN_AUTHOR_ID）。
+      // 本人判定ができないため通報を出さない（#490）。
+      const reviewWithoutAuthorId = {
+        ...OTHERS_REVIEW,
+        author: { ...OTHERS_REVIEW.author, id: '' },
+      };
+      mockUseSpotReviews.mockReturnValue({ data: [reviewWithoutAuthorId], isPending: false });
+
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      expect(screen.getByText(OTHERS_REVIEW.comment)).toBeTruthy();
+      expect(screen.queryByLabelText('tourism.reviewCard.openMenu')).toBeNull();
+    });
   });
 });

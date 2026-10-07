@@ -2,11 +2,14 @@ import type { PublicUser } from '@/features/user';
 import { apiFetch } from '@/shared/lib/api';
 import type { SupportedLanguage } from '@/shared/lib/i18n';
 
-import type { Review } from '../../domain/review';
+import { UNKNOWN_AUTHOR_ID, type Review } from '../../domain/review';
 
 /**
- * Backend が返すレビュー author。表示名のみを返し、id / iconUrl は返さない（#490）。
- * 将来 Backend が id / iconUrl を返すようになっても壊れないよう任意項目として受ける。
+ * Backend が返すレビュー author。
+ *
+ * backend はレビュー一覧で author_user_id（id）と name を返すが、V17 以前に投稿され
+ * author_user_id が NULL のまま残るレビューだけは id が欠ける（#490）。
+ * iconUrl は現状返さないため、どちらも欠落に備えて任意項目として受ける。
  */
 type ReviewAuthorResponse = {
   name: string;
@@ -19,20 +22,19 @@ type ReviewResponse = Omit<Review, 'author'> & {
   author: ReviewAuthorResponse;
 };
 
-/** author.id 未返却時のフォールバック。実ユーザー ID と衝突しない空文字とする。 */
-const FALLBACK_AUTHOR_ID = '';
 /** author.iconUrl 未返却時のフォールバック。空文字にすると UserAvatar がプレースホルダを表示する。 */
 const FALLBACK_AUTHOR_ICON_URL = '';
 
 /**
- * Backend レスポンス（author が name のみ）をドメインの {@link Review}（author は PublicUser）へ変換する。
- * id / iconUrl が欠けている場合はフォールバック値で補い、UI 側でプレースホルダ表示に委ねる。
+ * Backend レスポンス（author.id / iconUrl が欠けうる）をドメインの {@link Review}（author は PublicUser）へ変換する。
+ * id は欠けていれば {@link UNKNOWN_AUTHOR_ID} で補い（本人判定不可として扱う / #490）、
+ * iconUrl は空文字で補って UI 側のプレースホルダ表示に委ねる。
  */
 function toReview(dto: ReviewResponse): Review {
   return {
     ...dto,
     author: {
-      id: dto.author.id ?? FALLBACK_AUTHOR_ID,
+      id: dto.author.id ?? UNKNOWN_AUTHOR_ID,
       name: dto.author.name,
       iconUrl: dto.author.iconUrl ?? FALLBACK_AUTHOR_ICON_URL,
     },
@@ -154,15 +156,13 @@ export async function deleteReview(spotId: string, reviewId: string): Promise<vo
 /**
  * 他人のレビューを不適切として通報する（#538）。
  *
- * TODO(#538 follow-up): backend の通報エンドポイントが未確定のため、現状は送信せず受理した
- * ことにする。確定後に下記を実装して置き換える想定:
- *   `POST /api/v1/tourism/spots/:spotId/reviews/:reviewId/reports`（認証必須）
- *
- * この段階で UI を先行実装しても実害がないのは、通報導線を含む UGC 機能全体が
- * {@link IS_USER_CONTENT_ENABLED} で塞がれており（v1 は false）、実ユーザーには露出しないため。
+ * バックエンド `POST /api/v1/tourism/spots/:spotId/reviews/:reviewId/reports` を呼び出す（認証必須）。
+ * 通報理由やカテゴリは UI で収集しないためボディは送らず、対象はパスで指定する。
+ * 受理の成否は {@link apiFetch} の共通処理に委ねる（非 2xx は {@link ApiError}、204 は void）。
  */
 export async function reportReview(spotId: string, reviewId: string): Promise<void> {
-  // 実送信は後続 PR で配線する。引数は確定後にそのままパスへ渡すため受け取っておく。
-  void spotId;
-  void reviewId;
+  await apiFetch<void>(
+    `/api/v1/tourism/spots/${encodeURIComponent(spotId)}/reviews/${encodeURIComponent(reviewId)}/reports`,
+    { method: 'POST', auth: true },
+  );
 }

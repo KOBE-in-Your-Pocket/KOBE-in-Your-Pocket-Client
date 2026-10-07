@@ -12,8 +12,6 @@ import { reportReview } from '../infrastructure/api/review-api';
  * {@link useUpdateReview} と同じく最終防衛線としてここでも弾く）。
  *
  * 通報対象は自分以外のレビューなので、ローカルの一覧・ストアは書き換えない。
- * TODO(#538 follow-up): backend の通報エンドポイント確定後に {@link reportReview} の
- * 実送信を配線する。
  */
 export function useReportReview(spotId: string) {
   const reporter = useCurrentUser();
