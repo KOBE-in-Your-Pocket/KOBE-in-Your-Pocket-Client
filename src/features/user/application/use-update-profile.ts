@@ -10,7 +10,11 @@ import {
 } from '../domain/profile-edits';
 import { useAuthStore } from '../store/use-auth-store';
 import { defaultPersistedUserStore, defaultUserGateway } from './auth-deps';
-import { enqueueSessionWrite } from './session-operation';
+import {
+  enqueueSessionWrite,
+  getSessionGeneration,
+  isSessionGenerationCurrent,
+} from './session-operation';
 
 type UpdateProfileDeps = {
   persistedUserStore: PersistedUserStore;
@@ -52,10 +56,15 @@ export async function performProfileUpdate(
   if (normalized.iconUrl === '') {
     request.iconUrl = '';
   }
+  const generation = getSessionGeneration();
   const saved = await deps.userGateway.updateCurrentUser(request);
 
-  // 送信中にログアウト・別ユーザーへの切替があった場合、古いユーザーでセッションを書き戻さない。
-  if (useAuthStore.getState().currentUser?.id !== currentUser.id) {
+  // 送信中にサインアウト・サインインがあった場合、古い応答でセッションを書き戻さない。
+  // 同じユーザーで再ログインした場合も世代で検出できるため、ID の比較は保険として残す。
+  if (
+    !isSessionGenerationCurrent(generation) ||
+    useAuthStore.getState().currentUser?.id !== currentUser.id
+  ) {
     return;
   }
 

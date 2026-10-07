@@ -1,6 +1,7 @@
 import { useReviewStore } from '@/features/tourism/store/use-review-store';
 
 import { useAuthStore } from '../../store/use-auth-store';
+import { bumpSessionGeneration } from '../session-operation';
 import { performProfileUpdate } from '../use-update-profile';
 
 const USER = { id: 'user-1', name: 'Google 太郎', iconUrl: '' };
@@ -116,6 +117,21 @@ describe('performProfileUpdate', () => {
     await performProfileUpdate({ name: '新しい名前', iconUrl: '' }, deps);
 
     expect(useAuthStore.getState().currentUser).toEqual(OTHER_USER);
+    expect(updatePersistedUser).not.toHaveBeenCalled();
+  });
+
+  it('送信中に同じユーザーで再ログインしていたら、前の応答で上書きしない', async () => {
+    const RELOGGED_USER = { ...USER, name: '再ログイン後の名前' };
+    updateCurrentUser.mockImplementation(async () => {
+      useAuthStore.getState().logout();
+      bumpSessionGeneration();
+      useAuthStore.setState({ currentUser: RELOGGED_USER });
+      return { id: 'user-1', name: '新しい名前', iconUrl: '' };
+    });
+
+    await performProfileUpdate({ name: '新しい名前', iconUrl: '' }, deps);
+
+    expect(useAuthStore.getState().currentUser).toEqual(RELOGGED_USER);
     expect(updatePersistedUser).not.toHaveBeenCalled();
   });
 
