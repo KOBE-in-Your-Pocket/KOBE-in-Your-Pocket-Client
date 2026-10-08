@@ -15,6 +15,7 @@ import {
   deleteCurrentUser,
   fetchCurrentUser,
   updateCurrentUser,
+  uploadMyIcon,
 } from '../infrastructure/api/user-api';
 import {
   clearPersistedSession,
@@ -48,5 +49,6 @@ export const defaultPersistedUserStore: PersistedUserStore = {
 export const defaultUserGateway: UserGateway = {
   fetchCurrentUser,
   updateCurrentUser,
+  uploadMyIcon,
   deleteCurrentUser,
 };

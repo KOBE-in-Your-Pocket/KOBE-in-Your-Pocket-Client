@@ -1,7 +1,10 @@
 import type { PublicUser } from './public-user';
 
 /** アカウント編集画面で編集できる項目。 */
-export type ProfileEdits = Pick<PublicUser, 'name' | 'iconUrl'>;
+export type ProfileEdits = Pick<PublicUser, 'name' | 'iconUrl'> & {
+  /** フォトライブラリで新しく選んだ画像のローカル URI。アップロード待ち。未変更なら undefined。 */
+  newIconUri?: string;
+};
 
 /**
  * `PATCH /api/v1/users/me` に送る部分更新。省略したフィールドは変更されない。
@@ -30,5 +33,5 @@ export function normalizeProfileEdits(edits: ProfileEdits): ProfileEdits | null 
     return null;
   }
 
-  return { name: edits.name.trim(), iconUrl: edits.iconUrl };
+  return { name: edits.name.trim(), iconUrl: edits.iconUrl, newIconUri: edits.newIconUri };
 }

@@ -5,24 +5,29 @@ import { bumpSessionGeneration } from '../session-operation';
 import { performProfileUpdate } from '../use-update-profile';
 
 const USER = { id: 'user-1', name: 'Google 太郎', iconUrl: '' };
-const ICON_URL = 'https://i.pravatar.cc/150?img=5';
+const NEW_ICON_URI = 'file:///tmp/icon.jpg';
+const UPLOADED_ICON_URL = 'https://media.example.com/icons/icon-1.jpg';
 
 describe('performProfileUpdate', () => {
   const updatePersistedUser = jest.fn();
   const updateCurrentUser = jest.fn();
+  const uploadMyIcon = jest.fn();
   const deps = {
     persistedUserStore: { updatePersistedUser },
-    userGateway: { updateCurrentUser },
+    userGateway: { updateCurrentUser, uploadMyIcon },
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
     updatePersistedUser.mockResolvedValue(undefined);
-    updateCurrentUser.mockImplementation(async (request: { name?: string }) => ({
+    // 実際の backend と同じく、iconUrl は明示的な未設定指示（空文字）のときだけ変わり、
+    // それ以外は PATCH 時点でサーバーが保持している値をそのまま返す。
+    updateCurrentUser.mockImplementation(async (request: { name?: string; iconUrl?: string }) => ({
       id: 'user-1',
       name: request.name ?? USER.name,
-      iconUrl: USER.iconUrl,
+      iconUrl: request.iconUrl === '' ? '' : (useAuthStore.getState().currentUser?.iconUrl ?? ''),
     }));
+    uploadMyIcon.mockResolvedValue({ id: 'user-1', name: USER.name, iconUrl: UPLOADED_ICON_URL });
     useAuthStore.setState({
       currentUser: USER,
       accessToken: 'access-token',
@@ -40,40 +45,87 @@ describe('performProfileUpdate', () => {
     expect(updatePersistedUser).toHaveBeenCalledWith(updated);
   });
 
-  it('アイコンの URL は送らず、編集値をローカルにだけ反映する', async () => {
-    await performProfileUpdate({ name: '新しい名前', iconUrl: ICON_URL }, deps);
-
-    expect(updateCurrentUser).toHaveBeenCalledWith({ name: '新しい名前' });
-    expect(useAuthStore.getState().currentUser?.iconUrl).toBe(ICON_URL);
-    expect(updatePersistedUser).toHaveBeenCalledWith({
-      id: 'user-1',
-      name: '新しい名前',
-      iconUrl: ICON_URL,
-    });
-  });
-
-  it('アイコンを未設定にするときは、ローカルの値に関係なく iconUrl を空文字で送る', async () => {
-    useAuthStore.setState({ currentUser: { ...USER, iconUrl: ICON_URL } });
+  it('アイコンを未設定にするときは iconUrl を空文字で送り、アップロードは呼ばない', async () => {
+    useAuthStore.setState({ currentUser: { ...USER, iconUrl: UPLOADED_ICON_URL } });
 
     await performProfileUpdate({ name: 'Google 太郎', iconUrl: '' }, deps);
 
     expect(updateCurrentUser).toHaveBeenCalledWith({ name: 'Google 太郎', iconUrl: '' });
+    expect(uploadMyIcon).not.toHaveBeenCalled();
     expect(useAuthStore.getState().currentUser?.iconUrl).toBe('');
   });
 
-  it('ローカルがすでに未設定でも、未設定の指定は空文字で送る', async () => {
-    await performProfileUpdate({ name: 'Google 太郎', iconUrl: '' }, deps);
+  it('newIconUri を指定せずアイコンを変更しない場合はアップロードを呼ばない', async () => {
+    useAuthStore.setState({ currentUser: { ...USER, iconUrl: UPLOADED_ICON_URL } });
 
-    expect(updateCurrentUser).toHaveBeenCalledWith({ name: 'Google 太郎', iconUrl: '' });
+    await performProfileUpdate({ name: '新しい名前', iconUrl: UPLOADED_ICON_URL }, deps);
+
+    expect(uploadMyIcon).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().currentUser?.iconUrl).toBe(UPLOADED_ICON_URL);
   });
 
-  it('送信に失敗したらストアも永続化も変えず、例外を伝える', async () => {
-    updateCurrentUser.mockRejectedValue(new Error('network error'));
-
-    await expect(performProfileUpdate({ name: '新しい名前', iconUrl: '' }, deps)).rejects.toThrow(
-      'network error',
+  it('newIconUri を指定したときはアイコンをアップロードし、応答の iconUrl を反映する', async () => {
+    await performProfileUpdate(
+      { name: '新しい名前', iconUrl: USER.iconUrl, newIconUri: NEW_ICON_URI },
+      deps,
     );
 
+    expect(uploadMyIcon).toHaveBeenCalledWith(NEW_ICON_URI);
+    const updated = { id: 'user-1', name: '新しい名前', iconUrl: UPLOADED_ICON_URL };
+    expect(useAuthStore.getState().currentUser).toEqual(updated);
+    expect(updatePersistedUser).toHaveBeenCalledWith(updated);
+  });
+
+  it('PATCH 応答の iconUrl を反映する（他端末での変更をローカルの古い値で上書きしない）', async () => {
+    const OTHER_DEVICE_ICON_URL = 'https://media.example.com/icons/other-device.jpg';
+    updateCurrentUser.mockResolvedValue({
+      id: 'user-1',
+      name: 'Google 太郎',
+      iconUrl: OTHER_DEVICE_ICON_URL,
+    });
+
+    await performProfileUpdate({ name: 'Google 太郎', iconUrl: USER.iconUrl }, deps);
+
+    expect(useAuthStore.getState().currentUser?.iconUrl).toBe(OTHER_DEVICE_ICON_URL);
+  });
+
+  it('表示名の永続化を待つ間にログアウトされていたら、アイコンのアップロードを呼ばない', async () => {
+    updatePersistedUser.mockImplementation(async () => {
+      useAuthStore.getState().logout();
+    });
+
+    await performProfileUpdate(
+      { name: '新しい名前', iconUrl: USER.iconUrl, newIconUri: NEW_ICON_URI },
+      deps,
+    );
+
+    expect(uploadMyIcon).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().currentUser).toBeNull();
+  });
+
+  it('アイコンのアップロードに失敗しても、すでに成功した表示名の保存は巻き戻さない', async () => {
+    uploadMyIcon.mockRejectedValue(new Error('upload failed'));
+
+    await expect(
+      performProfileUpdate(
+        { name: '新しい名前', iconUrl: USER.iconUrl, newIconUri: NEW_ICON_URI },
+        deps,
+      ),
+    ).rejects.toThrow('upload failed');
+
+    const nameOnlyUpdate = { id: 'user-1', name: '新しい名前', iconUrl: USER.iconUrl };
+    expect(useAuthStore.getState().currentUser).toEqual(nameOnlyUpdate);
+    expect(updatePersistedUser).toHaveBeenCalledWith(nameOnlyUpdate);
+  });
+
+  it('送信に失敗したらストアも永続化も変えず、アイコンのアップロードも呼ばない', async () => {
+    updateCurrentUser.mockRejectedValue(new Error('network error'));
+
+    await expect(
+      performProfileUpdate({ name: '新しい名前', iconUrl: '', newIconUri: NEW_ICON_URI }, deps),
+    ).rejects.toThrow('network error');
+
+    expect(uploadMyIcon).not.toHaveBeenCalled();
     expect(useAuthStore.getState().currentUser).toEqual(USER);
     expect(updatePersistedUser).not.toHaveBeenCalled();
   });
@@ -105,6 +157,27 @@ describe('performProfileUpdate', () => {
 
     expect(useAuthStore.getState().currentUser).toBeNull();
     expect(updatePersistedUser).not.toHaveBeenCalled();
+  });
+
+  it('アイコンのアップロード中にログアウトされていたら、アイコンの応答はストアへ書き戻さない', async () => {
+    uploadMyIcon.mockImplementation(async () => {
+      useAuthStore.getState().logout();
+      return { id: 'user-1', name: '新しい名前', iconUrl: UPLOADED_ICON_URL };
+    });
+
+    await performProfileUpdate(
+      { name: '新しい名前', iconUrl: USER.iconUrl, newIconUri: NEW_ICON_URI },
+      deps,
+    );
+
+    // アイコンのアップロード開始前に表示名だけの保存はすでに反映済み。
+    expect(useAuthStore.getState().currentUser).toBeNull();
+    expect(updatePersistedUser).toHaveBeenCalledTimes(1);
+    expect(updatePersistedUser).toHaveBeenCalledWith({
+      id: 'user-1',
+      name: '新しい名前',
+      iconUrl: USER.iconUrl,
+    });
   });
 
   it('送信中に別ユーザーでログインし直していたら、前のユーザーの値で上書きしない', async () => {
@@ -161,13 +234,16 @@ describe('performProfileUpdate', () => {
       language: 'ja',
     });
 
-    await performProfileUpdate({ name: '新しい名前', iconUrl: ICON_URL }, deps);
+    await performProfileUpdate(
+      { name: '新しい名前', iconUrl: USER.iconUrl, newIconUri: NEW_ICON_URI },
+      deps,
+    );
 
     const reviews = useReviewStore.getState().submittedReviews['spot-a'];
     expect(reviews.find((r) => r.id === 'r1')?.author).toEqual({
       id: USER.id,
       name: '新しい名前',
-      iconUrl: ICON_URL,
+      iconUrl: UPLOADED_ICON_URL,
     });
     expect(reviews.find((r) => r.id === 'r2')?.author).toEqual({
       id: 'other-user',

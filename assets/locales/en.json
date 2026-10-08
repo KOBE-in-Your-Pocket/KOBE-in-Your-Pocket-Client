@@ -1,6 +1,7 @@
 {
   "ios": {
     "CFBundleDisplayName": "KOBE in Your Pocket",
-    "NSLocationWhenInUseUsageDescription": "Your location is shown on the map so we can guide you to nearby sightseeing spots and evacuation shelters, and show how far away they are. Your location stays on your device except when calculating a walking route."
+    "NSLocationWhenInUseUsageDescription": "Your location is shown on the map so we can guide you to nearby sightseeing spots and evacuation shelters, and show how far away they are. Your location stays on your device except when calculating a walking route.",
+    "NSPhotoLibraryUsageDescription": "Access your photo library to choose a photo to use as your profile icon."
   }
 }

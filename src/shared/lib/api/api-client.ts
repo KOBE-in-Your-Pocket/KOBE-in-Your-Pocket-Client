@@ -6,7 +6,7 @@ import { getAuthTokenProvider } from './auth-token-provider';
 /** apiFetch のオプション。 */
 export interface ApiFetchOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
-  /** JSON シリアライズして送信するリクエストボディ。 */
+  /** リクエストボディ。`FormData` はそのまま multipart で送り、他は JSON シリアライズする。 */
   body?: unknown;
   /** クエリパラメータ。undefined の値は除外される。 */
   query?: Record<string, string | number | boolean | undefined>;
@@ -40,7 +40,7 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
   }
 
   const url = buildUrl(baseUrl, path, options.query);
-  const body = options.body !== undefined ? JSON.stringify(options.body) : undefined;
+  const body = toRequestBody(options.body);
   const tokenProvider = options.auth ? getAuthTokenProvider() : null;
 
   let response = await sendRequest(url, body, options, tokenProvider?.getAccessToken() ?? null);
@@ -65,13 +65,20 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
   return (await response.json()) as T;
 }
 
+function toRequestBody(body: unknown): string | FormData | undefined {
+  if (body === undefined || body instanceof FormData) {
+    return body;
+  }
+  return JSON.stringify(body);
+}
+
 /**
  * 1 回分のリクエストを送る。タイムアウト用の AbortController は試行ごとに作り直す
  * （初回のタイムアウトで再試行まで巻き込んで中断されるのを防ぐ）。
  */
 async function sendRequest(
   url: string,
-  body: string | undefined,
+  body: string | FormData | undefined,
   options: ApiFetchOptions,
   accessToken: string | null,
 ): Promise<Response> {
@@ -79,7 +86,7 @@ async function sendRequest(
   if (options.language) {
     headers['Accept-Language'] = options.language;
   }
-  if (body !== undefined) {
+  if (typeof body === 'string') {
     headers['Content-Type'] = 'application/json';
   }
   if (accessToken) {

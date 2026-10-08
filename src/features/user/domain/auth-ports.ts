@@ -31,5 +31,6 @@ export type PersistedUserStore = {
 export type UserGateway = {
   fetchCurrentUser(): Promise<PublicUser>;
   updateCurrentUser(request: ProfileUpdateRequest): Promise<PublicUser>;
+  uploadMyIcon(localUri: string): Promise<PublicUser>;
   deleteCurrentUser(): Promise<void>;
 };

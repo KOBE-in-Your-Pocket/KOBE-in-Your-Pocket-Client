@@ -56,10 +56,7 @@
       "saving": "保存中...",
       "saveError": "无法保存。请稍后再试。",
       "changeIcon": "更换头像",
-      "iconLibraryTitle": "选择照片",
-      "iconLibraryDescription": "请选择用作头像的照片（示例照片）",
-      "iconLibraryPhoto": "示例照片",
-      "iconLibraryClose": "关闭",
+      "iconPickError": "无法使用该照片，请换一张试试。",
       "notSignedIn": "编辑账户前请先登录。"
     },
     "deleteAccount": "删除账户（注销）",

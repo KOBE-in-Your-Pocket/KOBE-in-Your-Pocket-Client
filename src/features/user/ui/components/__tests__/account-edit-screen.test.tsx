@@ -7,6 +7,7 @@ import { useAuthStore } from '../../../store/use-auth-store';
 import { AccountEditScreen } from '../account-edit-screen';
 
 import type { ReactNode } from 'react';
+import type { PickProfileIconResult } from '../../../application/pick-profile-icon';
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -33,9 +34,16 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 const mockUpdateCurrentUser = jest.fn();
+const mockUploadMyIcon = jest.fn();
 jest.mock('../../../infrastructure/api/user-api', () => ({
   ...jest.requireActual('../../../infrastructure/api/user-api'),
   updateCurrentUser: (request: { name?: string }) => mockUpdateCurrentUser(request),
+  uploadMyIcon: (localUri: string) => mockUploadMyIcon(localUri),
+}));
+
+const mockPickProfileIcon = jest.fn<Promise<PickProfileIconResult>, []>();
+jest.mock('../../../application/pick-profile-icon', () => ({
+  pickProfileIcon: () => mockPickProfileIcon(),
 }));
 
 jest.mock('expo-image', () => ({ Image: () => null }));
@@ -45,6 +53,8 @@ jest.mock('expo-router', () => ({
 }));
 
 const USER = { id: 'user-1', name: 'Google 太郎', iconUrl: 'https://i.pravatar.cc/150?img=12' };
+const NEW_ICON_URI = 'file:///tmp/new-icon.jpg';
+const UPLOADED_ICON_URL = 'https://media.example.com/icons/icon-1.jpg';
 
 function renderScreen() {
   const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
@@ -55,6 +65,11 @@ function renderScreen() {
   );
 }
 
+async function pressChangeIcon() {
+  fireEvent.press(screen.getByLabelText('settings.accountEdit.changeIcon'));
+  await waitFor(() => expect(mockPickProfileIcon).toHaveBeenCalled());
+}
+
 describe('AccountEditScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -63,6 +78,11 @@ describe('AccountEditScreen', () => {
       name: request.name ?? USER.name,
       iconUrl: USER.iconUrl,
     }));
+    mockUploadMyIcon.mockResolvedValue({
+      id: USER.id,
+      name: USER.name,
+      iconUrl: UPLOADED_ICON_URL,
+    });
     useAuthStore.setState({
       currentUser: USER,
       accessToken: 'access-token',
@@ -98,17 +118,6 @@ describe('AccountEditScreen', () => {
     expect(screen.queryByText('settings.accountEdit.nameInvalid')).toBeNull();
   });
 
-  it('アイコンをタップするとモック写真ライブラリが開き、写真を選ぶと閉じる', () => {
-    renderScreen();
-
-    fireEvent.press(screen.getByLabelText('settings.accountEdit.changeIcon'));
-    expect(screen.getByText('settings.accountEdit.iconLibraryTitle')).toBeTruthy();
-
-    fireEvent.press(screen.getAllByLabelText('settings.accountEdit.iconLibraryPhoto')[0]);
-
-    expect(screen.queryByText('settings.accountEdit.iconLibraryTitle')).toBeNull();
-  });
-
   it('表示名を編集して保存するとストアへ反映され前の画面へ戻る', async () => {
     renderScreen();
 
@@ -120,17 +129,75 @@ describe('AccountEditScreen', () => {
 
     await waitFor(() => expect(router.back).toHaveBeenCalled());
     expect(useAuthStore.getState().currentUser?.name).toBe('新しい名前');
+    expect(mockUploadMyIcon).not.toHaveBeenCalled();
   });
 
-  it('アイコンを選んで保存すると選んだ写真が反映される', async () => {
+  it('アイコンを選んで保存すると画像がアップロードされ、応答の URL が反映される', async () => {
+    mockPickProfileIcon.mockResolvedValue({ status: 'picked', uri: NEW_ICON_URI });
     renderScreen();
 
-    fireEvent.press(screen.getByLabelText('settings.accountEdit.changeIcon'));
-    fireEvent.press(screen.getAllByLabelText('settings.accountEdit.iconLibraryPhoto')[0]);
+    await pressChangeIcon();
     fireEvent.press(screen.getByRole('button', { name: 'settings.accountEdit.save' }));
 
     await waitFor(() => expect(router.back).toHaveBeenCalled());
-    expect(useAuthStore.getState().currentUser?.iconUrl).not.toBe(USER.iconUrl);
+    expect(mockUploadMyIcon).toHaveBeenCalledWith(NEW_ICON_URI);
+    expect(useAuthStore.getState().currentUser?.iconUrl).toBe(UPLOADED_ICON_URL);
+  });
+
+  it('一度写真を選んだ後に選び直しが失敗したら、前に選んだ写真を使わず保存する', async () => {
+    mockPickProfileIcon.mockResolvedValueOnce({ status: 'picked', uri: NEW_ICON_URI });
+    renderScreen();
+    fireEvent.press(screen.getByLabelText('settings.accountEdit.changeIcon'));
+    await waitFor(() => expect(mockPickProfileIcon).toHaveBeenCalledTimes(1));
+
+    mockPickProfileIcon.mockRejectedValueOnce(new Error('picker failed'));
+    fireEvent.press(screen.getByLabelText('settings.accountEdit.changeIcon'));
+    await waitFor(() => expect(mockPickProfileIcon).toHaveBeenCalledTimes(2));
+
+    expect(screen.getByText('settings.accountEdit.iconPickError')).toBeTruthy();
+
+    fireEvent.press(screen.getByRole('button', { name: 'settings.accountEdit.save' }));
+    await waitFor(() => expect(router.back).toHaveBeenCalled());
+    expect(mockUploadMyIcon).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().currentUser?.iconUrl).toBe(USER.iconUrl);
+  });
+
+  it('写真の選択に失敗したらエラー文を表示し、アップロードを呼ばない', async () => {
+    mockPickProfileIcon.mockRejectedValue(new Error('picker failed'));
+    renderScreen();
+
+    await pressChangeIcon();
+
+    expect(screen.getByText('settings.accountEdit.iconPickError')).toBeTruthy();
+
+    fireEvent.press(screen.getByRole('button', { name: 'settings.accountEdit.save' }));
+    await waitFor(() => expect(router.back).toHaveBeenCalled());
+    expect(mockUploadMyIcon).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().currentUser?.iconUrl).toBe(USER.iconUrl);
+  });
+
+  it('写真を選ばずに閉じた（キャンセル）場合は何も変えず、アップロードを呼ばない', async () => {
+    mockPickProfileIcon.mockResolvedValue({ status: 'canceled' });
+    renderScreen();
+
+    await pressChangeIcon();
+
+    expect(screen.queryByText('settings.accountEdit.iconPickError')).toBeNull();
+
+    fireEvent.press(screen.getByRole('button', { name: 'settings.accountEdit.save' }));
+    await waitFor(() => expect(router.back).toHaveBeenCalled());
+    expect(mockUploadMyIcon).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().currentUser?.iconUrl).toBe(USER.iconUrl);
+  });
+
+  it('写真の選択・加工中は保存ボタンが押せない', async () => {
+    mockPickProfileIcon.mockReturnValue(new Promise<PickProfileIconResult>(() => {}));
+    renderScreen();
+
+    fireEvent.press(screen.getByLabelText('settings.accountEdit.changeIcon'));
+    await waitFor(() => expect(mockPickProfileIcon).toHaveBeenCalled());
+
+    expect(screen.getByRole('button', { name: 'settings.accountEdit.save' })).toBeDisabled();
   });
 
   it('保存に失敗したらエラー文を表示し、画面を閉じず入力内容を残す', async () => {
@@ -147,6 +214,19 @@ describe('AccountEditScreen', () => {
     expect(router.back).not.toHaveBeenCalled();
     expect(screen.getByDisplayValue('新しい名前')).toBeTruthy();
     expect(useAuthStore.getState().currentUser?.name).toBe(USER.name);
+  });
+
+  it('アイコンのアップロードに失敗したらエラー文を表示し、アイコンを差し替えない', async () => {
+    mockPickProfileIcon.mockResolvedValue({ status: 'picked', uri: NEW_ICON_URI });
+    mockUploadMyIcon.mockRejectedValue(new Error('upload failed'));
+    renderScreen();
+
+    await pressChangeIcon();
+    fireEvent.press(screen.getByRole('button', { name: 'settings.accountEdit.save' }));
+
+    await waitFor(() => expect(screen.getByText('settings.accountEdit.saveError')).toBeTruthy());
+    expect(router.back).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().currentUser?.iconUrl).toBe(USER.iconUrl);
   });
 
   it('失敗後に表示名を書き換えるとエラー文が消える', async () => {

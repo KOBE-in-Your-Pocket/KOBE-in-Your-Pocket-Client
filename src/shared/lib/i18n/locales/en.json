@@ -56,10 +56,7 @@
       "saving": "Saving...",
       "saveError": "Could not save your changes. Please try again later.",
       "changeIcon": "Change icon",
-      "iconLibraryTitle": "Choose a Photo",
-      "iconLibraryDescription": "Pick a photo to use as your icon (mock photos)",
-      "iconLibraryPhoto": "Mock photo",
-      "iconLibraryClose": "Close",
+      "iconPickError": "Could not use that photo. Please try another one.",
       "notSignedIn": "Sign in to edit your account."
     },
     "deleteAccount": "Delete Account",
