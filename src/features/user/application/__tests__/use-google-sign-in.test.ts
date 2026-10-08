@@ -35,6 +35,7 @@ describe('performGoogleSignIn', () => {
     const result = await performGoogleSignIn({
       authGateway: {
         signInWithGoogle,
+        signInWithApple: jest.fn(),
         signUpWithEmail: jest.fn(),
         signInWithEmail: jest.fn(),
         refreshAuthSession: jest.fn(),
@@ -59,6 +60,7 @@ describe('performGoogleSignIn', () => {
     const result = await performGoogleSignIn({
       authGateway: {
         signInWithGoogle,
+        signInWithApple: jest.fn(),
         signUpWithEmail: jest.fn(),
         signInWithEmail: jest.fn(),
         refreshAuthSession: jest.fn(),
@@ -87,6 +89,7 @@ describe('performGoogleSignIn', () => {
       performGoogleSignIn({
         authGateway: {
           signInWithGoogle,
+          signInWithApple: jest.fn(),
           signUpWithEmail: jest.fn(),
           signInWithEmail: jest.fn(),
           refreshAuthSession: jest.fn(),
@@ -108,6 +111,7 @@ describe('performGoogleSignIn', () => {
       performGoogleSignIn({
         authGateway: {
           signInWithGoogle,
+          signInWithApple: jest.fn(),
           signUpWithEmail: jest.fn(),
           signInWithEmail: jest.fn(),
           refreshAuthSession: jest.fn(),

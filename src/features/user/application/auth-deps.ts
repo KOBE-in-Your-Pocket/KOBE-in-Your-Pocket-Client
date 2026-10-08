@@ -7,6 +7,7 @@ import type {
 import {
   logoutAuthSession,
   refreshAuthSession,
+  signInWithApple,
   signInWithEmail,
   signInWithGoogle,
   signUpWithEmail,
@@ -26,6 +27,7 @@ import {
 /** 本番用の認証 API ゲートウェイ。 */
 export const defaultAuthGateway: AuthGateway = {
   signInWithGoogle,
+  signInWithApple,
   signUpWithEmail,
   signInWithEmail,
   refreshAuthSession,

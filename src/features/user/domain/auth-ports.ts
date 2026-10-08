@@ -5,6 +5,7 @@ import type { PublicUser } from './public-user';
 /** backend 認証 API へのアクセスを抽象化するポート。 */
 export type AuthGateway = {
   signInWithGoogle(idToken: string): Promise<AuthSession>;
+  signInWithApple(params: { idToken: string; nonce: string }): Promise<AuthSession>;
   signUpWithEmail(params: {
     email: string;
     password: string;

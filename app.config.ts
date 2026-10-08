@@ -64,6 +64,10 @@ export default (): ExpoConfig => ({
     // （./assets/images/app-icon.png）を使わせるため、iOS 側の指定は外す。
     bundleIdentifier: iosBundleIdentifier,
     ...(iosAppleTeamId ? { appleTeamId: iosAppleTeamId } : {}),
+    // Sign in with Apple の entitlement（com.apple.developer.applesignin）を付与する。
+    // 無料の個人チームはこの capability を使えず署名に失敗するため、LOCAL_DEV_IOS=1 では付けない。
+    // EAS ビルドでは Bundle ID 側の capability が自動で有効化される。
+    usesAppleSignIn: !isLocalDevIos,
     infoPlist: {
       // 非適用暗号（HTTPS 以外の独自暗号）を含まないことの申告。
       // 未設定だと提出のたびに App Store Connect で輸出コンプライアンスを聞かれる。

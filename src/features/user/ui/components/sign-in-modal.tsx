@@ -1,4 +1,5 @@
 import { GoogleSigninButton } from '@react-native-google-signin/google-signin';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -13,7 +14,7 @@ import {
 } from 'react-native';
 
 import { Spacing } from '@/shared/config';
-import { useTheme } from '@/shared/lib/theme';
+import { useColorScheme, useTheme } from '@/shared/lib/theme';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
 import {
@@ -22,6 +23,7 @@ import {
   useEmailSignIn,
   useEmailSignUp,
 } from '../../application/use-email-auth';
+import { useAppleSignIn, useAppleSignInAvailable } from '../../application/use-apple-sign-in';
 import { useGoogleSignIn } from '../../application/use-google-sign-in';
 
 /** プライマリアクションの配色（位置情報モーダルのアクセントカラーに合わせる）。 */
@@ -41,12 +43,13 @@ type AuthMode = 'signIn' | 'signUp';
 
 /**
  * サインイン用モーダル。
- * Google サインインとメールアドレス + パスワードのログイン / 新規登録をまとめて提供する。
+ * Apple サインイン（iOS のみ）・Google サインインとメールアドレス + パスワードのログイン / 新規登録をまとめて提供する。
  * いずれかの方法でセッションが確立したら onClose を呼ぶ。
  */
 export function SignInModal({ visible, onClose }: SignInModalProps) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const colorScheme = useColorScheme();
 
   const [mode, setMode] = useState<AuthMode>('signIn');
   const [name, setName] = useState('');
@@ -56,10 +59,16 @@ export function SignInModal({ visible, onClose }: SignInModalProps) {
   const [confirmationSent, setConfirmationSent] = useState(false);
 
   const googleSignIn = useGoogleSignIn();
+  const appleSignIn = useAppleSignIn();
+  const isAppleSignInAvailable = useAppleSignInAvailable();
   const emailSignIn = useEmailSignIn();
   const emailSignUp = useEmailSignUp();
 
-  const isPending = googleSignIn.isPending || emailSignIn.isPending || emailSignUp.isPending;
+  const isPending =
+    googleSignIn.isPending ||
+    appleSignIn.isPending ||
+    emailSignIn.isPending ||
+    emailSignUp.isPending;
 
   const canSubmit =
     email.trim().length > 0 &&
@@ -75,6 +84,7 @@ export function SignInModal({ visible, onClose }: SignInModalProps) {
     emailSignIn.reset();
     emailSignUp.reset();
     googleSignIn.reset();
+    appleSignIn.reset();
   };
 
   const closeWith = (didSignIn: boolean) => {
@@ -96,10 +106,29 @@ export function SignInModal({ visible, onClose }: SignInModalProps) {
   };
 
   const handleGoogleSignIn = () => {
-    // 前回のメール認証エラーが残ったまま表示されないようにする。
+    // 前回のメール認証・Apple サインインのエラーが残ったまま表示されないようにする。
     emailSignIn.reset();
     emailSignUp.reset();
+    appleSignIn.reset();
     googleSignIn.mutate(undefined, {
+      onSuccess: (session) => {
+        // キャンセル時は null が返るのでモーダルは開いたままにする。
+        if (session) {
+          closeWith(true);
+        }
+      },
+    });
+  };
+
+  const handleAppleSignIn = () => {
+    if (isPending) {
+      return;
+    }
+    // 前回のメール認証・Google サインインのエラーが残ったまま表示されないようにする。
+    emailSignIn.reset();
+    emailSignUp.reset();
+    googleSignIn.reset();
+    appleSignIn.mutate(undefined, {
       onSuccess: (session) => {
         // キャンセル時は null が返るのでモーダルは開いたままにする。
         if (session) {
@@ -114,8 +143,9 @@ export function SignInModal({ visible, onClose }: SignInModalProps) {
       return;
     }
 
-    // 前回の Google サインインエラーが残ったまま表示されないようにする。
+    // 前回の Google / Apple サインインエラーが残ったまま表示されないようにする。
     googleSignIn.reset();
+    appleSignIn.reset();
 
     const trimmedEmail = email.trim();
     if (mode === 'signIn') {
@@ -149,7 +179,7 @@ export function SignInModal({ visible, onClose }: SignInModalProps) {
     mode,
     signInError: emailSignIn.error,
     signUpError: emailSignUp.error,
-    googleError: googleSignIn.isError,
+    ssoError: googleSignIn.isError || appleSignIn.isError,
     t,
   });
 
@@ -179,6 +209,20 @@ export function SignInModal({ visible, onClose }: SignInModalProps) {
             <ThemedText type="subtitle" style={styles.title}>
               {t('auth.title')}
             </ThemedText>
+
+            {isAppleSignInAvailable ? (
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                buttonStyle={
+                  colorScheme === 'dark'
+                    ? AppleAuthentication.AppleAuthenticationButtonStyle.WHITE
+                    : AppleAuthentication.AppleAuthenticationButtonStyle.BLACK
+                }
+                cornerRadius={Spacing.two}
+                onPress={handleAppleSignIn}
+                style={styles.appleButton}
+              />
+            ) : null}
 
             <GoogleSigninButton
               size={GoogleSigninButton.Size.Wide}
@@ -299,16 +343,17 @@ function resolveErrorMessage({
   mode,
   signInError,
   signUpError,
-  googleError,
+  ssoError,
   t,
 }: {
   mode: AuthMode;
   signInError: unknown;
   signUpError: unknown;
-  googleError: boolean;
+  /** Google / Apple サインインのいずれかが失敗したか。 */
+  ssoError: boolean;
   t: (key: string) => string;
 }): string | null {
-  if (googleError) {
+  if (ssoError) {
     return t('settings.signInError');
   }
 
@@ -355,6 +400,10 @@ const styles = StyleSheet.create({
   },
   title: {
     textAlign: 'center',
+  },
+  appleButton: {
+    width: '100%',
+    height: 48,
   },
   googleButton: {
     width: '100%',

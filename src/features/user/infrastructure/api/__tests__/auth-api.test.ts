@@ -2,6 +2,7 @@ import {
   AuthApiError,
   logoutAuthSession,
   refreshAuthSession,
+  signInWithApple,
   signInWithEmail,
   signInWithGoogle,
   signUpWithEmail,
@@ -28,6 +29,36 @@ function mockFetchResponse(status: number, body?: unknown) {
 describe('auth-api', () => {
   afterEach(() => {
     jest.restoreAllMocks();
+  });
+
+  describe('signInWithApple', () => {
+    it('idToken と生の nonce を /api/v1/auth/apple に POST し、セッションを返す', async () => {
+      const fetchMock = mockFetchResponse(200, SESSION_BODY);
+      global.fetch = fetchMock;
+
+      const session = await signInWithApple(
+        { idToken: 'apple-id-token', nonce: 'raw-nonce' },
+        { baseUrl: BASE_URL },
+      );
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        `${BASE_URL}/api/v1/auth/apple`,
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ idToken: 'apple-id-token', nonce: 'raw-nonce' }),
+        }),
+      );
+      expect(session.accessToken).toBe('access-token');
+      expect(session.user).toEqual({ id: 'user-1', name: 'Google 太郎', iconUrl: '' });
+    });
+
+    it('エラーレスポンスの message を持つ AuthApiError を投げる', async () => {
+      global.fetch = mockFetchResponse(400, { status: 400, message: 'invalid nonce' });
+
+      await expect(
+        signInWithApple({ idToken: 'bad', nonce: 'n' }, { baseUrl: BASE_URL }),
+      ).rejects.toMatchObject({ status: 400, message: 'invalid nonce' });
+    });
   });
 
   describe('signInWithGoogle', () => {

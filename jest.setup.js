@@ -11,6 +11,37 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn().mockResolvedValue(undefined),
 }));
 
+// Apple サインインのネイティブモジュールをモックへ差し替える。
+// 既定はキャンセル（ERR_REQUEST_CANCELED）。成功パスは各テストで signInAsync の戻り値を上書きする。
+jest.mock('expo-apple-authentication', () => {
+  const React = require('react');
+  const { Pressable, Text } = require('react-native');
+  const AppleAuthenticationButton = ({ onPress, ...rest }) =>
+    React.createElement(
+      Pressable,
+      { accessibilityRole: 'button', onPress, ...rest },
+      React.createElement(Text, null, 'Apple Sign-In'),
+    );
+
+  return {
+    AppleAuthenticationButton,
+    AppleAuthenticationButtonType: { SIGN_IN: 0, CONTINUE: 1, SIGN_UP: 2 },
+    AppleAuthenticationButtonStyle: { WHITE: 0, WHITE_OUTLINE: 1, BLACK: 2 },
+    AppleAuthenticationScope: { FULL_NAME: 0, EMAIL: 1 },
+    isAvailableAsync: jest.fn().mockResolvedValue(false),
+    signInAsync: jest
+      .fn()
+      .mockRejectedValue(Object.assign(new Error('canceled'), { code: 'ERR_REQUEST_CANCELED' })),
+  };
+});
+
+// expo-crypto もネイティブモジュールのため、決定的な値を返すモックへ差し替える。
+jest.mock('expo-crypto', () => ({
+  CryptoDigestAlgorithm: { SHA256: 'SHA-256' },
+  randomUUID: jest.fn(() => 'raw-nonce'),
+  digestStringAsync: jest.fn(async (_algorithm, value) => `hashed:${value}`),
+}));
+
 // Google サインインのネイティブモジュールをモックへ差し替える。
 // 既定はキャンセル応答。成功パスは各テストで signIn の戻り値を上書きする。
 jest.mock('@react-native-google-signin/google-signin', () => {

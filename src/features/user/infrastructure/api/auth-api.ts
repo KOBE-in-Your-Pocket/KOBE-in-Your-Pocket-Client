@@ -13,7 +13,7 @@ type ApiErrorBody = {
 
 export { AuthApiError };
 
-/** /auth/signup, /auth/login, /auth/google, /auth/refresh が返すセッションレスポンス。 */
+/** /auth/signup, /auth/login, /auth/google, /auth/apple, /auth/refresh が返すセッションレスポンス。 */
 type SessionResponseBody = {
   accessToken: string;
   refreshToken: string;
@@ -158,6 +158,23 @@ export async function signInWithGoogle(
 ): Promise<AuthSession> {
   const response = await postJson(`${resolveBaseUrl(options.baseUrl)}/api/v1/auth/google`, {
     body: { idToken },
+    signal: options.signal,
+  });
+
+  return parseSessionResponse(response);
+}
+
+/**
+ * Apple 発行の ID トークンで backend にサインインする（POST /auth/apple）。
+ * Google と同じく初回は backend 側でユーザーが自動作成される。
+ * nonce は Apple へ渡したハッシュ値ではなく、ハッシュ前の生の値を渡す（GoTrue がハッシュして照合する）。
+ */
+export async function signInWithApple(
+  params: { idToken: string; nonce: string },
+  options: AuthApiOptions = {},
+): Promise<AuthSession> {
+  const response = await postJson(`${resolveBaseUrl(options.baseUrl)}/api/v1/auth/apple`, {
+    body: params,
     signal: options.signal,
   });
 
