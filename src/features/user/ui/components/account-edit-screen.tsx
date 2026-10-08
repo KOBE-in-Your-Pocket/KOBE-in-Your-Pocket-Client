@@ -9,10 +9,10 @@ import { MaxContentWidth, Spacing } from '@/shared/config';
 import { useTheme } from '@/shared/lib/theme';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
+import { pickProfileIcon } from '../../application/pick-profile-icon';
 import { useCurrentUser } from '../../application/use-current-user';
 import { useUpdateProfile } from '../../application/use-update-profile';
 import { isValidDisplayName, MAX_DISPLAY_NAME_LENGTH } from '../../domain/profile-edits';
-import { IconLibraryModal } from './icon-library-modal';
 import { UserAvatar } from './user-avatar';
 
 import type { PublicUser } from '../../domain/public-user';
@@ -24,7 +24,7 @@ const AVATAR_SIZE = 96;
 /**
  * アカウント編集画面（#402）。
  * 現在のアカウント情報を初期表示し、表示名とアイコンを編集できる。
- * アイコンはタップでモック写真ライブラリ（{@link IconLibraryModal}）を開いて選ぶ。
+ * アイコンはタップで端末の写真ライブラリを開いて選ぶ（#546）。
  */
 export function AccountEditScreen() {
   const { t } = useTranslation();
@@ -108,27 +108,50 @@ function AccountEditForm({ currentUser }: { currentUser: PublicUser }) {
   const updateProfile = useUpdateProfile();
 
   const [name, setName] = useState(currentUser.name);
-  const [iconUrl, setIconUrl] = useState(currentUser.iconUrl);
-  const [libraryVisible, setLibraryVisible] = useState(false);
+  const [newIconUri, setNewIconUri] = useState<string | undefined>(undefined);
+  const [picking, setPicking] = useState(false);
+  const [pickErrorKey, setPickErrorKey] = useState<string | null>(null);
 
   const canSave = isValidDisplayName(name);
+  const previewIconUrl = newIconUri ?? currentUser.iconUrl;
 
   function handleSave() {
-    updateProfile.mutate({ name, iconUrl }, { onSuccess: () => router.back() });
+    updateProfile.mutate(
+      { name, iconUrl: currentUser.iconUrl, newIconUri },
+      { onSuccess: () => router.back() },
+    );
+  }
+
+  async function handleChangeIcon() {
+    setPicking(true);
+    setPickErrorKey(null);
+    try {
+      const result = await pickProfileIcon();
+      if (result.status === 'picked') {
+        setNewIconUri(result.uri);
+      } else if (result.status === 'permissionDenied') {
+        setPickErrorKey('settings.accountEdit.iconPermissionDenied');
+      }
+    } catch {
+      setPickErrorKey('settings.accountEdit.iconPickError');
+    } finally {
+      setPicking(false);
+    }
   }
 
   return (
     <>
-      <Header canSave={canSave} isSaving={updateProfile.isPending} onSave={handleSave} />
+      <Header canSave={canSave} isSaving={updateProfile.isPending || picking} onSave={handleSave} />
 
       <View style={styles.iconArea}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('settings.accountEdit.changeIcon')}
-          onPress={() => setLibraryVisible(true)}
+          disabled={picking || updateProfile.isPending}
+          onPress={handleChangeIcon}
           style={styles.avatarButton}
         >
-          <UserAvatar iconUrl={iconUrl} size={AVATAR_SIZE} />
+          <UserAvatar iconUrl={previewIconUrl} size={AVATAR_SIZE} />
           <View style={[styles.editBadge, { backgroundColor: theme.backgroundSelected }]}>
             <SymbolView
               name={{ ios: 'pencil', android: 'edit', web: 'edit' }}
@@ -140,6 +163,11 @@ function AccountEditForm({ currentUser }: { currentUser: PublicUser }) {
         <ThemedText type="small" themeColor="textSecondary">
           {t('settings.accountEdit.changeIcon')}
         </ThemedText>
+        {pickErrorKey ? (
+          <ThemedText type="small" accessibilityRole="alert" style={{ color: ERROR_TEXT_COLOR }}>
+            {t(pickErrorKey)}
+          </ThemedText>
+        ) : null}
       </View>
 
       <View style={styles.field}>
@@ -179,16 +207,6 @@ function AccountEditForm({ currentUser }: { currentUser: PublicUser }) {
           </ThemedText>
         ) : null}
       </View>
-
-      <IconLibraryModal
-        visible={libraryVisible}
-        selectedIconUrl={iconUrl}
-        onSelect={(url) => {
-          setIconUrl(url);
-          setLibraryVisible(false);
-        }}
-        onClose={() => setLibraryVisible(false)}
-      />
     </>
   );
 }

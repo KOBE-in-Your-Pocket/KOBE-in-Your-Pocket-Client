@@ -86,6 +86,17 @@ describe('apiFetch', () => {
     });
   });
 
+  it('body が FormData のときはシリアライズせず Content-Type も付けない', async () => {
+    mockFetch.mockResolvedValue(jsonResponse(200, { id: 'user-1' }));
+    const formData = new FormData();
+    formData.append('file', 'dummy');
+
+    await apiFetch('/api/v1/users/me/icon', { method: 'POST', body: formData });
+
+    expect(mockFetch.mock.calls[0][1]).toMatchObject({ method: 'POST', body: formData });
+    expect(mockFetch.mock.calls[0][1].headers).toEqual({ Accept: 'application/json' });
+  });
+
   it('204 レスポンスは undefined を返す', async () => {
     mockFetch.mockResolvedValue({
       ok: true,

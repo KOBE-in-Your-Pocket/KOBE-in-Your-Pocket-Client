@@ -56,10 +56,8 @@
       "saving": "保存中...",
       "saveError": "保存できませんでした。時間をおいて再度お試しください。",
       "changeIcon": "アイコンを変更",
-      "iconLibraryTitle": "写真を選択",
-      "iconLibraryDescription": "アイコンに使う写真を選んでください（モック写真）",
-      "iconLibraryPhoto": "モック写真",
-      "iconLibraryClose": "閉じる",
+      "iconPermissionDenied": "写真ライブラリへのアクセスが許可されていません。設定アプリから許可してください。",
+      "iconPickError": "その写真は使用できませんでした。別の写真をお試しください。",
       "notSignedIn": "アカウントを編集するにはログインが必要です。"
     },
     "deleteAccount": "アカウント削除（退会）",

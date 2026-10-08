@@ -140,6 +140,18 @@ export default (): ExpoConfig => ({
       },
     ],
     [
+      'expo-image-picker',
+      {
+        // Info.plist に焼き込まれる既定値。審査は英語環境で行われるため英語にし、
+        // ja / ko / zh-Hans は上の locales が InfoPlist.strings で上書きする。
+        photosPermission:
+          'Access your photo library to choose a photo to use as your profile icon.',
+        // カメラ・マイクは使わないため権限自体を追加しない。
+        cameraPermission: false,
+        microphonePermission: false,
+      },
+    ],
+    [
       'react-native-maps',
       {
         androidGoogleMapsApiKey: googleMapsApiKey,

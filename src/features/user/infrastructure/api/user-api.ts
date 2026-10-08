@@ -1,3 +1,5 @@
+import { File } from 'expo-file-system';
+
 import { apiFetch } from '@/shared/lib/api';
 
 import type { ProfileUpdateRequest } from '../../domain/profile-edits';
@@ -42,6 +44,27 @@ export async function updateCurrentUser(request: ProfileUpdateRequest): Promise<
   const response = await apiFetch<PublicUserResponse>('/api/v1/users/me', {
     method: 'PATCH',
     body: request,
+    auth: true,
+  });
+
+  return toPublicUser(response);
+}
+
+/**
+ * ログイン中のユーザーのアイコンを差し替える（#546）。
+ *
+ * `POST /api/v1/users/me/icon` は認証必須。multipart/form-data の `file` フィールドで
+ * 画像を送る。応答は更新後のユーザー情報（backend #184）。
+ */
+export async function uploadMyIcon(localUri: string): Promise<PublicUser> {
+  // Expo SDK 56 の fetch/FormData は RN 流の {uri, name, type} を受け付けず、
+  // Blob 実装（expo-file-system の File）のみサポートする。
+  const formData = new FormData();
+  formData.append('file', new File(localUri));
+
+  const response = await apiFetch<PublicUserResponse>('/api/v1/users/me/icon', {
+    method: 'POST',
+    body: formData,
     auth: true,
   });
 

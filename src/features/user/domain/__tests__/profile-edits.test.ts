@@ -36,4 +36,10 @@ describe('normalizeProfileEdits', () => {
   it('表示名が不正な場合は null を返す', () => {
     expect(normalizeProfileEdits({ name: '   ', iconUrl: '' })).toBeNull();
   });
+
+  it('newIconUri をそのまま通す', () => {
+    expect(
+      normalizeProfileEdits({ name: '名前', iconUrl: '', newIconUri: 'file:///tmp/icon.jpg' }),
+    ).toEqual({ name: '名前', iconUrl: '', newIconUri: 'file:///tmp/icon.jpg' });
+  });
 });
