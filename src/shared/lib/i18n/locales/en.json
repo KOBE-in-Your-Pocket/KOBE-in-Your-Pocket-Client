@@ -56,7 +56,6 @@
       "saving": "Saving...",
       "saveError": "Could not save your changes. Please try again later.",
       "changeIcon": "Change icon",
-      "iconPermissionDenied": "Photo library access is not allowed. Please allow it in Settings.",
       "iconPickError": "Could not use that photo. Please try another one.",
       "notSignedIn": "Sign in to edit your account."
     },

@@ -63,10 +63,19 @@ export async function performProfileUpdate(
     return;
   }
 
-  let updated = { ...currentUser, name: saved.name, iconUrl: normalized.iconUrl };
+  // iconUrl は呼び出し開始時点のローカル値ではなく、PATCH 応答の値を信頼する。
+  // 他端末での変更が backend に反映済みなら、その値で上書きしてしまわないようにする。
+  let updated = { ...currentUser, name: saved.name, iconUrl: saved.iconUrl };
   await applyUpdatedUser(updated, deps.persistedUserStore);
 
   if (normalized.newIconUri) {
+    // 直前の永続化待ち（await）の間にログアウト・別ユーザーでの再ログインが
+    // 起きていないか、アップロード直前にも確認する。確認せずに呼ぶと、前の
+    // 利用者が選んだ画像を新しいセッションの認証情報でアップロードしてしまう。
+    if (!isSessionStillCurrent(generation, currentUser.id)) {
+      return;
+    }
+
     const uploaded = await deps.userGateway.uploadMyIcon(normalized.newIconUri);
 
     if (!isSessionStillCurrent(generation, currentUser.id)) {

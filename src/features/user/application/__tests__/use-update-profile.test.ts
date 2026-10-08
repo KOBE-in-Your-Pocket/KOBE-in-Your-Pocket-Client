@@ -20,10 +20,12 @@ describe('performProfileUpdate', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     updatePersistedUser.mockResolvedValue(undefined);
-    updateCurrentUser.mockImplementation(async (request: { name?: string }) => ({
+    // 実際の backend と同じく、iconUrl は明示的な未設定指示（空文字）のときだけ変わり、
+    // それ以外は PATCH 時点でサーバーが保持している値をそのまま返す。
+    updateCurrentUser.mockImplementation(async (request: { name?: string; iconUrl?: string }) => ({
       id: 'user-1',
       name: request.name ?? USER.name,
-      iconUrl: USER.iconUrl,
+      iconUrl: request.iconUrl === '' ? '' : (useAuthStore.getState().currentUser?.iconUrl ?? ''),
     }));
     uploadMyIcon.mockResolvedValue({ id: 'user-1', name: USER.name, iconUrl: UPLOADED_ICON_URL });
     useAuthStore.setState({
@@ -72,6 +74,33 @@ describe('performProfileUpdate', () => {
     const updated = { id: 'user-1', name: '新しい名前', iconUrl: UPLOADED_ICON_URL };
     expect(useAuthStore.getState().currentUser).toEqual(updated);
     expect(updatePersistedUser).toHaveBeenCalledWith(updated);
+  });
+
+  it('PATCH 応答の iconUrl を反映する（他端末での変更をローカルの古い値で上書きしない）', async () => {
+    const OTHER_DEVICE_ICON_URL = 'https://media.example.com/icons/other-device.jpg';
+    updateCurrentUser.mockResolvedValue({
+      id: 'user-1',
+      name: 'Google 太郎',
+      iconUrl: OTHER_DEVICE_ICON_URL,
+    });
+
+    await performProfileUpdate({ name: 'Google 太郎', iconUrl: USER.iconUrl }, deps);
+
+    expect(useAuthStore.getState().currentUser?.iconUrl).toBe(OTHER_DEVICE_ICON_URL);
+  });
+
+  it('表示名の永続化を待つ間にログアウトされていたら、アイコンのアップロードを呼ばない', async () => {
+    updatePersistedUser.mockImplementation(async () => {
+      useAuthStore.getState().logout();
+    });
+
+    await performProfileUpdate(
+      { name: '新しい名前', iconUrl: USER.iconUrl, newIconUri: NEW_ICON_URI },
+      deps,
+    );
+
+    expect(uploadMyIcon).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().currentUser).toBeNull();
   });
 
   it('アイコンのアップロードに失敗しても、すでに成功した表示名の保存は巻き戻さない', async () => {

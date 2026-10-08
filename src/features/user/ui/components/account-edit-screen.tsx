@@ -129,8 +129,6 @@ function AccountEditForm({ currentUser }: { currentUser: PublicUser }) {
       const result = await pickProfileIcon();
       if (result.status === 'picked') {
         setNewIconUri(result.uri);
-      } else if (result.status === 'permissionDenied') {
-        setPickErrorKey('settings.accountEdit.iconPermissionDenied');
       }
     } catch {
       setPickErrorKey('settings.accountEdit.iconPickError');

@@ -144,13 +144,13 @@ describe('AccountEditScreen', () => {
     expect(useAuthStore.getState().currentUser?.iconUrl).toBe(UPLOADED_ICON_URL);
   });
 
-  it('権限が拒否されたら案内文を表示し、アップロードを呼ばない', async () => {
-    mockPickProfileIcon.mockResolvedValue({ status: 'permissionDenied' });
+  it('写真の選択に失敗したらエラー文を表示し、アップロードを呼ばない', async () => {
+    mockPickProfileIcon.mockRejectedValue(new Error('picker failed'));
     renderScreen();
 
     await pressChangeIcon();
 
-    expect(screen.getByText('settings.accountEdit.iconPermissionDenied')).toBeTruthy();
+    expect(screen.getByText('settings.accountEdit.iconPickError')).toBeTruthy();
 
     fireEvent.press(screen.getByRole('button', { name: 'settings.accountEdit.save' }));
     await waitFor(() => expect(router.back).toHaveBeenCalled());
@@ -164,7 +164,7 @@ describe('AccountEditScreen', () => {
 
     await pressChangeIcon();
 
-    expect(screen.queryByText('settings.accountEdit.iconPermissionDenied')).toBeNull();
+    expect(screen.queryByText('settings.accountEdit.iconPickError')).toBeNull();
 
     fireEvent.press(screen.getByRole('button', { name: 'settings.accountEdit.save' }));
     await waitFor(() => expect(router.back).toHaveBeenCalled());

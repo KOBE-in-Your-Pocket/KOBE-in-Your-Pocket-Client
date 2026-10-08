@@ -6,23 +6,17 @@ const ICON_MAX_EDGE_PX = 512;
 /** JPEG 圧縮品質（0〜1）。backend のアイコン専用上限（既定 2MB）を十分下回る大きさにする。 */
 const ICON_JPEG_COMPRESS = 0.8;
 
-export type PickProfileIconResult =
-  | { status: 'picked'; uri: string }
-  | { status: 'canceled' }
-  | { status: 'permissionDenied' };
+export type PickProfileIconResult = { status: 'picked'; uri: string } | { status: 'canceled' };
 
 /**
  * 端末の写真ライブラリからアイコン用の画像を選び、アップロード用に加工する（#546）。
  *
- * 権限拒否・選択キャンセル時は `canceled`/`permissionDenied` を返すだけで、呼び出し側は
+ * SDK 56 の画像選択は事前の権限リクエストを必要としない（必要な場合は
+ * `launchImageLibraryAsync` が内部で処理する）ため、ここでは要求しない。
+ * 選択キャンセル・失敗時は `canceled`/例外を返すだけで、呼び出し側は
  * アップロードを呼ばなければクラッシュしない。
  */
 export async function pickProfileIcon(): Promise<PickProfileIconResult> {
-  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!permission.granted) {
-    return { status: 'permissionDenied' };
-  }
-
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],
     quality: 1,
@@ -36,15 +30,19 @@ export async function pickProfileIcon(): Promise<PickProfileIconResult> {
 }
 
 async function normalizeIconImage(asset: { uri: string; width: number; height: number }) {
-  const longEdge = Math.max(asset.width, asset.height);
-  const scale = longEdge > ICON_MAX_EDGE_PX ? ICON_MAX_EDGE_PX / longEdge : 1;
-
   const context = ImageManipulator.manipulate(asset.uri);
-  if (scale < 1) {
-    context.resize({
-      width: Math.round(asset.width * scale),
-      height: Math.round(asset.height * scale),
-    });
+  const longEdge = Math.max(asset.width, asset.height);
+
+  if (longEdge <= 0) {
+    // 寸法を取得できない場合でも、片辺だけ指定して ImageManipulator に比率計算を
+    // 任せる（手元で両辺を計算すると極端な縦横比で 0px に丸まりうる）。
+    context.resize({ width: ICON_MAX_EDGE_PX });
+  } else if (longEdge > ICON_MAX_EDGE_PX) {
+    if (asset.width >= asset.height) {
+      context.resize({ width: ICON_MAX_EDGE_PX });
+    } else {
+      context.resize({ height: ICON_MAX_EDGE_PX });
+    }
   }
 
   const rendered = await context.renderAsync();

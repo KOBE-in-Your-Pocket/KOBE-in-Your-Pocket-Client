@@ -56,7 +56,6 @@
       "saving": "保存中...",
       "saveError": "无法保存。请稍后再试。",
       "changeIcon": "更换头像",
-      "iconPermissionDenied": "尚未允许访问相册。请在设置中允许访问。",
       "iconPickError": "无法使用该照片，请换一张试试。",
       "notSignedIn": "编辑账户前请先登录。"
     },
