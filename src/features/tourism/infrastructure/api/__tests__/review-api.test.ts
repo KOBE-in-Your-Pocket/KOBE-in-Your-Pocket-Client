@@ -20,6 +20,14 @@ function response(author: { name: string; id?: string | null; iconUrl?: string |
   };
 }
 
+/** GET の 1 件。POST / PUT と違い `hiddenByReport` を持つ。 */
+function listItem(
+  author: { name: string; id?: string | null; iconUrl?: string | null },
+  hiddenByReport = false,
+) {
+  return { ...response(author), hiddenByReport };
+}
+
 describe('fetchReviews', () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
@@ -36,19 +44,23 @@ describe('fetchReviews', () => {
   });
 
   it('author が name のみのとき id / iconUrl をフォールバック（空文字）で補う', async () => {
-    mockApiFetch.mockResolvedValue([response({ name: '山田 太郎' })]);
+    mockApiFetch.mockResolvedValue([listItem({ name: '山田 太郎' })]);
 
-    const [review] = await fetchReviews('nankinmachi', 'ja');
+    const {
+      reviews: [review],
+    } = await fetchReviews('nankinmachi', 'ja');
 
     expect(review.author).toEqual({ id: '', name: '山田 太郎', iconUrl: '' });
   });
 
   it('backend が id / iconUrl を返す場合はその値をそのまま採用する', async () => {
     mockApiFetch.mockResolvedValue([
-      response({ name: '花子', id: 'user-9', iconUrl: 'https://example.com/a.png' }),
+      listItem({ name: '花子', id: 'user-9', iconUrl: 'https://example.com/a.png' }),
     ]);
 
-    const [review] = await fetchReviews('nankinmachi', 'ja');
+    const {
+      reviews: [review],
+    } = await fetchReviews('nankinmachi', 'ja');
 
     expect(review.author).toEqual({
       id: 'user-9',
@@ -58,17 +70,21 @@ describe('fetchReviews', () => {
   });
 
   it('id / iconUrl が null のときもフォールバックする', async () => {
-    mockApiFetch.mockResolvedValue([response({ name: '次郎', id: null, iconUrl: null })]);
+    mockApiFetch.mockResolvedValue([listItem({ name: '次郎', id: null, iconUrl: null })]);
 
-    const [review] = await fetchReviews('nankinmachi', 'ja');
+    const {
+      reviews: [review],
+    } = await fetchReviews('nankinmachi', 'ja');
 
     expect(review.author).toEqual({ id: '', name: '次郎', iconUrl: '' });
   });
 
   it('author 以外のフィールドは変換せずそのまま保持する', async () => {
-    mockApiFetch.mockResolvedValue([response({ name: '太郎' })]);
+    mockApiFetch.mockResolvedValue([listItem({ name: '太郎' })]);
 
-    const [review] = await fetchReviews('nankinmachi', 'ja');
+    const {
+      reviews: [review],
+    } = await fetchReviews('nankinmachi', 'ja');
 
     expect(review).toMatchObject({
       id: 'r1',
@@ -77,6 +93,37 @@ describe('fetchReviews', () => {
       postedAt: '2025-05-01T00:00:00.000Z',
       language: 'ja',
     });
+  });
+
+  it('通報が承認された口コミ（hiddenByReport: true）は reviews から外し、ID だけ返す', async () => {
+    mockApiFetch.mockResolvedValue([
+      { ...listItem({ name: '太郎' }), id: 'visible' },
+      { ...listItem({ name: '次郎' }, true), id: 'hidden' },
+    ]);
+
+    const { reviews, hiddenReviewIds } = await fetchReviews('nankinmachi', 'ja');
+
+    expect(reviews.map((r) => r.id)).toEqual(['visible']);
+    expect(hiddenReviewIds).toEqual(['hidden']);
+  });
+
+  it('hiddenByReport キーが無い（古い Backend）レビューは表示する', async () => {
+    mockApiFetch.mockResolvedValue([response({ name: '太郎' })]);
+
+    const { reviews, hiddenReviewIds } = await fetchReviews('nankinmachi', 'ja');
+
+    expect(reviews.map((r) => r.id)).toEqual(['r1']);
+    expect(hiddenReviewIds).toEqual([]);
+  });
+
+  it('hiddenByReport を Review に持ち込まない', async () => {
+    mockApiFetch.mockResolvedValue([listItem({ name: '太郎' })]);
+
+    const {
+      reviews: [review],
+    } = await fetchReviews('nankinmachi', 'ja');
+
+    expect(review).not.toHaveProperty('hiddenByReport');
   });
 });
 
