@@ -38,4 +38,11 @@ describe('mergeReviews', () => {
 
     expect(mergeReviews(seed, [edited])[0].comment).toBe('編集後');
   });
+
+  it('hiddenReviewIds のレビューは submitted（本人の投稿）にあっても除く', () => {
+    const own = review('own-1', '2026-09-04T00:00:00.000Z');
+    const seed = [review('a', '2025-01-01T00:00:00.000Z')];
+
+    expect(mergeReviews(seed, [own], ['own-1']).map((r) => r.id)).toEqual(['a']);
+  });
 });
