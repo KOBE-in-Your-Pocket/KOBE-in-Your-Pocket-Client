@@ -131,6 +131,9 @@ function AccountEditForm({ currentUser }: { currentUser: PublicUser }) {
         setNewIconUri(result.uri);
       }
     } catch {
+      // 以前に選んだ画像が残っていると、エラー表示のまま保存したときに
+      // 無関係な古い画像がアップロードされてしまう。
+      setNewIconUri(undefined);
       setPickErrorKey('settings.accountEdit.iconPickError');
     } finally {
       setPicking(false);

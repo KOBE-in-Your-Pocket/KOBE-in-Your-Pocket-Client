@@ -59,14 +59,25 @@ export async function updateCurrentUser(request: ProfileUpdateRequest): Promise<
 export async function uploadMyIcon(localUri: string): Promise<PublicUser> {
   // Expo SDK 56 の fetch/FormData は RN 流の {uri, name, type} を受け付けず、
   // Blob 実装（expo-file-system の File）のみサポートする。
+  const file = new File(localUri);
   const formData = new FormData();
-  formData.append('file', new File(localUri));
+  formData.append('file', file);
 
   const response = await apiFetch<PublicUserResponse>('/api/v1/users/me/icon', {
     method: 'POST',
     body: formData,
     auth: true,
   });
+
+  // アップロード済みの加工済みファイルはもう不要。失敗してもキャッシュに
+  // 残るだけなので、アップロード自体の成否には影響させない。
+  try {
+    if (file.exists) {
+      file.delete();
+    }
+  } catch {
+    // 掃除に失敗しても無視する。
+  }
 
   return toPublicUser(response);
 }

@@ -1,3 +1,4 @@
+import { File } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -47,5 +48,21 @@ async function normalizeIconImage(asset: { uri: string; width: number; height: n
 
   const rendered = await context.renderAsync();
   const saved = await rendered.saveAsync({ format: SaveFormat.JPEG, compress: ICON_JPEG_COMPRESS });
+
+  // 縮小・再エンコード後は選択直後の元画像（フルサイズ）が不要になる。削除に
+  // 失敗してもキャッシュに残るだけなので、選択自体は成功として扱う。
+  deleteLocalFileQuietly(asset.uri);
+
   return saved.uri;
+}
+
+function deleteLocalFileQuietly(uri: string): void {
+  try {
+    const file = new File(uri);
+    if (file.exists) {
+      file.delete();
+    }
+  } catch {
+    // キャッシュの掃除に失敗しても選択フロー自体は継続する。
+  }
 }

@@ -8,8 +8,13 @@ jest.mock('@/shared/lib/api', () => ({
   apiFetch: jest.fn(),
 }));
 
+const mockDelete = jest.fn();
 jest.mock('expo-file-system', () => ({
-  File: jest.fn().mockImplementation((uri: string) => ({ uri })),
+  File: jest.fn().mockImplementation((uri: string) => ({
+    uri,
+    exists: true,
+    delete: () => mockDelete(uri),
+  })),
 }));
 
 const mockApiFetch = jest.mocked(apiFetch);
@@ -94,6 +99,7 @@ describe('updateCurrentUser', () => {
 describe('uploadMyIcon', () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
+    mockDelete.mockReset();
   });
 
   it('認証付きで POST /users/me/icon に FormData の file フィールドで送る', async () => {
@@ -127,6 +133,22 @@ describe('uploadMyIcon', () => {
       name: '荒川蓮',
       iconUrl: 'https://example.com/icon.jpg',
     });
+  });
+
+  it('アップロード成功後、ローカルの加工済みファイルを削除する', async () => {
+    mockApiFetch.mockResolvedValue({ id: 'user-1', name: '荒川蓮', iconUrl: null });
+
+    await uploadMyIcon('file:///tmp/icon.jpg');
+
+    expect(mockDelete).toHaveBeenCalledWith('file:///tmp/icon.jpg');
+  });
+
+  it('アップロードに失敗したらローカルファイルは削除しない（再送で使えるように残す）', async () => {
+    mockApiFetch.mockRejectedValue(new Error('network error'));
+
+    await expect(uploadMyIcon('file:///tmp/icon.jpg')).rejects.toThrow('network error');
+
+    expect(mockDelete).not.toHaveBeenCalled();
   });
 });
 

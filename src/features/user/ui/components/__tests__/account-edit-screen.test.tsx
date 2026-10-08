@@ -144,6 +144,24 @@ describe('AccountEditScreen', () => {
     expect(useAuthStore.getState().currentUser?.iconUrl).toBe(UPLOADED_ICON_URL);
   });
 
+  it('一度写真を選んだ後に選び直しが失敗したら、前に選んだ写真を使わず保存する', async () => {
+    mockPickProfileIcon.mockResolvedValueOnce({ status: 'picked', uri: NEW_ICON_URI });
+    renderScreen();
+    fireEvent.press(screen.getByLabelText('settings.accountEdit.changeIcon'));
+    await waitFor(() => expect(mockPickProfileIcon).toHaveBeenCalledTimes(1));
+
+    mockPickProfileIcon.mockRejectedValueOnce(new Error('picker failed'));
+    fireEvent.press(screen.getByLabelText('settings.accountEdit.changeIcon'));
+    await waitFor(() => expect(mockPickProfileIcon).toHaveBeenCalledTimes(2));
+
+    expect(screen.getByText('settings.accountEdit.iconPickError')).toBeTruthy();
+
+    fireEvent.press(screen.getByRole('button', { name: 'settings.accountEdit.save' }));
+    await waitFor(() => expect(router.back).toHaveBeenCalled());
+    expect(mockUploadMyIcon).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().currentUser?.iconUrl).toBe(USER.iconUrl);
+  });
+
   it('写真の選択に失敗したらエラー文を表示し、アップロードを呼ばない', async () => {
     mockPickProfileIcon.mockRejectedValue(new Error('picker failed'));
     renderScreen();

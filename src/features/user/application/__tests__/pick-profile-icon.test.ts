@@ -1,3 +1,4 @@
+import { File } from 'expo-file-system';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -12,8 +13,18 @@ jest.mock('expo-image-manipulator', () => ({
   SaveFormat: { JPEG: 'jpeg' },
 }));
 
+const mockDelete = jest.fn();
+jest.mock('expo-file-system', () => ({
+  File: jest.fn().mockImplementation((uri: string) => ({
+    uri,
+    exists: true,
+    delete: () => mockDelete(uri),
+  })),
+}));
+
 const mockLaunchLibrary = jest.mocked(ImagePicker.launchImageLibraryAsync);
 const mockManipulate = jest.mocked(ImageManipulator.manipulate);
+const mockFile = jest.mocked(File);
 
 function assetOf(width: number, height: number, uri = 'file:///tmp/original.jpg') {
   return { uri, width, height };
@@ -102,5 +113,18 @@ describe('pickProfileIcon', () => {
       uri: 'file:///tmp/processed.jpg',
     });
     expect(resize).toHaveBeenCalledWith({ width: 512 });
+  });
+
+  it('加工が終わったら、選択直後の元画像（フルサイズ）を削除する', async () => {
+    mockLaunchLibrary.mockResolvedValue({
+      canceled: false,
+      assets: [assetOf(2000, 1000, 'file:///tmp/picker-original.jpg')],
+    } as never);
+    mockManipulateContext('file:///tmp/processed.jpg');
+
+    await pickProfileIcon();
+
+    expect(mockFile).toHaveBeenCalledWith('file:///tmp/picker-original.jpg');
+    expect(mockDelete).toHaveBeenCalledWith('file:///tmp/picker-original.jpg');
   });
 });
