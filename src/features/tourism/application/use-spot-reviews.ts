@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { useCurrentUser } from '@/features/user/application/use-current-user';
+import type { PublicUser } from '@/features/user/domain/public-user';
 import { resolveLanguage } from '@/shared/lib/i18n';
 
 import { fetchReviews, type SpotReviews } from '../infrastructure/api/review-api';
@@ -46,6 +48,31 @@ export function mergeReviews(
   return [...byId.values()].sort((a, b) => b.postedAt.localeCompare(a.postedAt));
 }
 
+/**
+ * 自分が投稿したレビュー（`author.id` が一致するもの）の表示名・アイコンを、保存済みの
+ * 値ではなく今のプロフィール（`currentUser`）に差し替える（#547）。
+ *
+ * サーバーは投稿時点の表示名・アイコンをスナップショットとして保持し、プロフィール変更後も
+ * 更新しないため、保存値のままだと自分の画面にも古い表示名・アイコンが残り続ける。
+ * 描画時にここで差し替えることで、ストアを書き換えずに済み、再起動後も自分の端末では
+ * 常に最新の表示名・アイコンが見える。他人の端末からの見え方は直せない（サーバー側の対応が必要）。
+ */
+export function applyCurrentUserAuthorInfo(
+  reviews: Review[],
+  currentUser: PublicUser | null,
+): Review[] {
+  if (!currentUser) return reviews;
+
+  return reviews.map((review) =>
+    review.author.id !== '' && review.author.id === currentUser.id
+      ? {
+          ...review,
+          author: { ...review.author, name: currentUser.name, iconUrl: currentUser.iconUrl },
+        }
+      : review,
+  );
+}
+
 export function useSpotReviews(spotId: string | null | undefined) {
   const { i18n } = useTranslation();
   const language = resolveLanguage(i18n.language);
@@ -60,14 +87,19 @@ export function useSpotReviews(spotId: string | null | undefined) {
     spotId ? (state.submittedReviews[spotId] ?? EMPTY_REVIEWS) : EMPTY_REVIEWS,
   );
 
+  const currentUser = useCurrentUser();
+
   const data = useMemo(
     () =>
-      mergeReviews(
-        seedQuery.data?.reviews ?? EMPTY_REVIEWS,
-        submitted,
-        seedQuery.data?.hiddenReviewIds,
+      applyCurrentUserAuthorInfo(
+        mergeReviews(
+          seedQuery.data?.reviews ?? EMPTY_REVIEWS,
+          submitted,
+          seedQuery.data?.hiddenReviewIds,
+        ),
+        currentUser,
       ),
-    [seedQuery.data, submitted],
+    [seedQuery.data, submitted, currentUser],
   );
 
   return {

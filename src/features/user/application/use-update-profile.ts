@@ -1,7 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
 
-import { useReviewStore } from '@/features/tourism/store/use-review-store';
-
 import type { PersistedUserStore, UserGateway } from '../domain/auth-ports';
 import {
   normalizeProfileEdits,
@@ -31,9 +29,6 @@ type UpdateProfileDeps = {
  * ストア・永続化へ反映する。アイコンのアップロードはその後に失敗しうるが、
  * その場合も表示名の反映は巻き戻さない（backend 側はすでに新しい表示名を
  * 保持しており、反映しないと次回の fetchCurrentUser で無言で値が変わってしまう）。
- *
- * 合わせて、自分が投稿済みのレビュー（useReviewStore の submittedReviews）の
- * author.name / author.iconUrl もその場で書き換える（#516 暫定対応）。
  */
 export async function performProfileUpdate(
   edits: ProfileEdits,
@@ -100,10 +95,6 @@ async function applyUpdatedUser(
   persistedUserStore: PersistedUserStore,
 ): Promise<void> {
   useAuthStore.getState().updateCurrentUser(updated);
-  useReviewStore.getState().updateAuthorInfo(updated.id, {
-    name: updated.name,
-    iconUrl: updated.iconUrl,
-  });
 
   try {
     // 進行中のサインイン・復元・ログアウトの書き込みと交錯して古いセッションが

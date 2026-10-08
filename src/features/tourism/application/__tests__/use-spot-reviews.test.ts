@@ -1,13 +1,15 @@
-import { mergeReviews } from '../use-spot-reviews';
+import type { PublicUser } from '@/features/user/domain/public-user';
+
+import { applyCurrentUserAuthorInfo, mergeReviews } from '../use-spot-reviews';
 
 import type { Review } from '../../domain/review';
 
-function review(id: string, postedAt: string): Review {
+function review(id: string, postedAt: string, author?: Partial<Review['author']>): Review {
   return {
     id,
     rating: { value: 5 },
     comment: id,
-    author: { id: 'author-n', name: 'n', iconUrl: 'https://example.com/a.png' },
+    author: { id: 'author-n', name: 'n', iconUrl: 'https://example.com/a.png', ...author },
     postedAt,
     language: 'ja',
   };
@@ -44,5 +46,54 @@ describe('mergeReviews', () => {
     const seed = [review('a', '2025-01-01T00:00:00.000Z')];
 
     expect(mergeReviews(seed, [own], ['own-1']).map((r) => r.id)).toEqual(['a']);
+  });
+});
+
+describe('applyCurrentUserAuthorInfo', () => {
+  const currentUser: PublicUser = {
+    id: 'user-1',
+    name: '新しい名前',
+    iconUrl: 'https://example.com/new.png',
+  };
+
+  it('自分（author.id 一致）のレビューは今のプロフィールの name / iconUrl に差し替わる', () => {
+    const own = review('r1', '2026-09-04T00:00:00.000Z', {
+      id: 'user-1',
+      name: '古い名前',
+      iconUrl: 'https://example.com/old.png',
+    });
+
+    const [result] = applyCurrentUserAuthorInfo([own], currentUser);
+
+    expect(result.author).toEqual({
+      id: 'user-1',
+      name: '新しい名前',
+      iconUrl: 'https://example.com/new.png',
+    });
+  });
+
+  it('他人のレビューは変わらない', () => {
+    const other = review('r1', '2026-09-04T00:00:00.000Z');
+
+    const [result] = applyCurrentUserAuthorInfo([other], currentUser);
+
+    expect(result.author).toEqual(other.author);
+  });
+
+  it('未ログイン（currentUser が null）なら何も変えない', () => {
+    const own = review('r1', '2026-09-04T00:00:00.000Z', { id: 'user-1' });
+
+    const [result] = applyCurrentUserAuthorInfo([own], null);
+
+    expect(result.author).toEqual(own.author);
+  });
+
+  it('author.id が空文字（V17 以前の投稿）は差し替えない', () => {
+    const legacy = review('r1', '2026-09-04T00:00:00.000Z', { id: '' });
+    const anonymousUser: PublicUser = { id: '', name: '匿名', iconUrl: '' };
+
+    const [result] = applyCurrentUserAuthorInfo([legacy], anonymousUser);
+
+    expect(result.author).toEqual(legacy.author);
   });
 });
