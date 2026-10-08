@@ -1,9 +1,9 @@
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useFilteredSpots } from '../../application/use-filtered-spots';
@@ -140,8 +140,19 @@ export function SpotList({
   showHeader?: boolean;
 }) {
   const { t } = useTranslation();
-  const { data: spots, isPending, isError } = useFilteredSpots();
+  const { data: spots, isPending, isError, refetch } = useFilteredSpots();
   const { coords } = useCurrentLocation();
+  // 背景の再取得ではくるくるを出さず、引っ張って更新したときだけ出す。
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetch]);
 
   const renderListHeader = useCallback(
     () => <ListHeader showGenreFilter={showGenreFilter} />,
@@ -189,6 +200,7 @@ export function SpotList({
       renderItem={({ item }) => <SpotListItem spot={item} />}
       ListHeaderComponent={showHeader ? renderListHeader : undefined}
       contentContainerStyle={styles.listContent}
+      refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
     />
   );
 }

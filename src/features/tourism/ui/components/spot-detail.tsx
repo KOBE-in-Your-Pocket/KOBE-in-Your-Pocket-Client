@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Modal,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -394,8 +395,13 @@ const dropdownStyles = StyleSheet.create({
 export function SpotDetailContent({ spot }: { spot: Spot }) {
   const theme = useTheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const { coords } = useCurrentLocation();
-  const { data: reviews, isPending: isReviewsPending } = useSpotReviews(spot.id);
+  const {
+    data: reviews,
+    isPending: isReviewsPending,
+    refetch: refetchReviews,
+  } = useSpotReviews(spot.id);
   const [reviewLang, setReviewLang] = useState<ReviewLangFilter>('all');
   const currentUser = useCurrentUser();
   const isAdult = useIsAdult();
@@ -405,6 +411,17 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
   const reportedReviewIds = useReportedReviewIds(currentUser?.id);
   const [signInVisible, setSignInVisible] = useState(false);
   const [reportNotice, setReportNotice] = useState<ReportOutcome | null>(null);
+  // 背景の再取得ではくるくるを出さず、引っ張って更新したときだけ出す。
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await refetchReviews();
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetchReviews]);
 
   const handleOpenDirections = useCallback(() => {
     confirmOpenDirections(t, spot.coordinates, { origin: coords });
@@ -416,7 +433,17 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
 
   return (
     <>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          // 画面最上部から始まるため、そのままだとくるくるがステータスバー（Dynamic Island）の裏に隠れる。
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={handleRefresh}
+            progressViewOffset={insets.top}
+          />
+        }
+      >
         <View style={styles.hero}>
           <Image
             source={{ uri: spot.media.imageUrl }}

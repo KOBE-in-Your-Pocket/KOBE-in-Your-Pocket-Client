@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import { resolveLanguage } from '@/shared/lib/i18n';
 
-import { fetchReviews } from '../infrastructure/api/review-api';
+import { fetchReviews, type SpotReviews } from '../infrastructure/api/review-api';
 import { useReviewStore } from '../store/use-review-store';
 
 import type { Review } from '../domain/review';
@@ -23,14 +23,24 @@ const EMPTY_REVIEWS: Review[] = [];
  * 再取得後は seed と submitted に同じ ID が並ぶ。ID で重複を排除しないと React の
  * 一覧が同じ key を 2 つ持つことになるので、Map でまとめて submitted を優先する
  * （編集直後は submitted 側が新しい内容を持つ）。
+ *
+ * `hiddenReviewIds`（通報が運営に承認されたレビュー）は submitted 側にあっても除く。
  */
-export function mergeReviews(seed: Review[], submitted: Review[]): Review[] {
+export function mergeReviews(
+  seed: Review[],
+  submitted: Review[],
+  hiddenReviewIds: readonly string[] = [],
+): Review[] {
   const byId = new Map<string, Review>();
   for (const item of seed) {
     byId.set(item.id, item);
   }
   for (const item of submitted) {
     byId.set(item.id, item);
+  }
+  // 運営が通報を承認したレビューは、端末内に残る本人の投稿分でも出さない（#583）。
+  for (const id of hiddenReviewIds) {
+    byId.delete(id);
   }
 
   return [...byId.values()].sort((a, b) => b.postedAt.localeCompare(a.postedAt));
@@ -40,7 +50,7 @@ export function useSpotReviews(spotId: string | null | undefined) {
   const { i18n } = useTranslation();
   const language = resolveLanguage(i18n.language);
 
-  const seedQuery = useQuery<Review[]>({
+  const seedQuery = useQuery<SpotReviews>({
     queryKey: [...SPOT_REVIEWS_QUERY_KEY, spotId, language],
     enabled: Boolean(spotId),
     queryFn: () => fetchReviews(spotId as string, language),
@@ -51,9 +61,19 @@ export function useSpotReviews(spotId: string | null | undefined) {
   );
 
   const data = useMemo(
-    () => mergeReviews(seedQuery.data ?? EMPTY_REVIEWS, submitted),
+    () =>
+      mergeReviews(
+        seedQuery.data?.reviews ?? EMPTY_REVIEWS,
+        submitted,
+        seedQuery.data?.hiddenReviewIds,
+      ),
     [seedQuery.data, submitted],
   );
 
-  return { data, isPending: seedQuery.isPending, isError: seedQuery.isError };
+  return {
+    data,
+    isPending: seedQuery.isPending,
+    isError: seedQuery.isError,
+    refetch: seedQuery.refetch,
+  };
 }

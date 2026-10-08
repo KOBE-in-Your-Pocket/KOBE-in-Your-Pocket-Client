@@ -15,6 +15,19 @@ type ReviewResponse = Omit<Review, 'author'> & {
   author: ReviewAuthorResponse;
 };
 
+/** GET の 1 件。POST / PUT の応答には `hiddenByReport` が載らない。 */
+type ReviewListItemResponse = ReviewResponse & {
+  /** 通報が運営に承認された口コミか。true ならアプリ全体で表示しない。古い Backend ではキーが無い。 */
+  hiddenByReport?: boolean;
+};
+
+/** スポットのレビュー取得結果。非表示のレビューは本文を持ち出さず、ID だけ返す。 */
+export type SpotReviews = {
+  reviews: Review[];
+  /** 通報が運営に承認されたレビューの ID。端末内に残る本人の投稿からも除くために使う。 */
+  hiddenReviewIds: string[];
+};
+
 // id は実ユーザーと衝突しない空文字、iconUrl は空文字で UserAvatar のプレースホルダ表示に委ねる。
 const FALLBACK_AUTHOR_ID = '';
 const FALLBACK_AUTHOR_ICON_URL = '';
@@ -30,14 +43,30 @@ function toReview(dto: ReviewResponse): Review {
   };
 }
 
-/** `GET /api/v1/tourism/spots/:spotId/reviews`。該当スポットにレビューが無ければ空配列。 */
-export async function fetchReviews(spotId: string, language: SupportedLanguage): Promise<Review[]> {
-  const response = await apiFetch<ReviewResponse[]>(
+/**
+ * `GET /api/v1/tourism/spots/:spotId/reviews`。該当スポットにレビューが無ければ空配列。
+ * 通報が承認された口コミ（`hiddenByReport`）は `reviews` から外し、ID だけを返す。
+ */
+export async function fetchReviews(
+  spotId: string,
+  language: SupportedLanguage,
+): Promise<SpotReviews> {
+  const response = await apiFetch<ReviewListItemResponse[]>(
     `/api/v1/tourism/spots/${encodeURIComponent(spotId)}/reviews`,
     { query: { lang: language } },
   );
 
-  return response.map(toReview);
+  const reviews: Review[] = [];
+  const hiddenReviewIds: string[] = [];
+  for (const { hiddenByReport, ...dto } of response) {
+    if (hiddenByReport) {
+      hiddenReviewIds.push(dto.id);
+    } else {
+      reviews.push(toReview(dto));
+    }
+  }
+
+  return { reviews, hiddenReviewIds };
 }
 
 export type ReviewInput = {
