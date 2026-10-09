@@ -397,13 +397,13 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { coords } = useCurrentLocation();
+  const currentUser = useCurrentUser();
   const {
     data: reviews,
     isPending: isReviewsPending,
     refetch: refetchReviews,
-  } = useSpotReviews(spot.id);
+  } = useSpotReviews(spot.id, currentUser);
   const [reviewLang, setReviewLang] = useState<ReviewLangFilter>('all');
-  const currentUser = useCurrentUser();
   const isAdult = useIsAdult();
   const updateReview = useUpdateReview(spot.id);
   const deleteReview = useDeleteReview(spot.id);

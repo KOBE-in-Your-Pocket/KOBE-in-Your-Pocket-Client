@@ -2,8 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { useCurrentUser } from '@/features/user/application/use-current-user';
-import type { PublicUser } from '@/features/user/domain/public-user';
 import { resolveLanguage } from '@/shared/lib/i18n';
 
 import { fetchReviews, type SpotReviews } from '../infrastructure/api/review-api';
@@ -49,17 +47,13 @@ export function mergeReviews(
 }
 
 /**
- * 自分が投稿したレビュー（`author.id` が一致するもの）の表示名・アイコンを、保存済みの
- * 値ではなく今のプロフィール（`currentUser`）に差し替える（#547）。
- *
- * サーバーは投稿時点の表示名・アイコンをスナップショットとして保持し、プロフィール変更後も
- * 更新しないため、保存値のままだと自分の画面にも古い表示名・アイコンが残り続ける。
- * 描画時にここで差し替えることで、ストアを書き換えずに済み、再起動後も自分の端末では
- * 常に最新の表示名・アイコンが見える。他人の端末からの見え方は直せない（サーバー側の対応が必要）。
+ * サーバーは投稿時点の表示名・アイコンをスナップショットのまま保持し、プロフィール変更後も
+ * 更新しない（#547）。自分（`author.id` 一致）のレビューだけ、保存値ではなく今の
+ * `currentUser` の name / iconUrl を使う。他人の端末からの見え方は直せない。
  */
 export function applyCurrentUserAuthorInfo(
   reviews: Review[],
-  currentUser: PublicUser | null,
+  currentUser: Review['author'] | null,
 ): Review[] {
   if (!currentUser) return reviews;
 
@@ -73,7 +67,10 @@ export function applyCurrentUserAuthorInfo(
   );
 }
 
-export function useSpotReviews(spotId: string | null | undefined) {
+export function useSpotReviews(
+  spotId: string | null | undefined,
+  currentUser: Review['author'] | null,
+) {
   const { i18n } = useTranslation();
   const language = resolveLanguage(i18n.language);
 
@@ -87,19 +84,19 @@ export function useSpotReviews(spotId: string | null | undefined) {
     spotId ? (state.submittedReviews[spotId] ?? EMPTY_REVIEWS) : EMPTY_REVIEWS,
   );
 
-  const currentUser = useCurrentUser();
+  const merged = useMemo(
+    () =>
+      mergeReviews(
+        seedQuery.data?.reviews ?? EMPTY_REVIEWS,
+        submitted,
+        seedQuery.data?.hiddenReviewIds,
+      ),
+    [seedQuery.data, submitted],
+  );
 
   const data = useMemo(
-    () =>
-      applyCurrentUserAuthorInfo(
-        mergeReviews(
-          seedQuery.data?.reviews ?? EMPTY_REVIEWS,
-          submitted,
-          seedQuery.data?.hiddenReviewIds,
-        ),
-        currentUser,
-      ),
-    [seedQuery.data, submitted, currentUser],
+    () => applyCurrentUserAuthorInfo(merged, currentUser),
+    [merged, currentUser],
   );
 
   return {
