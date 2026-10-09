@@ -37,7 +37,7 @@ const mockDeleteReviewAsync = jest.fn();
 const mockReportReviewAsync = jest.fn();
 
 jest.mock('../../../application/use-spot-reviews', () => ({
-  useSpotReviews: (spotId: string) => mockUseSpotReviews(spotId),
+  useSpotReviews: (spotId: string, currentUser: unknown) => mockUseSpotReviews(spotId, currentUser),
 }));
 
 jest.mock('../../../application/use-update-review', () => ({
@@ -246,6 +246,12 @@ describe('SpotDetailContent', () => {
     expect(mockSpotMannerSection).toHaveBeenCalledWith({ spotId: 'nankinmachi' });
     expect(screen.getByText(mockSpot.name)).toBeTruthy();
     expect(screen.getByText('review-form:nankinmachi')).toBeTruthy();
+  });
+
+  it('useSpotReviews に現在ユーザーを渡す（#547: 自分のレビュー表示の最新化に使う）', () => {
+    render(<SpotDetailContent spot={mockSpot} />);
+
+    expect(mockUseSpotReviews).toHaveBeenCalledWith('nankinmachi', { name: 'test-user' });
   });
 
   describe('自分のレビューの編集', () => {

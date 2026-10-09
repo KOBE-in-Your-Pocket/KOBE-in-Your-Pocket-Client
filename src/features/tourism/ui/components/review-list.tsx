@@ -10,7 +10,7 @@ import type { Review } from '../../domain/review';
 
 import { ReviewForm } from './review-form';
 
-import { UserAvatar } from '@/features/user';
+import { useCurrentUser, UserAvatar } from '@/features/user';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
 const MAX_RATING = 5;
@@ -66,7 +66,8 @@ function ReviewItem({ review }: { review: Review }) {
 
 export function ReviewList({ spotId }: { spotId: string }) {
   const { t } = useTranslation();
-  const { data: reviews, isPending, isError } = useSpotReviews(spotId);
+  const currentUser = useCurrentUser();
+  const { data: reviews, isPending, isError } = useSpotReviews(spotId, currentUser);
 
   return (
     <View style={styles.container}>

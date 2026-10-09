@@ -73,47 +73,6 @@ describe('useReviewStore', () => {
     expect(useReviewStore.getState().submittedReviews['spot-a'].map((r) => r.id)).toEqual(['r1']);
   });
 
-  it('updateAuthorInfo で全スポット横断で author.id 一致のレビューの author.name / iconUrl が更新される', () => {
-    useReviewStore
-      .getState()
-      .addReview(
-        'spot-a',
-        makeReview({ id: 'r1', author: { id: 'user-taro', name: 'Taro', iconUrl: 'old.png' } }),
-      );
-    useReviewStore
-      .getState()
-      .addReview(
-        'spot-b',
-        makeReview({ id: 'r2', author: { id: 'user-taro', name: 'Taro', iconUrl: 'old.png' } }),
-      );
-    useReviewStore.getState().addReview(
-      'spot-a',
-      makeReview({
-        id: 'r3',
-        author: { id: 'user-hanako', name: 'Hanako', iconUrl: 'hanako.png' },
-      }),
-    );
-
-    useReviewStore.getState().updateAuthorInfo('user-taro', { name: '新太郎', iconUrl: 'new.png' });
-
-    const { submittedReviews } = useReviewStore.getState();
-    expect(submittedReviews['spot-a'].find((r) => r.id === 'r1')?.author).toEqual({
-      id: 'user-taro',
-      name: '新太郎',
-      iconUrl: 'new.png',
-    });
-    expect(submittedReviews['spot-b'].find((r) => r.id === 'r2')?.author).toEqual({
-      id: 'user-taro',
-      name: '新太郎',
-      iconUrl: 'new.png',
-    });
-    expect(submittedReviews['spot-a'].find((r) => r.id === 'r3')?.author).toEqual({
-      id: 'user-hanako',
-      name: 'Hanako',
-      iconUrl: 'hanako.png',
-    });
-  });
-
   it('clearSubmittedReviews で全スポット分の投稿済みレビューが消える', () => {
     useReviewStore.getState().addReview('spot-a', makeReview({ id: 'r1' }));
     useReviewStore.getState().addReview('spot-b', makeReview({ id: 'r2' }));

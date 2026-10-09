@@ -46,7 +46,31 @@ export function mergeReviews(
   return [...byId.values()].sort((a, b) => b.postedAt.localeCompare(a.postedAt));
 }
 
-export function useSpotReviews(spotId: string | null | undefined) {
+/**
+ * サーバーは投稿時点の表示名・アイコンをスナップショットのまま保持し、プロフィール変更後も
+ * 更新しない（#547）。自分（`author.id` 一致）のレビューだけ、保存値ではなく今の
+ * `currentUser` の name / iconUrl を使う。他人の端末からの見え方は直せない。
+ */
+export function applyCurrentUserAuthorInfo(
+  reviews: Review[],
+  currentUser: Review['author'] | null,
+): Review[] {
+  if (!currentUser) return reviews;
+
+  return reviews.map((review) =>
+    review.author.id !== '' && review.author.id === currentUser.id
+      ? {
+          ...review,
+          author: { ...review.author, name: currentUser.name, iconUrl: currentUser.iconUrl },
+        }
+      : review,
+  );
+}
+
+export function useSpotReviews(
+  spotId: string | null | undefined,
+  currentUser: Review['author'] | null,
+) {
   const { i18n } = useTranslation();
   const language = resolveLanguage(i18n.language);
 
@@ -60,7 +84,7 @@ export function useSpotReviews(spotId: string | null | undefined) {
     spotId ? (state.submittedReviews[spotId] ?? EMPTY_REVIEWS) : EMPTY_REVIEWS,
   );
 
-  const data = useMemo(
+  const merged = useMemo(
     () =>
       mergeReviews(
         seedQuery.data?.reviews ?? EMPTY_REVIEWS,
@@ -68,6 +92,11 @@ export function useSpotReviews(spotId: string | null | undefined) {
         seedQuery.data?.hiddenReviewIds,
       ),
     [seedQuery.data, submitted],
+  );
+
+  const data = useMemo(
+    () => applyCurrentUserAuthorInfo(merged, currentUser),
+    [merged, currentUser],
   );
 
   return {
