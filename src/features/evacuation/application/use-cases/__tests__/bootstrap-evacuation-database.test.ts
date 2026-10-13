@@ -28,6 +28,11 @@ jest.mock('../../../infrastructure/storage/shelter-language-storage', () => ({
   setLastSeededShelterLanguage: jest.fn(),
 }));
 
+jest.mock('../../../infrastructure/storage/shelter-seed-version-storage', () => ({
+  getLastSeededShelterVersion: jest.fn(),
+  setLastSeededShelterVersion: jest.fn(),
+}));
+
 jest.mock('../../../infrastructure/storage/shelter-dataset-metadata-storage', () => ({
   setShelterDatasetMetadata: jest.fn(),
 }));

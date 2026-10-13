@@ -1,0 +1,1 @@
+ALTER TABLE `evacuation_shelters` ADD `phone_number` text;

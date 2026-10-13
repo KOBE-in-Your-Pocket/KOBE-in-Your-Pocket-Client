@@ -13,6 +13,7 @@ const sampleShelter: EvacuationShelter = {
   capacity: 850,
   accessible: true,
   externalUrl: 'https://www.city.kobe.lg.jp/bosai/',
+  phoneNumber: '078-331-8181',
 };
 
 describe('evacuation-shelter-mapper', () => {
@@ -29,6 +30,7 @@ describe('evacuation-shelter-mapper', () => {
       capacity: 850,
       accessible: true,
       externalUrl: 'https://www.city.kobe.lg.jp/bosai/',
+      phoneNumber: '078-331-8181',
     });
   });
 
@@ -46,6 +48,7 @@ describe('evacuation-shelter-mapper', () => {
         capacity: null,
         accessible: true,
         externalUrl: 'https://www.city.kobe.lg.jp/bosai/',
+        phoneNumber: '078-331-8181',
       }),
     ).toEqual({
       ...sampleShelter,
@@ -67,6 +70,7 @@ describe('evacuation-shelter-mapper', () => {
         capacity: null,
         accessible: true,
         externalUrl: null,
+        phoneNumber: '078-331-8181',
       }).capacity,
     ).toBeUndefined();
   });
@@ -85,7 +89,32 @@ describe('evacuation-shelter-mapper', () => {
         capacity: 850,
         accessible: true,
         externalUrl: null,
+        phoneNumber: '078-331-8181',
       }).externalUrl,
+    ).toBeUndefined();
+  });
+
+  it('phoneNumber 未設定は null として保存し、undefined として復元する', () => {
+    const { phoneNumber: _phoneNumber, ...shelterWithoutPhoneNumber } = sampleShelter;
+
+    const record = toEvacuationShelterRecord(shelterWithoutPhoneNumber);
+
+    expect(record.phoneNumber).toBeNull();
+    expect(
+      toEvacuationShelter({
+        id: 'kobe-city-hall',
+        name: '神戸市役所',
+        address: '兵庫県神戸市中央区加納町6丁目5-1',
+        latitude: 34.6909,
+        longitude: 135.1956,
+        type: 'designated',
+        facilityCategory: 'government',
+        imageUrl: 'https://example.com/hall.jpg',
+        capacity: 850,
+        accessible: true,
+        externalUrl: null,
+        phoneNumber: null,
+      }).phoneNumber,
     ).toBeUndefined();
   });
 });

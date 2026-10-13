@@ -16,6 +16,7 @@ export function toEvacuationShelter(record: EvacuationShelterRecord): Evacuation
     media: { imageUrl: record.imageUrl },
     capacity: record.capacity ?? undefined,
     accessible: record.accessible,
+    phoneNumber: record.phoneNumber ?? undefined,
     externalUrl: record.externalUrl ?? undefined,
   };
 }
@@ -33,5 +34,6 @@ export function toEvacuationShelterRecord(shelter: EvacuationShelter): NewEvacua
     capacity: shelter.capacity ?? null,
     accessible: shelter.accessible,
     externalUrl: shelter.externalUrl ?? null,
+    phoneNumber: shelter.phoneNumber ?? null,
   };
 }
