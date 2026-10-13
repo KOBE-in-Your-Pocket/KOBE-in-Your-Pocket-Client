@@ -483,6 +483,19 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
             </ThemedText>
           </View>
 
+          {spot.address.trim() !== '' && (
+            <View style={styles.hoursRow} testID="spot-address-row">
+              <SymbolView
+                tintColor={theme.textSecondary}
+                name={{ ios: 'mappin', android: 'location_on', web: 'location_on' }}
+                size={14}
+              />
+              <ThemedText type="small" themeColor="textSecondary" style={styles.addressText}>
+                {t('tourism.spotDetail.addressLabel')}: {spot.address}
+              </ThemedText>
+            </View>
+          )}
+
           <ThemedText themeColor="textSecondary" style={styles.description}>
             {spot.description}
           </ThemedText>
