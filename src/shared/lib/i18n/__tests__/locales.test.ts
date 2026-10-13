@@ -14,4 +14,8 @@ describe('locale files', () => {
     expect(locale.map.modeToggle.tourism).toBeTruthy();
     expect(locale.map.modeToggle.evacuation).toBeTruthy();
   });
+
+  it.each(SUPPORTED_LANGUAGES)('%s に避難所カードの電話番号ラベルの翻訳がある', (language) => {
+    expect(LOCALES[language].evacuation.shelterCard.phoneLabel).toBeTruthy();
+  });
 });

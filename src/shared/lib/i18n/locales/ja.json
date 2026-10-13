@@ -196,7 +196,8 @@
     "shelterCard": {
       "detail": "詳細を見る",
       "navigate": "経路案内",
-      "close": "閉じる"
+      "close": "閉じる",
+      "phoneLabel": "電話番号"
     },
     "shelterDetail": {
       "back": "戻る",

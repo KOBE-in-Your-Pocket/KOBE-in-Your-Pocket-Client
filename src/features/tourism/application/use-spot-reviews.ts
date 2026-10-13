@@ -1,8 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-
-import { resolveLanguage } from '@/shared/lib/i18n';
 
 import { fetchReviews, type SpotReviews } from '../infrastructure/api/review-api';
 import { useReviewStore } from '../store/use-review-store';
@@ -71,13 +68,11 @@ export function useSpotReviews(
   spotId: string | null | undefined,
   currentUser: Review['author'] | null,
 ) {
-  const { i18n } = useTranslation();
-  const language = resolveLanguage(i18n.language);
-
+  // レビューは言語横断で全件取得し、言語の絞り込みは UI（ReviewLanguageFilter）に委ねる（#489 / #607）。
   const seedQuery = useQuery<SpotReviews>({
-    queryKey: [...SPOT_REVIEWS_QUERY_KEY, spotId, language],
+    queryKey: [...SPOT_REVIEWS_QUERY_KEY, spotId],
     enabled: Boolean(spotId),
-    queryFn: () => fetchReviews(spotId as string, language),
+    queryFn: () => fetchReviews(spotId as string),
   });
 
   const submitted = useReviewStore((state) =>

@@ -1,4 +1,8 @@
 export { bootstrapEvacuationDatabase } from './application/use-cases/bootstrap-evacuation-database';
+export {
+  filterSheltersWithinRadius,
+  SHELTER_MAP_RADIUS_KM,
+} from './application/use-cases/filter-shelters-within-radius';
 export { reseedEvacuationSheltersIfNeeded } from './application/use-cases/reseed-evacuation-shelters-if-needed';
 export {
   sortSheltersByDistance,

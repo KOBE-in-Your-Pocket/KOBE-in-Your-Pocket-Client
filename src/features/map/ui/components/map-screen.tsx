@@ -2,7 +2,11 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { EvacuationShelterCard, useEvacuationShelters } from '@/features/evacuation';
+import {
+  EvacuationShelterCard,
+  filterSheltersWithinRadius,
+  useEvacuationShelters,
+} from '@/features/evacuation';
 import type { EvacuationShelter } from '@/features/evacuation';
 import type { Spot } from '@/features/tourism';
 import { useSpots } from '@/features/tourism';
@@ -49,12 +53,18 @@ export function MapScreen() {
     setShowServicesModal(false);
   }, []);
 
+  // 現在地から半径 1km 以内の避難所だけを地図に出す（#594）。マーカーと選択解除判定で共有する。
+  const visibleShelters = useMemo(
+    () => filterSheltersWithinRadius(shelters ?? [], coords),
+    [shelters, coords],
+  );
+
   // 地図モードに応じて表示するピンを出し分ける。
   // tourism: 観光名所（useSpots）／evacuation: 避難所（useEvacuationShelters）。
   // mapMode は zustand ストアなので、モード切替で即座に markers が再計算・再描画される。
   const markers = useMemo<MapMarker[]>(() => {
     if (mapMode === 'evacuation') {
-      return (shelters ?? []).map((shelter) => ({
+      return visibleShelters.map((shelter) => ({
         id: shelter.id,
         coordinate: shelter.coordinates,
         title: shelter.name,
@@ -67,7 +77,7 @@ export function MapScreen() {
       coordinate: spot.coordinates,
       title: spot.name,
     }));
-  }, [mapMode, spots, shelters]);
+  }, [mapMode, spots, visibleShelters]);
 
   // 観光地リストの「経路」ボタンから spotId 付きで遷移してきたら、その地点を選択状態にする。
   // render 中に前回適用した spotId と比較して反映する（effect 内 setState を避ける公式パターン）。
@@ -86,6 +96,16 @@ export function MapScreen() {
     setSelectedSpot(null);
   }
   if (mapMode !== 'evacuation' && selectedShelter !== null) {
+    setSelectedShelter(null);
+  }
+
+  // 現在地更新などで選択中の避難所が 1km 圏外（表示対象外）になったら選択を解除する。
+  // 地図にピンが無い避難所をカード・経路が指し続ける不整合を防ぐ（#594）。
+  if (
+    mapMode === 'evacuation' &&
+    selectedShelter !== null &&
+    !visibleShelters.some((shelter) => shelter.id === selectedShelter.id)
+  ) {
     setSelectedShelter(null);
   }
 

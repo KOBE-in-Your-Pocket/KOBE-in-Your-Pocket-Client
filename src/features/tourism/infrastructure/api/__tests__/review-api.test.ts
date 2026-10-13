@@ -33,14 +33,12 @@ describe('fetchReviews', () => {
     mockApiFetch.mockReset();
   });
 
-  it('encodeURIComponent したパスと lang クエリで apiFetch を呼ぶ', async () => {
+  it('encodeURIComponent したパスで、lang クエリを付けずに apiFetch を呼ぶ（言語横断で全件取得）', async () => {
     mockApiFetch.mockResolvedValue([]);
 
-    await fetchReviews('spot/with space', 'en');
+    await fetchReviews('spot/with space');
 
-    expect(mockApiFetch).toHaveBeenCalledWith('/api/v1/tourism/spots/spot%2Fwith%20space/reviews', {
-      query: { lang: 'en' },
-    });
+    expect(mockApiFetch).toHaveBeenCalledWith('/api/v1/tourism/spots/spot%2Fwith%20space/reviews');
   });
 
   it('author が name のみのとき id / iconUrl をフォールバック（空文字）で補う', async () => {
@@ -48,7 +46,7 @@ describe('fetchReviews', () => {
 
     const {
       reviews: [review],
-    } = await fetchReviews('nankinmachi', 'ja');
+    } = await fetchReviews('nankinmachi');
 
     expect(review.author).toEqual({ id: '', name: '山田 太郎', iconUrl: '' });
   });
@@ -60,7 +58,7 @@ describe('fetchReviews', () => {
 
     const {
       reviews: [review],
-    } = await fetchReviews('nankinmachi', 'ja');
+    } = await fetchReviews('nankinmachi');
 
     expect(review.author).toEqual({
       id: 'user-9',
@@ -74,7 +72,7 @@ describe('fetchReviews', () => {
 
     const {
       reviews: [review],
-    } = await fetchReviews('nankinmachi', 'ja');
+    } = await fetchReviews('nankinmachi');
 
     expect(review.author).toEqual({ id: '', name: '次郎', iconUrl: '' });
   });
@@ -84,7 +82,7 @@ describe('fetchReviews', () => {
 
     const {
       reviews: [review],
-    } = await fetchReviews('nankinmachi', 'ja');
+    } = await fetchReviews('nankinmachi');
 
     expect(review).toMatchObject({
       id: 'r1',
@@ -101,7 +99,7 @@ describe('fetchReviews', () => {
       { ...listItem({ name: '次郎' }, true), id: 'hidden' },
     ]);
 
-    const { reviews, hiddenReviewIds } = await fetchReviews('nankinmachi', 'ja');
+    const { reviews, hiddenReviewIds } = await fetchReviews('nankinmachi');
 
     expect(reviews.map((r) => r.id)).toEqual(['visible']);
     expect(hiddenReviewIds).toEqual(['hidden']);
@@ -110,7 +108,7 @@ describe('fetchReviews', () => {
   it('hiddenByReport キーが無い（古い Backend）レビューは表示する', async () => {
     mockApiFetch.mockResolvedValue([response({ name: '太郎' })]);
 
-    const { reviews, hiddenReviewIds } = await fetchReviews('nankinmachi', 'ja');
+    const { reviews, hiddenReviewIds } = await fetchReviews('nankinmachi');
 
     expect(reviews.map((r) => r.id)).toEqual(['r1']);
     expect(hiddenReviewIds).toEqual([]);
@@ -121,7 +119,7 @@ describe('fetchReviews', () => {
 
     const {
       reviews: [review],
-    } = await fetchReviews('nankinmachi', 'ja');
+    } = await fetchReviews('nankinmachi');
 
     expect(review).not.toHaveProperty('hiddenByReport');
   });

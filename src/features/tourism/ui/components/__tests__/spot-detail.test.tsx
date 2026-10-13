@@ -107,7 +107,16 @@ jest.mock('../review-form', () => ({
 }));
 
 jest.mock('../review-language-filter', () => ({
-  ReviewLanguageFilter: () => null,
+  // 言語チップを押すと onChange(value) を呼ぶ最小スタブ（絞り込みの配線を検証するため）。
+  ReviewLanguageFilter: ({ onChange }: { onChange: (v: string) => void }) => (
+    <MockView>
+      {['all', 'ja', 'en', 'zh', 'ko'].map((lang) => (
+        <MockText key={lang} testID={`lang-chip-${lang}`} onPress={() => onChange(lang)}>
+          {lang}
+        </MockText>
+      ))}
+    </MockView>
+  ),
 }));
 
 jest.mock('react-i18next', () => ({
@@ -252,6 +261,76 @@ describe('SpotDetailContent', () => {
     render(<SpotDetailContent spot={mockSpot} />);
 
     expect(mockUseSpotReviews).toHaveBeenCalledWith('nankinmachi', { name: 'test-user' });
+  });
+
+  describe('言語タグでの絞り込み（#607）', () => {
+    const JA_REVIEW = {
+      ...OWN_REVIEW,
+      id: 'r-ja',
+      comment: '日本語のレビュー',
+      language: 'ja' as const,
+    };
+    const EN_REVIEW = {
+      ...OWN_REVIEW,
+      id: 'r-en',
+      comment: 'English review',
+      language: 'en' as const,
+    };
+    const KO_REVIEW = {
+      ...OWN_REVIEW,
+      id: 'r-ko',
+      comment: '한국어 리뷰',
+      language: 'ko' as const,
+    };
+
+    beforeEach(() => {
+      mockUseSpotReviews.mockReturnValue({
+        data: [JA_REVIEW, EN_REVIEW, KO_REVIEW],
+        isPending: false,
+      });
+    });
+
+    it('初期表示（すべて）は全言語のレビューを表示する', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      expect(screen.getByText('日本語のレビュー')).toBeTruthy();
+      expect(screen.getByText('English review')).toBeTruthy();
+      expect(screen.getByText('한국어 리뷰')).toBeTruthy();
+    });
+
+    it('言語タグを選ぶと、その言語のレビューだけを表示する', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      fireEvent.press(screen.getByTestId('lang-chip-en'));
+
+      expect(screen.getByText('English review')).toBeTruthy();
+      expect(screen.queryByText('日本語のレビュー')).toBeNull();
+      expect(screen.queryByText('한국어 리뷰')).toBeNull();
+    });
+
+    it('別の言語タグに切り替えても壊れず、その言語だけになる', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      fireEvent.press(screen.getByTestId('lang-chip-en'));
+      fireEvent.press(screen.getByTestId('lang-chip-ko'));
+
+      expect(screen.getByText('한국어 리뷰')).toBeTruthy();
+      expect(screen.queryByText('English review')).toBeNull();
+      expect(screen.queryByText('日本語のレビュー')).toBeNull();
+    });
+
+    it('「すべて」に戻すと再び全言語を表示する', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      fireEvent.press(screen.getByTestId('lang-chip-ja'));
+      expect(screen.queryByText('English review')).toBeNull();
+
+      fireEvent.press(screen.getByTestId('lang-chip-all'));
+
+      expect(screen.getByText('日本語のレビュー')).toBeTruthy();
+      expect(screen.getByText('English review')).toBeTruthy();
+      expect(screen.getByText('한국어 리뷰')).toBeTruthy();
+    });
   });
 
   describe('住所表示（#587）', () => {
