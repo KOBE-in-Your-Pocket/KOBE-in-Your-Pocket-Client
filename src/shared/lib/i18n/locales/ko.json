@@ -200,7 +200,8 @@
     "shelterCard": {
       "detail": "상세 보기",
       "navigate": "길 안내",
-      "close": "닫기"
+      "close": "닫기",
+      "phoneLabel": "전화번호"
     },
     "shelterDetail": {
       "back": "뒤로",
