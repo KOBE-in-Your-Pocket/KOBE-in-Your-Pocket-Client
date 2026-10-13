@@ -24,6 +24,10 @@ import {
   getLastSeededShelterLanguage,
   setLastSeededShelterLanguage,
 } from '../../infrastructure/storage/shelter-language-storage';
+import {
+  getLastSeededShelterVersion,
+  setLastSeededShelterVersion,
+} from '../../infrastructure/storage/shelter-seed-version-storage';
 
 import type { SupportedLanguage } from '@/shared/lib/i18n';
 import type { ReactNode } from 'react';
@@ -41,6 +45,11 @@ jest.mock('../../infrastructure/api/shelter-api', () => ({
 jest.mock('../../infrastructure/storage/shelter-language-storage', () => ({
   getLastSeededShelterLanguage: jest.fn(),
   setLastSeededShelterLanguage: jest.fn(),
+}));
+
+jest.mock('../../infrastructure/storage/shelter-seed-version-storage', () => ({
+  getLastSeededShelterVersion: jest.fn(),
+  setLastSeededShelterVersion: jest.fn(),
 }));
 
 jest.mock('../../infrastructure/storage/shelter-dataset-metadata-storage', () => ({
@@ -137,6 +146,10 @@ describe('オフライン（DBのみ）避難所参照', () => {
     mockLanguage = 'ja';
     jest.mocked(getLastSeededShelterLanguage).mockResolvedValue(null);
     jest.mocked(setLastSeededShelterLanguage).mockResolvedValue(undefined);
+    jest
+      .mocked(getLastSeededShelterVersion)
+      .mockResolvedValue(schema.EVACUATION_SHELTERS_SEED_VERSION);
+    jest.mocked(setLastSeededShelterVersion).mockResolvedValue(undefined);
 
     const { db, close } = createInMemoryEvacuationDatabase();
     closeDatabase = close;
@@ -200,6 +213,41 @@ describe('オフライン（DBのみ）避難所参照', () => {
       await expect(getEvacuationSheltersFromLocalDb('en')).resolves.toEqual(seededSheltersEn);
       expect(fetchEvacuationShelterDataset).toHaveBeenCalledTimes(2);
       expect(fetchEvacuationShelterDataset).toHaveBeenLastCalledWith('en');
+    });
+
+    describe('シード版を記録する前のバージョンでシードした端末（アプリ更新直後）', () => {
+      const sheltersWithPhoneNumber = seededShelters.map((shelter) => ({
+        ...shelter,
+        phoneNumber: '078-411-0556',
+      }));
+
+      beforeEach(async () => {
+        const repository = createSqliteEvacuationShelterRepository(getEvacuationDatabase());
+        await repository.replaceAll(seededShelters);
+        jest.mocked(getLastSeededShelterLanguage).mockResolvedValue('ja');
+        jest.mocked(getLastSeededShelterVersion).mockResolvedValue(null);
+      });
+
+      it('同じ言語でも再取得し、電話番号入りのデータに入れ替えてシード版を記録する', async () => {
+        jest
+          .mocked(fetchEvacuationShelterDataset)
+          .mockResolvedValue(datasetOf(sheltersWithPhoneNumber));
+
+        await expect(getEvacuationSheltersFromLocalDb('ja')).resolves.toEqual(
+          sheltersWithPhoneNumber,
+        );
+        expect(fetchEvacuationShelterDataset).toHaveBeenCalledTimes(1);
+        expect(setLastSeededShelterVersion).toHaveBeenCalledWith(
+          schema.EVACUATION_SHELTERS_SEED_VERSION,
+        );
+      });
+
+      it('再取得に失敗（オフライン）しても保存済みの一覧を返し、シード版は記録しない', async () => {
+        jest.mocked(fetchEvacuationShelterDataset).mockRejectedValue(new Error('network error'));
+
+        await expect(getEvacuationSheltersFromLocalDb('ja')).resolves.toEqual(seededShelters);
+        expect(setLastSeededShelterVersion).not.toHaveBeenCalled();
+      });
     });
   });
 

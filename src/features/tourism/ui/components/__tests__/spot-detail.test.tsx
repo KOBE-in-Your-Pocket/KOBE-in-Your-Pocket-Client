@@ -333,6 +333,20 @@ describe('SpotDetailContent', () => {
     });
   });
 
+  describe('住所表示（#587）', () => {
+    it('address のあるスポットではラベル付きで住所を表示する', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      expect(screen.getByText(new RegExp(mockSpot.address))).toBeTruthy();
+    });
+
+    it('address が空のスポットでは住所行を表示しない', () => {
+      render(<SpotDetailContent spot={{ ...mockSpot, address: '' }} />);
+
+      expect(screen.queryByTestId('spot-address-row')).toBeNull();
+    });
+  });
+
   describe('自分のレビューの編集', () => {
     beforeEach(() => {
       stubMeasureInWindow();
