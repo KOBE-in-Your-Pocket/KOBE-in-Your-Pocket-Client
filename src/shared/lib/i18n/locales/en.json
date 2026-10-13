@@ -187,10 +187,6 @@
         "park": "Park",
         "gymnasium": "Gymnasium"
       },
-      "accessible": {
-        "yes": "Accessible",
-        "no": "Not accessible"
-      },
       "type": {
         "emergency": "Emergency",
         "designated": "Designated",

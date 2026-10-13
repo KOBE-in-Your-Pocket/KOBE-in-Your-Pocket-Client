@@ -187,10 +187,6 @@
         "park": "公园",
         "gymnasium": "体育馆"
       },
-      "accessible": {
-        "yes": "无障碍设施",
-        "no": "无无障碍设施"
-      },
       "type": {
         "emergency": "紧急",
         "designated": "指定",

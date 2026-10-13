@@ -122,19 +122,6 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
           </View>
         ) : null}
 
-        <View style={styles.infoRow}>
-          <SymbolView
-            tintColor={theme.textSecondary}
-            name={{ ios: 'figure.roll', android: 'accessible', web: 'accessible' }}
-            size={16}
-          />
-          <ThemedText type="small" themeColor="textSecondary" style={styles.infoText}>
-            {shelter.accessible
-              ? t('evacuation.list.accessible.yes')
-              : t('evacuation.list.accessible.no')}
-          </ThemedText>
-        </View>
-
         <Pressable
           style={styles.routeButton}
           onPress={handleOpenDirections}

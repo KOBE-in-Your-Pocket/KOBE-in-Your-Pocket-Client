@@ -187,10 +187,6 @@
         "park": "공원",
         "gymnasium": "체육관"
       },
-      "accessible": {
-        "yes": "무장애 시설",
-        "no": "무장애 미지원"
-      },
       "type": {
         "emergency": "긴급",
         "designated": "지정",
