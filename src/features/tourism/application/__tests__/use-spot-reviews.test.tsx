@@ -8,10 +8,6 @@ import type { PropsWithChildren } from 'react';
 
 import type { Review } from '../../domain/review';
 
-jest.mock('react-i18next', () => ({
-  useTranslation: () => ({ i18n: { language: 'ja' } }),
-}));
-
 jest.mock('../../infrastructure/api/review-api', () => ({
   fetchReviews: jest.fn(),
 }));
@@ -165,6 +161,15 @@ describe('useSpotReviews', () => {
       iconUrl: 'https://example.com/new.png',
     });
     expect(fetchReviewsMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('言語で絞らず spotId だけで取得する（言語横断で全件取得 / #607）', async () => {
+    const wrapper = createWrapper();
+    const { result } = renderHook(() => useSpotReviews('spot-a', null), { wrapper });
+
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+
+    expect(fetchReviewsMock).toHaveBeenCalledWith('spot-a');
   });
 
   it('他人のレビューは currentUser が変わっても変わらない', async () => {
