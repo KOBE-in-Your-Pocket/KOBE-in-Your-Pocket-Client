@@ -79,6 +79,9 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.one,
   },
+  addressText: {
+    flex: 1,
+  },
   routeButton: {
     alignSelf: 'flex-start',
     flexDirection: 'row',

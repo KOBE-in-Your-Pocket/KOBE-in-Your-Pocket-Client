@@ -7,8 +7,6 @@ import { formatDistanceKm, getDistanceKm, type GeoCoordinates } from '@/shared/l
 import { useTheme } from '@/shared/lib/theme';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
-import { ShelterImage } from './shelter-image';
-
 import { styles } from '../styles/evacuation-shelter-card.styles';
 
 import type { EvacuationShelter } from '../../domain/evacuation-shelter';
@@ -39,13 +37,15 @@ export function EvacuationShelterCard({
 
   return (
     <ThemedView style={styles.card}>
-      <View style={styles.imageWrapper}>
-        <ShelterImage
-          imageUrl={shelter.media.imageUrl}
-          facilityCategory={shelter.facilityCategory}
-          style={styles.image}
-        />
-        <View style={styles.scrim} />
+      <View style={styles.header}>
+        <View style={styles.headerText}>
+          <ThemedText themeColor="textSecondary" style={styles.category}>
+            {t(`evacuation.list.category.${shelter.facilityCategory}`).toUpperCase()}
+          </ThemedText>
+          <ThemedText style={styles.name} numberOfLines={1}>
+            {shelter.name}
+          </ThemedText>
+        </View>
 
         <Pressable
           onPress={onClose}
@@ -55,20 +55,11 @@ export function EvacuationShelterCard({
           accessibilityLabel={t('evacuation.shelterCard.close')}
         >
           <SymbolView
-            tintColor="#FFFFFF"
+            tintColor={theme.textSecondary}
             name={{ ios: 'xmark', android: 'close', web: 'close' }}
             size={14}
           />
         </Pressable>
-
-        <View style={styles.imageContent}>
-          <ThemedText style={styles.category}>
-            {t(`evacuation.list.category.${shelter.facilityCategory}`).toUpperCase()}
-          </ThemedText>
-          <ThemedText style={styles.name} numberOfLines={1}>
-            {shelter.name}
-          </ThemedText>
-        </View>
       </View>
 
       <View style={styles.footer}>
