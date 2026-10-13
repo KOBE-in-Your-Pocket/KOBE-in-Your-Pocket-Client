@@ -32,9 +32,15 @@ const mockShelters = [
   },
 ];
 
+// jest.mock ファクトリから差し替えるため、mock プレフィックス付きで宣言する。
+const mockUseCurrentLocation = jest.fn();
+const mockFilterShelters = jest.fn();
+
 // Map は markers を受け取る共有 UI。ここでは各マーカーの id を testID、variant をテキストとして
 // 描画するスタブに差し替え、「どのピンが・どの見た目で」渡されたかを検証できるようにする。
 type MockMarker = { id: string; variant?: string };
+
+type MockShelter = { id: string; coordinates: { latitude: number; longitude: number } };
 
 jest.mock('@/shared/ui', () => ({
   Map: ({
@@ -66,8 +72,8 @@ jest.mock('@/features/tourism', () => ({
 
 jest.mock('@/features/evacuation', () => ({
   useEvacuationShelters: () => ({ data: mockShelters }),
-  // coords が null のときは絞り込まず全件返す実挙動に合わせたパススルー（距離フィルタ本体は use-case 側で検証）。
-  filterSheltersWithinRadius: (shelters: MockMarker[]) => shelters,
+  // 距離フィルタ本体は use-case 側で検証。ここでは返す避難所を差し替えられるようにする。
+  filterSheltersWithinRadius: (shelters: MockShelter[]) => mockFilterShelters(shelters),
   EvacuationShelterCard: ({
     shelter,
     onDetail,
@@ -82,7 +88,7 @@ jest.mock('@/features/evacuation', () => ({
 }));
 
 jest.mock('@/shared/lib/geo', () => ({
-  useCurrentLocation: () => ({ coords: null, servicesDisabled: false, permissionDenied: false }),
+  useCurrentLocation: () => mockUseCurrentLocation(),
   getDistanceKm: () => 0,
 }));
 
@@ -115,6 +121,13 @@ jest.mock('../spot-card', () => ({
 describe('MapScreen のマーカー出し分け', () => {
   beforeEach(() => {
     useMapModeStore.setState({ mapMode: 'tourism' });
+    // 既定: 現在地なし・絞り込みなし（全件返す）。個別テストで上書きする。
+    mockUseCurrentLocation.mockReturnValue({
+      coords: null,
+      servicesDisabled: false,
+      permissionDenied: false,
+    });
+    mockFilterShelters.mockImplementation((shelters: MockShelter[]) => shelters);
   });
 
   it('tourism モードでは観光スポットのピンを表示する', () => {
@@ -226,6 +239,34 @@ describe('MapScreen のマーカー出し分け', () => {
     act(() => {
       useMapModeStore.setState({ mapMode: 'evacuation' });
     });
+    expect(screen.queryByTestId('shelter-card')).toBeNull();
+  });
+
+  it('選択中の避難所が 1km 圏外（フィルタ対象外）になったら選択を解除する（#594）', () => {
+    useMapModeStore.setState({ mapMode: 'evacuation' });
+    mockUseCurrentLocation.mockReturnValue({
+      coords: { latitude: 34.69, longitude: 135.19 },
+      servicesDisabled: false,
+      permissionDenied: false,
+    });
+
+    const { rerender } = render(<MapScreen />);
+    fireEvent.press(screen.getByTestId('marker-shelter-1'));
+    expect(screen.getByTestId('shelter-card').props.children).toBe('shelter-1');
+
+    // 現在地が更新され、shelter-1 がフィルタ結果（1km 圏内）から外れる。
+    mockFilterShelters.mockImplementation((shelters: MockShelter[]) =>
+      shelters.filter((shelter) => shelter.id !== 'shelter-1'),
+    );
+    mockUseCurrentLocation.mockReturnValue({
+      coords: { latitude: 35.0, longitude: 135.6 },
+      servicesDisabled: false,
+      permissionDenied: false,
+    });
+    rerender(<MapScreen />);
+
+    // ピンが消え、カード（と経路の起点）も残らない。
+    expect(screen.queryByTestId('marker-shelter-1')).toBeNull();
     expect(screen.queryByTestId('shelter-card')).toBeNull();
   });
 });
