@@ -63,11 +63,9 @@ jest.mock('react-i18next', () => ({
 }));
 
 // 写真を再び差し込んだら検知できるよう、ShelterImage はテスト用マーカーに差し替える（#589）。
-jest.mock('../shelter-image', () => {
-  const React = require('react');
-  const { View } = require('react-native');
-  return { ShelterImage: () => React.createElement(View, { testID: 'shelter-card-image' }) };
-});
+jest.mock('../shelter-image', () => ({
+  ShelterImage: () => <MockView testID="shelter-card-image" />,
+}));
 
 function renderCard(overrides: Partial<React.ComponentProps<typeof EvacuationShelterCard>> = {}) {
   const props = {
