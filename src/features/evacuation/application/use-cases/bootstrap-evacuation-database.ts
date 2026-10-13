@@ -3,12 +3,17 @@ import type { SupportedLanguage } from '@/shared/lib/i18n';
 import { fetchEvacuationShelterDataset } from '../../infrastructure/api/shelter-api';
 import { getEvacuationDatabase } from '../../infrastructure/db/client';
 import { runEvacuationMigrations } from '../../infrastructure/db/run-migrations';
+import { EVACUATION_SHELTERS_SEED_VERSION } from '../../infrastructure/db/schema';
 import { createSqliteEvacuationShelterRepository } from '../../infrastructure/db/sqlite-evacuation-shelter-repository';
 import { setShelterDatasetMetadata } from '../../infrastructure/storage/shelter-dataset-metadata-storage';
 import {
   getLastSeededShelterLanguage,
   setLastSeededShelterLanguage,
 } from '../../infrastructure/storage/shelter-language-storage';
+import {
+  getLastSeededShelterVersion,
+  setLastSeededShelterVersion,
+} from '../../infrastructure/storage/shelter-seed-version-storage';
 
 import { reseedEvacuationSheltersIfNeeded } from './reseed-evacuation-shelters-if-needed';
 
@@ -26,6 +31,9 @@ async function doBootstrapEvacuationDatabase(language: SupportedLanguage): Promi
     language,
     getLastSeededLanguage: getLastSeededShelterLanguage,
     setLastSeededLanguage: setLastSeededShelterLanguage,
+    seedVersion: EVACUATION_SHELTERS_SEED_VERSION,
+    getLastSeededVersion: getLastSeededShelterVersion,
+    setLastSeededVersion: setLastSeededShelterVersion,
     setDatasetMetadata: setShelterDatasetMetadata,
   });
 }

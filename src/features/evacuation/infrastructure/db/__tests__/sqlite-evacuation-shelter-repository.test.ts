@@ -1,6 +1,8 @@
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import fs from 'fs';
+import os from 'os';
 import path from 'path';
 
 import type { EvacuationShelter } from '../../../domain/evacuation-shelter';
@@ -23,6 +25,7 @@ const sampleShelters: EvacuationShelter[] = [
     capacity: 100,
     accessible: true,
     externalUrl: 'https://www.city.kobe.lg.jp/bosai/',
+    phoneNumber: '078-411-0556',
   },
   {
     id: 'shelter-2',
@@ -36,21 +39,49 @@ const sampleShelters: EvacuationShelter[] = [
   },
 ];
 
+const MIGRATIONS_FOLDER = path.resolve(__dirname, '../../../../../../drizzle');
+
 // 作成した in-memory DB を追跡し、テストごとに close してネイティブハンドルのリークを防ぐ。
 const openDatabases: Database.Database[] = [];
+const temporaryFolders: string[] = [];
 
 function createTestRepository() {
   const sqlite = new Database(':memory:');
   openDatabases.push(sqlite);
   const db = drizzle(sqlite, { schema });
-  migrate(db, { migrationsFolder: path.resolve(__dirname, '../../../../../../drizzle') });
+  migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
 
   return createSqliteEvacuationShelterRepository(db as unknown as EvacuationDatabase);
+}
+
+/** 先頭 `count` 件のマイグレーションだけを持つフォルダを作る（旧バージョンの DB を再現する用）。 */
+function createMigrationsFolderUpTo(count: number): string {
+  const folder = fs.mkdtempSync(path.join(os.tmpdir(), 'evacuation-migrations-'));
+  temporaryFolders.push(folder);
+
+  const journal = JSON.parse(
+    fs.readFileSync(path.join(MIGRATIONS_FOLDER, 'meta/_journal.json'), 'utf8'),
+  ) as { entries: { tag: string }[] };
+  const entries = journal.entries.slice(0, count);
+
+  fs.mkdirSync(path.join(folder, 'meta'));
+  fs.writeFileSync(
+    path.join(folder, 'meta/_journal.json'),
+    JSON.stringify({ ...journal, entries }),
+  );
+  for (const { tag } of entries) {
+    fs.copyFileSync(path.join(MIGRATIONS_FOLDER, `${tag}.sql`), path.join(folder, `${tag}.sql`));
+  }
+
+  return folder;
 }
 
 afterEach(() => {
   while (openDatabases.length > 0) {
     openDatabases.pop()?.close();
+  }
+  while (temporaryFolders.length > 0) {
+    fs.rmSync(temporaryFolders.pop() as string, { recursive: true, force: true });
   }
 });
 
@@ -61,6 +92,53 @@ describe('SqliteEvacuationShelterRepository', () => {
     await repository.replaceAll(sampleShelters);
 
     await expect(repository.findAll()).resolves.toEqual(sampleShelters);
+  });
+
+  it('電話番号を保存→取得で往復し、未登録は phoneNumber を持たない', async () => {
+    const repository = createTestRepository();
+
+    await repository.replaceAll(sampleShelters);
+
+    const [withPhoneNumber, withoutPhoneNumber] = await Promise.all([
+      repository.findById('shelter-1'),
+      repository.findById('shelter-2'),
+    ]);
+    expect(withPhoneNumber?.phoneNumber).toBe('078-411-0556');
+    expect(withoutPhoneNumber?.phoneNumber).toBeUndefined();
+  });
+
+  it('phone_number 列を追加するマイグレーションで既存レコードが壊れない', async () => {
+    const sqlite = new Database(':memory:');
+    openDatabases.push(sqlite);
+    const db = drizzle(sqlite, { schema });
+
+    // phone_number 列が無い時点（0001 まで）の DB に 1 件保存しておく。
+    migrate(db, { migrationsFolder: createMigrationsFolderUpTo(2) });
+    sqlite
+      .prepare(
+        `INSERT INTO evacuation_shelters
+          (id, name, address, latitude, longitude, type, facility_category, image_url, capacity, accessible, external_url)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        'shelter-1',
+        '避難所A',
+        '住所A',
+        34.69,
+        135.19,
+        'emergency',
+        'park',
+        'https://example.com/a.jpg',
+        100,
+        1,
+        'https://www.city.kobe.lg.jp/bosai/',
+      );
+
+    migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
+
+    const repository = createSqliteEvacuationShelterRepository(db as unknown as EvacuationDatabase);
+    const { phoneNumber: _phoneNumber, ...legacyShelter } = sampleShelters[0];
+    await expect(repository.findAll()).resolves.toEqual([legacyShelter]);
   });
 
   it('findById で単一の避難所を取得できる', async () => {
