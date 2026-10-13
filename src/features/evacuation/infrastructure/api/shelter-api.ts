@@ -5,9 +5,17 @@ import type { EvacuationShelter } from '../../domain/evacuation-shelter';
 import type { ShelterDataset } from '../../domain/shelter-dataset-metadata';
 import { isShelterDatasetMetadata } from '../../domain/shelter-dataset-metadata';
 
+/**
+ * 避難所 1 件のレスポンス。電話番号が未登録の避難所では `phoneNumber` がフィールドごと
+ * 欠落する（null / 空文字で返ってきても未登録として扱う）。
+ */
+type EvacuationShelterResponse = Omit<EvacuationShelter, 'phoneNumber'> & {
+  phoneNumber?: string | null;
+};
+
 /** GET /api/v1/evacuation/shelters のレスポンス封筒。 */
 type EvacuationSheltersResponse = {
-  data: EvacuationShelter[];
+  data: EvacuationShelterResponse[];
   /** `{ source, asOf, updatedAt }`。返さないバックエンドもあり得るため未検証の型で受ける。 */
   meta: unknown;
 };
@@ -17,7 +25,8 @@ type EvacuationSheltersResponse = {
  *
  * バックエンド `GET /api/v1/evacuation/shelters` を `lang` クエリ付きで呼び出す。
  * レスポンスの `data` はフィールド・enum 値ともクライアントの {@link EvacuationShelter} と
- * 一致しており変換は不要。`meta` は出典・データ基準日の表示（#492）に使うが、欠けていても
+ * 一致しており、変換は未登録の電話番号（`phoneNumber`）を undefined に揃える分だけ。
+ * `meta` は出典・データ基準日の表示（#492）に使うが、欠けていても
  * 避難所一覧そのものは表示できなければならないため、検証に通らない場合は null にする。
  */
 export async function fetchEvacuationShelterDataset(
@@ -28,7 +37,16 @@ export async function fetchEvacuationShelterDataset(
   });
 
   return {
-    shelters: response.data,
+    shelters: response.data.map(toEvacuationShelter),
     metadata: isShelterDatasetMetadata(response.meta) ? response.meta : null,
   };
+}
+
+/** 未登録の電話番号（欠落 / null / 空文字 / 空白のみ）を undefined に揃えてドメインへ変換する。 */
+function toEvacuationShelter({
+  phoneNumber,
+  ...shelter
+}: EvacuationShelterResponse): EvacuationShelter {
+  const trimmedPhoneNumber = phoneNumber?.trim();
+  return trimmedPhoneNumber ? { ...shelter, phoneNumber: trimmedPhoneNumber } : shelter;
 }

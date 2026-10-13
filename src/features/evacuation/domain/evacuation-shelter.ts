@@ -28,6 +28,8 @@ export type EvacuationShelter = {
   capacity?: number;
   /** バリアフリー対応可否。 */
   accessible: boolean;
+  /** 問い合わせ先の電話番号。未登録の場合は undefined。 */
+  phoneNumber?: string;
   /** 開設状況の参考となる外部ページ（自治体の避難所情報ページ等）。無い場合は undefined。 */
   externalUrl?: string;
 };
