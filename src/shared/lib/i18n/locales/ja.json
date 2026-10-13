@@ -187,10 +187,6 @@
         "park": "公園",
         "gymnasium": "体育館"
       },
-      "accessible": {
-        "yes": "バリアフリー対応",
-        "no": "バリアフリー非対応"
-      },
       "type": {
         "emergency": "緊急",
         "designated": "指定",

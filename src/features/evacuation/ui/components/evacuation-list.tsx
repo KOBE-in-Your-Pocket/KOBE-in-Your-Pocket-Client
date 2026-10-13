@@ -14,7 +14,7 @@ import { useEvacuationShelters } from '../../application/hooks/use-evacuation-sh
 import { ShelterDatasetNotice } from './shelter-dataset-notice';
 import { ShelterImage } from './shelter-image';
 
-import { ACCESSIBLE_COLOR, styles } from '../styles/evacuation-list.styles';
+import { styles } from '../styles/evacuation-list.styles';
 
 import { Spacing } from '@/shared/config';
 import { formatDistanceKm, useCurrentLocation } from '@/shared/lib/geo';
@@ -73,8 +73,8 @@ function ShelterListItem({
             {shelter.address}
           </ThemedText>
 
-          <View style={styles.infoRow}>
-            {shelter.capacity !== undefined ? (
+          {shelter.capacity !== undefined ? (
+            <View style={styles.infoRow}>
               <View style={styles.infoItem}>
                 <SymbolView
                   tintColor={theme.textSecondary}
@@ -85,25 +85,8 @@ function ShelterListItem({
                   {t('evacuation.list.capacity', { count: shelter.capacity })}
                 </ThemedText>
               </View>
-            ) : null}
-
-            <View style={styles.infoItem}>
-              <SymbolView
-                tintColor={ACCESSIBLE_COLOR}
-                name={{
-                  ios: 'figure.roll',
-                  android: 'accessible',
-                  web: 'accessible',
-                }}
-                size={14}
-              />
-              <ThemedText type="small" style={styles.accessibilityText}>
-                {shelter.accessible
-                  ? t('evacuation.list.accessible.yes')
-                  : t('evacuation.list.accessible.no')}
-              </ThemedText>
             </View>
-          </View>
+          ) : null}
         </View>
       </ThemedView>
     </Pressable>

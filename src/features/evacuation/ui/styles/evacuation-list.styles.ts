@@ -3,8 +3,7 @@ import { Platform, StyleSheet } from 'react-native';
 import { Spacing } from '@/shared/config';
 
 export const CATEGORY_COLOR = '#3A6EA5';
-export const ACCESSIBLE_COLOR = '#2E8B57';
-/** 最寄りバッジ専用のアクセントカラー（避難モードの赤）。ACCESSIBLE_COLOR（バリアフリー表示）との意味の重複を避けるため分離。 */
+/** 最寄りバッジ専用のアクセントカラー（避難モードの赤）。 */
 export const NEAREST_BADGE_COLOR = '#EF4444';
 /** 位置情報フォールバックバナーの警告テキスト色。背景が固定色のため、ダークモードでも読めるよう文字色も固定する。 */
 export const LOCATION_BANNER_TEXT_COLOR = '#B71C1C';
@@ -126,9 +125,5 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one,
-  },
-  accessibilityText: {
-    color: ACCESSIBLE_COLOR,
-    fontWeight: '600',
   },
 });

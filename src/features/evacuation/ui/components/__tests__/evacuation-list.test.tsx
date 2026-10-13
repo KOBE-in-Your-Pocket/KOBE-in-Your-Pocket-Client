@@ -169,6 +169,18 @@ describe('EvacuationList の収容人数表示', () => {
     });
   });
 
+  it.each([true, false])('バリアフリー情報（accessible: %s）を表示しない', (accessible) => {
+    mockUseEvacuationShelters.mockReturnValue({
+      data: [{ ...DEFAULT_SHELTER, accessible }],
+      isPending: false,
+      isError: false,
+    });
+
+    render(<EvacuationList />);
+
+    expect(screen.queryByText(/evacuation\.list\.accessible/)).toBeNull();
+  });
+
   it('capacity が無い避難所は収容人数の行を表示しない', () => {
     render(<EvacuationList />);
 

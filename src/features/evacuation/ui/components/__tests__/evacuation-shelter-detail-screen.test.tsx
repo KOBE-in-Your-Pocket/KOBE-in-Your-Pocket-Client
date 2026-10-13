@@ -227,6 +227,18 @@ describe('避難所詳細の値の無い項目の表示分岐', () => {
     });
   });
 
+  it.each([true, false])('バリアフリー情報（accessible: %s）を表示しない', (accessible) => {
+    mockUseEvacuationShelterDetail.mockReturnValue({
+      data: { ...shelter, accessible },
+      isPending: false,
+      isError: false,
+    });
+
+    render(<EvacuationShelterDetailScreen shelterId="shelter-1" />);
+
+    expect(screen.queryByText(/evacuation\.list\.accessible/)).toBeNull();
+  });
+
   it('capacity・externalUrl が無い避難所ではその項目を表示しない', () => {
     mockUseEvacuationShelterDetail.mockReturnValue({
       data: shelter,
