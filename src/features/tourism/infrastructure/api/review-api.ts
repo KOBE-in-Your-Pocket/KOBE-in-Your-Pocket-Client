@@ -46,14 +46,14 @@ function toReview(dto: ReviewResponse): Review {
 /**
  * `GET /api/v1/tourism/spots/:spotId/reviews`。該当スポットにレビューが無ければ空配列。
  * 通報が承認された口コミ（`hiddenByReport`）は `reviews` から外し、ID だけを返す。
+ *
+ * レビューは言語横断で全件取得し、`?lang=` は付けない。現在の UI 言語だけで絞ると
+ * spot-detail の ReviewLanguageFilter で他言語チップが常に空になるため、言語での絞り込みは
+ * クライアント側（`review.language`）に委ねる（#489 / #607）。
  */
-export async function fetchReviews(
-  spotId: string,
-  language: SupportedLanguage,
-): Promise<SpotReviews> {
+export async function fetchReviews(spotId: string): Promise<SpotReviews> {
   const response = await apiFetch<ReviewListItemResponse[]>(
     `/api/v1/tourism/spots/${encodeURIComponent(spotId)}/reviews`,
-    { query: { lang: language } },
   );
 
   const reviews: Review[] = [];
