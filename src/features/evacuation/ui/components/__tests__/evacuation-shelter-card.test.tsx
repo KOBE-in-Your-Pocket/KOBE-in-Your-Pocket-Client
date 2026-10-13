@@ -62,6 +62,13 @@ jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
 
+// 写真を再び差し込んだら検知できるよう、ShelterImage はテスト用マーカーに差し替える（#589）。
+jest.mock('../shelter-image', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return { ShelterImage: () => React.createElement(View, { testID: 'shelter-card-image' }) };
+});
+
 function renderCard(overrides: Partial<React.ComponentProps<typeof EvacuationShelterCard>> = {}) {
   const props = {
     shelter,
@@ -85,6 +92,12 @@ describe('EvacuationShelterCard', () => {
 
       expect(screen.getByText('中央区役所')).toBeTruthy();
       expect(screen.getByText('神戸市中央区')).toBeTruthy();
+    });
+
+    it('写真（ShelterImage）を表示しない', () => {
+      renderCard();
+
+      expect(screen.queryByTestId('shelter-card-image')).toBeNull();
     });
 
     it('経路ボタンと詳細ボタンが存在する', () => {
