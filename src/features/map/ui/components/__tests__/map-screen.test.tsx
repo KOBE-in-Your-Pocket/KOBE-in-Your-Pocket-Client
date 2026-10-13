@@ -66,6 +66,8 @@ jest.mock('@/features/tourism', () => ({
 
 jest.mock('@/features/evacuation', () => ({
   useEvacuationShelters: () => ({ data: mockShelters }),
+  // coords が null のときは絞り込まず全件返す実挙動に合わせたパススルー（距離フィルタ本体は use-case 側で検証）。
+  filterSheltersWithinRadius: (shelters: MockMarker[]) => shelters,
   EvacuationShelterCard: ({
     shelter,
     onDetail,

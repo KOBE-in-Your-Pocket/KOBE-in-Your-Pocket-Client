@@ -2,7 +2,11 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { EvacuationShelterCard, useEvacuationShelters } from '@/features/evacuation';
+import {
+  EvacuationShelterCard,
+  filterSheltersWithinRadius,
+  useEvacuationShelters,
+} from '@/features/evacuation';
 import type { EvacuationShelter } from '@/features/evacuation';
 import type { Spot } from '@/features/tourism';
 import { useSpots } from '@/features/tourism';
@@ -54,7 +58,8 @@ export function MapScreen() {
   // mapMode は zustand ストアなので、モード切替で即座に markers が再計算・再描画される。
   const markers = useMemo<MapMarker[]>(() => {
     if (mapMode === 'evacuation') {
-      return (shelters ?? []).map((shelter) => ({
+      // 現在地から半径 1km 以内の避難所だけをピン表示する（#594）。
+      return filterSheltersWithinRadius(shelters ?? [], coords).map((shelter) => ({
         id: shelter.id,
         coordinate: shelter.coordinates,
         title: shelter.name,
@@ -67,7 +72,7 @@ export function MapScreen() {
       coordinate: spot.coordinates,
       title: spot.name,
     }));
-  }, [mapMode, spots, shelters]);
+  }, [mapMode, spots, shelters, coords]);
 
   // 観光地リストの「経路」ボタンから spotId 付きで遷移してきたら、その地点を選択状態にする。
   // render 中に前回適用した spotId と比較して反映する（effect 内 setState を避ける公式パターン）。
