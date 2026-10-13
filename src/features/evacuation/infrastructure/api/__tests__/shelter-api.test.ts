@@ -78,6 +78,35 @@ describe('fetchEvacuationShelterDataset', () => {
     });
   });
 
+  it('レスポンスの電話番号をドメインに取り込む', async () => {
+    mockFetch.mockResolvedValue(
+      jsonResponse(200, {
+        data: [{ ...shelterFixture, phoneNumber: '078-411-0556' }],
+        meta: metaFixture,
+      }),
+    );
+
+    const { shelters } = await fetchEvacuationShelterDataset('ja');
+
+    expect(shelters).toEqual([{ ...shelterFixture, phoneNumber: '078-411-0556' }]);
+  });
+
+  it.each([
+    ['フィールド欠落', {}],
+    ['null', { phoneNumber: null }],
+    ['空文字', { phoneNumber: '' }],
+    ['空白のみ', { phoneNumber: '   ' }],
+  ])('電話番号が未登録（%s）のときは phoneNumber を持たない', async (_label, phoneField) => {
+    mockFetch.mockResolvedValue(
+      jsonResponse(200, { data: [{ ...shelterFixture, ...phoneField }], meta: metaFixture }),
+    );
+
+    const { shelters } = await fetchEvacuationShelterDataset('ja');
+
+    expect(shelters).toEqual([shelterFixture]);
+    expect(shelters[0]).not.toHaveProperty('phoneNumber');
+  });
+
   it('非 2xx レスポンスは ApiError として伝播する', async () => {
     mockFetch.mockResolvedValue(
       jsonResponse(500, { status: 500, error: 'INTERNAL', message: '内部エラー' }),
