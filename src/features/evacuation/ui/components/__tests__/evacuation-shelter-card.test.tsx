@@ -104,6 +104,19 @@ describe('EvacuationShelterCard', () => {
       expect(screen.getByLabelText('evacuation.shelterCard.navigate')).toBeTruthy();
       expect(screen.getByLabelText('evacuation.shelterCard.detail')).toBeTruthy();
     });
+
+    it('写真削除後も主要素（カテゴリ・名称・住所・距離・収容人数・各ボタン）が揃って表示される', () => {
+      renderCard();
+
+      expect(screen.getByText('EVACUATION.LIST.CATEGORY.SCHOOL')).toBeTruthy();
+      expect(screen.getByText('中央区役所')).toBeTruthy();
+      expect(screen.getByText('神戸市中央区')).toBeTruthy();
+      expect(screen.getByText('1.2 km')).toBeTruthy();
+      expect(screen.getByText('evacuation.list.capacity')).toBeTruthy();
+      expect(screen.getByLabelText('evacuation.shelterCard.detail')).toBeTruthy();
+      expect(screen.getByLabelText('evacuation.shelterCard.navigate')).toBeTruthy();
+      expect(screen.getByLabelText('evacuation.shelterCard.close')).toBeTruthy();
+    });
   });
 
   describe('距離表示', () => {

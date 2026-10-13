@@ -28,12 +28,14 @@ export const styles = StyleSheet.create({
       default: {},
     }),
   },
-  header: {
+  content: {
+    padding: Spacing.three,
+    gap: Spacing.three,
+  },
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: Spacing.two,
-    paddingTop: Spacing.three,
-    paddingHorizontal: Spacing.three,
   },
   headerText: {
     flex: 1,
@@ -55,12 +57,6 @@ export const styles = StyleSheet.create({
     fontSize: 20,
     lineHeight: 26,
     fontWeight: '700',
-  },
-  footer: {
-    gap: Spacing.three,
-    paddingTop: Spacing.three,
-    paddingBottom: Spacing.three,
-    paddingHorizontal: Spacing.three,
   },
   address: {
     lineHeight: 20,
