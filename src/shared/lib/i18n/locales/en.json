@@ -200,7 +200,8 @@
     "shelterCard": {
       "detail": "Shelter Detail",
       "navigate": "Directions",
-      "close": "Close"
+      "close": "Close",
+      "phoneLabel": "Phone"
     },
     "shelterDetail": {
       "back": "Back",
