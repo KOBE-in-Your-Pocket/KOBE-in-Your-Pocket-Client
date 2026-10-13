@@ -122,6 +122,19 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
           </View>
         ) : null}
 
+        {shelter.phoneNumber ? (
+          <View style={styles.infoRow}>
+            <SymbolView
+              tintColor={theme.textSecondary}
+              name={{ ios: 'phone.fill', android: 'call', web: 'call' }}
+              size={16}
+            />
+            <ThemedText type="small" themeColor="textSecondary" style={styles.infoText}>
+              {t('evacuation.shelterCard.phoneLabel')}: {shelter.phoneNumber}
+            </ThemedText>
+          </View>
+        ) : null}
+
         <Pressable
           style={styles.routeButton}
           onPress={handleOpenDirections}

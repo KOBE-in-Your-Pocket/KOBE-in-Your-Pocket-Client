@@ -98,6 +98,19 @@ export function EvacuationShelterCard({
               </ThemedText>
             </View>
           ) : null}
+
+          {shelter.phoneNumber ? (
+            <View style={styles.metaItem}>
+              <SymbolView
+                tintColor={theme.textSecondary}
+                name={{ ios: 'phone.fill', android: 'call', web: 'call' }}
+                size={14}
+              />
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('evacuation.shelterCard.phoneLabel')}: {shelter.phoneNumber}
+              </ThemedText>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.actionsRow}>

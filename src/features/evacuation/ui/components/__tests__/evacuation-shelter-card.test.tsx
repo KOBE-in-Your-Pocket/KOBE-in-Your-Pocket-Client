@@ -134,6 +134,20 @@ describe('EvacuationShelterCard', () => {
     });
   });
 
+  describe('電話番号表示', () => {
+    it('電話番号がある避難所は電話番号を表示する', () => {
+      renderCard({ shelter: { ...shelter, phoneNumber: '078-411-0556' } });
+
+      expect(screen.getByText('evacuation.shelterCard.phoneLabel: 078-411-0556')).toBeTruthy();
+    });
+
+    it('電話番号が未登録の避難所は電話番号の行を表示しない', () => {
+      renderCard({ shelter: { ...shelter, phoneNumber: undefined } });
+
+      expect(screen.queryByText(/evacuation\.shelterCard\.phoneLabel/)).toBeNull();
+    });
+  });
+
   describe('経路ボタン', () => {
     it('押すと現在地を起点に confirmOpenDirections を呼ぶ', () => {
       renderCard();
