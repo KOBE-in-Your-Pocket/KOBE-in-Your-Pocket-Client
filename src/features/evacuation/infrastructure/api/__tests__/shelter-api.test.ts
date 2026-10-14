@@ -107,6 +107,53 @@ describe('fetchEvacuationShelterDataset', () => {
     expect(shelters[0]).not.toHaveProperty('phoneNumber');
   });
 
+  describe('suitability（災害種別ごとの適否）', () => {
+    const suitability = {
+      landslide: 'suitable',
+      flood: 'conditional',
+      tsunami: 'unsuitable',
+      'large-fire': 'not-applicable',
+    };
+
+    async function fetchSheltersWith(shelterFields: Record<string, unknown>) {
+      mockFetch.mockResolvedValue(
+        jsonResponse(200, { data: [{ ...shelterFixture, ...shelterFields }], meta: metaFixture }),
+      );
+
+      return (await fetchEvacuationShelterDataset('ja')).shelters;
+    }
+
+    it('レスポンスの災害種別ごとの適否をドメインに取り込む', async () => {
+      await expect(fetchSheltersWith({ suitability })).resolves.toEqual([
+        { ...shelterFixture, suitability },
+      ]);
+    });
+
+    it.each([
+      ['フィールド欠落', {}],
+      ['null', { suitability: null }],
+      ['空オブジェクト', { suitability: {} }],
+      ['オブジェクト以外', { suitability: 'suitable' }],
+    ])('情報が無い（%s）ときは suitability を持たない', async (_label, shelterFields) => {
+      const shelters = await fetchSheltersWith(shelterFields);
+
+      expect(shelters).toEqual([shelterFixture]);
+      expect(shelters[0]).not.toHaveProperty('suitability');
+    });
+
+    it('未知の災害種別・未知の適否は無視し、既知のものだけ取り込む', async () => {
+      const shelters = await fetchSheltersWith({
+        suitability: {
+          flood: 'suitable',
+          tsunami: 'unknown-value',
+          'storm-surge': 'suitable',
+        },
+      });
+
+      expect(shelters[0].suitability).toEqual({ flood: 'suitable' });
+    });
+  });
+
   it('非 2xx レスポンスは ApiError として伝播する', async () => {
     mockFetch.mockResolvedValue(
       jsonResponse(500, { status: 500, error: 'INTERNAL', message: '内部エラー' }),
