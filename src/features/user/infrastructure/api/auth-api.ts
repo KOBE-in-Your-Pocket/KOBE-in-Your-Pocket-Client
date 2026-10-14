@@ -1,6 +1,7 @@
 import { getApiBaseUrl } from '@/shared/config';
 
 import { AuthApiError } from '../../domain/auth-api-error';
+import type { AppleSignInParams } from '../../domain/auth-ports';
 import type { AuthSession, EmailSignUpResult } from '../../domain/auth-session';
 
 /** backend 全 API 共通のエラーレスポンス形式（400 系）。 */
@@ -13,7 +14,7 @@ type ApiErrorBody = {
 
 export { AuthApiError };
 
-/** /auth/signup, /auth/login, /auth/google, /auth/refresh が返すセッションレスポンス。 */
+/** /auth/signup, /auth/login, /auth/google, /auth/apple, /auth/refresh が返すセッションレスポンス。 */
 type SessionResponseBody = {
   accessToken: string;
   refreshToken: string;
@@ -158,6 +159,23 @@ export async function signInWithGoogle(
 ): Promise<AuthSession> {
   const response = await postJson(`${resolveBaseUrl(options.baseUrl)}/api/v1/auth/google`, {
     body: { idToken },
+    signal: options.signal,
+  });
+
+  return parseSessionResponse(response);
+}
+
+/**
+ * Apple 発行の ID トークンで backend にサインインする。
+ * Google と同じく初回は backend 側でユーザーが自動作成される。
+ * name は Apple が初回のみ返す表示名で、未取得なら body に含めない。
+ */
+export async function signInWithApple(
+  { idToken, nonce, name }: AppleSignInParams,
+  options: AuthApiOptions = {},
+): Promise<AuthSession> {
+  const response = await postJson(`${resolveBaseUrl(options.baseUrl)}/api/v1/auth/apple`, {
+    body: { idToken, nonce, ...(name ? { name } : {}) },
     signal: options.signal,
   });
 

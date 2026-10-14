@@ -16,6 +16,8 @@ type SignOutDeps = {
  *
  * backend のセッション破棄と GoogleSignin.signOut() は失敗しても続行し、
  * ローカルのセッション（secure-store とストア）は必ず破棄する。
+ * Apple 側の後始末は行わない（Apple にはサインアウト API がなく、signOutAsync は
+ * サインインシートを出すため非推奨。ローカルのセッション破棄だけでよい）。
  */
 export async function performSignOut(
   deps: SignOutDeps = {

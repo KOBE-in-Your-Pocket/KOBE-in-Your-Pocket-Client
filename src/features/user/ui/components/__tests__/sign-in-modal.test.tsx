@@ -14,6 +14,7 @@ jest.mock('@/shared/config', () => ({
 }));
 
 jest.mock('@/shared/lib/theme', () => ({
+  useColorScheme: () => 'light',
   useTheme: () => ({
     background: '#ffffff',
     backgroundElement: '#eeeeee',
@@ -49,6 +50,8 @@ const createMutationMock = (): MutationMock => ({
   error: null,
 });
 
+let mockAppleSignIn: MutationMock;
+let mockAppleSignInAvailable: boolean;
 let mockGoogleSignIn: MutationMock;
 let mockEmailSignIn: MutationMock;
 let mockEmailSignUp: MutationMock;
@@ -58,6 +61,12 @@ jest.mock('../../../application/use-email-auth', () => ({
   ...jest.requireActual('../../../application/use-email-auth'),
   useEmailSignIn: () => mockEmailSignIn,
   useEmailSignUp: () => mockEmailSignUp,
+}));
+
+// 表示条件（iOS かつ isAvailableAsync）の判定はフック側のテストで確認する。
+jest.mock('../../../application/use-apple-sign-in', () => ({
+  useAppleSignIn: () => mockAppleSignIn,
+  useIsAppleSignInAvailable: () => mockAppleSignInAvailable,
 }));
 
 jest.mock('../../../application/use-google-sign-in', () => ({
@@ -88,6 +97,8 @@ describe('SignInModal', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockAppleSignIn = createMutationMock();
+    mockAppleSignInAvailable = true;
     mockGoogleSignIn = createMutationMock();
     mockEmailSignIn = createMutationMock();
     mockEmailSignUp = createMutationMock();
@@ -199,6 +210,58 @@ describe('SignInModal', () => {
     fireEvent.press(screen.getByText('auth.submitSignIn'));
 
     expect(mockGoogleSignIn.reset).toHaveBeenCalled();
+  });
+
+  it('Apple サインインを提供できない端末ではボタンを出さない', () => {
+    mockAppleSignInAvailable = false;
+
+    render(<SignInModal visible onClose={onClose} />);
+
+    expect(screen.queryByText('Sign in with Apple')).toBeNull();
+    expect(screen.getByText('Google Sign-In')).toBeOnTheScreen();
+  });
+
+  it('Apple サインイン成功でモーダルを閉じ、キャンセル（null）では閉じない', () => {
+    mockAppleSignIn.mutate.mockImplementation((_input, options) => {
+      options?.onSuccess?.(null);
+    });
+
+    render(<SignInModal visible onClose={onClose} />);
+    fireEvent.press(screen.getByText('Sign in with Apple'));
+    expect(mockAppleSignIn.mutate).toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+
+    mockAppleSignIn.mutate.mockImplementation((_input, options) => {
+      options?.onSuccess?.(SESSION);
+    });
+    fireEvent.press(screen.getByText('Sign in with Apple'));
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('Apple サインイン失敗時はエラー文言を表示する', () => {
+    mockAppleSignIn.isError = true;
+
+    render(<SignInModal visible onClose={onClose} />);
+
+    expect(screen.getByText('settings.signInError')).toBeOnTheScreen();
+  });
+
+  it('Apple サインイン開始時に他の方法のエラー状態をリセットする', () => {
+    render(<SignInModal visible onClose={onClose} />);
+    fireEvent.press(screen.getByText('Sign in with Apple'));
+
+    expect(mockEmailSignIn.reset).toHaveBeenCalled();
+    expect(mockEmailSignUp.reset).toHaveBeenCalled();
+    expect(mockGoogleSignIn.reset).toHaveBeenCalled();
+  });
+
+  it('pending 中は Apple サインインを開始しない', () => {
+    mockGoogleSignIn.isPending = true;
+
+    render(<SignInModal visible onClose={onClose} />);
+    fireEvent.press(screen.getByText('Sign in with Apple'));
+
+    expect(mockAppleSignIn.mutate).not.toHaveBeenCalled();
   });
 
   it('入力が不足している間は送信できない', () => {

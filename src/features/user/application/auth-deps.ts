@@ -1,5 +1,6 @@
 import type {
   AuthGateway,
+  PendingAppleNameStore,
   PersistedUserStore,
   SessionStore,
   UserGateway,
@@ -7,6 +8,7 @@ import type {
 import {
   logoutAuthSession,
   refreshAuthSession,
+  signInWithApple,
   signInWithEmail,
   signInWithGoogle,
   signUpWithEmail,
@@ -18,6 +20,11 @@ import {
   uploadMyIcon,
 } from '../infrastructure/api/user-api';
 import {
+  clearPendingAppleName,
+  loadPendingAppleName,
+  savePendingAppleName,
+} from '../infrastructure/storage/apple-pending-name-storage';
+import {
   clearPersistedSession,
   loadPersistedSession,
   savePersistedSession,
@@ -27,6 +34,7 @@ import {
 /** 本番用の認証 API ゲートウェイ。 */
 export const defaultAuthGateway: AuthGateway = {
   signInWithGoogle,
+  signInWithApple,
   signUpWithEmail,
   signInWithEmail,
   refreshAuthSession,
@@ -38,6 +46,13 @@ export const defaultSessionStore: SessionStore = {
   savePersistedSession,
   loadPersistedSession,
   clearPersistedSession,
+};
+
+/** 本番用の Apple 表示名の一時保存ストア。 */
+export const defaultPendingAppleNameStore: PendingAppleNameStore = {
+  savePendingAppleName,
+  loadPendingAppleName,
+  clearPendingAppleName,
 };
 
 /** 本番用の永続化ユーザー更新ストア。 */

@@ -2,6 +2,7 @@ import {
   AuthApiError,
   logoutAuthSession,
   refreshAuthSession,
+  signInWithApple,
   signInWithEmail,
   signInWithGoogle,
   signUpWithEmail,
@@ -102,6 +103,60 @@ describe('auth-api', () => {
         status: 502,
         message: '認証 API のレスポンスを解析できませんでした',
       });
+    });
+  });
+
+  describe('signInWithApple', () => {
+    it('idToken・nonce・name を /api/v1/auth/apple に POST し、セッションを返す', async () => {
+      const fetchMock = mockFetchResponse(200, SESSION_BODY);
+      global.fetch = fetchMock;
+
+      const session = await signInWithApple(
+        { idToken: 'apple-id-token', nonce: 'raw-nonce', name: '山田 太郎' },
+        { baseUrl: BASE_URL },
+      );
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        `${BASE_URL}/api/v1/auth/apple`,
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            idToken: 'apple-id-token',
+            nonce: 'raw-nonce',
+            name: '山田 太郎',
+          }),
+        }),
+      );
+      expect(session.user).toEqual({ id: 'user-1', name: 'Google 太郎', iconUrl: '' });
+    });
+
+    it('name が無ければ body に含めない', async () => {
+      const fetchMock = mockFetchResponse(200, SESSION_BODY);
+      global.fetch = fetchMock;
+
+      await signInWithApple(
+        { idToken: 'apple-id-token', nonce: 'raw-nonce' },
+        { baseUrl: BASE_URL },
+      );
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        `${BASE_URL}/api/v1/auth/apple`,
+        expect.objectContaining({
+          body: JSON.stringify({ idToken: 'apple-id-token', nonce: 'raw-nonce' }),
+        }),
+      );
+    });
+
+    it('エラーレスポンスの message を持つ AuthApiError を投げる', async () => {
+      global.fetch = mockFetchResponse(400, { status: 400, message: 'invalid id token' });
+
+      const promise = signInWithApple(
+        { idToken: 'bad-token', nonce: 'raw-nonce' },
+        { baseUrl: BASE_URL },
+      );
+
+      await expect(promise).rejects.toBeInstanceOf(AuthApiError);
+      await expect(promise).rejects.toMatchObject({ status: 400, message: 'invalid id token' });
     });
   });
 
