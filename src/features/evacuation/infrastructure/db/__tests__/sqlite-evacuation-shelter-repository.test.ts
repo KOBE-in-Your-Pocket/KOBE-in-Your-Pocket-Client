@@ -26,6 +26,12 @@ const sampleShelters: EvacuationShelter[] = [
     accessible: true,
     externalUrl: 'https://www.city.kobe.lg.jp/bosai/',
     phoneNumber: '078-411-0556',
+    suitability: {
+      landslide: 'suitable',
+      flood: 'conditional',
+      tsunami: 'unsuitable',
+      'large-fire': 'not-applicable',
+    },
   },
   {
     id: 'shelter-2',
@@ -137,7 +143,64 @@ describe('SqliteEvacuationShelterRepository', () => {
     migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
 
     const repository = createSqliteEvacuationShelterRepository(db as unknown as EvacuationDatabase);
-    const { phoneNumber: _phoneNumber, ...legacyShelter } = sampleShelters[0];
+    const {
+      phoneNumber: _phoneNumber,
+      suitability: _suitability,
+      ...legacyShelter
+    } = sampleShelters[0];
+    await expect(repository.findAll()).resolves.toEqual([legacyShelter]);
+  });
+
+  it('災害種別ごとの適否を保存→取得で往復し、情報が無い避難所は suitability を持たない', async () => {
+    const repository = createTestRepository();
+
+    await repository.replaceAll(sampleShelters);
+
+    const [withSuitability, withoutSuitability] = await Promise.all([
+      repository.findById('shelter-1'),
+      repository.findById('shelter-2'),
+    ]);
+    expect(withSuitability?.suitability).toEqual({
+      landslide: 'suitable',
+      flood: 'conditional',
+      tsunami: 'unsuitable',
+      'large-fire': 'not-applicable',
+    });
+    expect(withoutSuitability?.suitability).toBeUndefined();
+  });
+
+  it('suitability_* 列を追加するマイグレーションで既存レコードが壊れない', async () => {
+    const sqlite = new Database(':memory:');
+    openDatabases.push(sqlite);
+    const db = drizzle(sqlite, { schema });
+
+    // suitability_* 列が無い時点（0002 まで）の DB に、電話番号つきで 1 件保存しておく。
+    migrate(db, { migrationsFolder: createMigrationsFolderUpTo(3) });
+    sqlite
+      .prepare(
+        `INSERT INTO evacuation_shelters
+          (id, name, address, latitude, longitude, type, facility_category, image_url, capacity, accessible, external_url, phone_number)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        'shelter-1',
+        '避難所A',
+        '住所A',
+        34.69,
+        135.19,
+        'emergency',
+        'park',
+        'https://example.com/a.jpg',
+        100,
+        1,
+        'https://www.city.kobe.lg.jp/bosai/',
+        '078-411-0556',
+      );
+
+    migrate(db, { migrationsFolder: MIGRATIONS_FOLDER });
+
+    const repository = createSqliteEvacuationShelterRepository(db as unknown as EvacuationDatabase);
+    const { suitability: _suitability, ...legacyShelter } = sampleShelters[0];
     await expect(repository.findAll()).resolves.toEqual([legacyShelter]);
   });
 
