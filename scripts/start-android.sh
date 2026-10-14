@@ -86,9 +86,26 @@ if ! emulator -list-avds 2>/dev/null | tr -d '\r' | grep -qx "${TARGET_AVD}"; th
 fi
 
 # ── 起動済みか確認 ────────────────────────────────
-if adb devices 2>/dev/null | tr -d '\r' | awk 'NR>1 && $2=="device"' | grep -q '^emulator-'; then
+# adb devices の状態が "device" なら健全に起動済み。
+# "offline"/"unauthorized" 等は、WSL や Windows を再起動した際にエミュレータ
+# プロセスだけが幽霊のように残った状態（応答しない）を指す。この状態を
+# 放置したまま次の emulator -avd を起動すると、同一 AVD の多重起動として
+# `FATAL | Running multiple emulators with the same AVD is an experimental
+# feature.` で即終了し、"pnpm android を打ってもエミュレータが機能しない"
+# ように見える不具合の原因になる（検証済み）。
+read -r stale_emulator_id stale_emulator_state <<< "$(adb devices 2>/dev/null | tr -d '\r' | awk 'NR>1 && $1 ~ /^emulator-/ {print; exit}')"
+
+if [[ "$stale_emulator_state" == "device" ]]; then
   echo "✓ Android Emulator は既に起動済み"
 else
+  if [[ -n "$stale_emulator_state" ]]; then
+    echo "⚠ 応答しない古いエミュレータ (${stale_emulator_id}: ${stale_emulator_state}) を検出 — 強制終了して起動し直します"
+    adb -s "${stale_emulator_id}" emu kill >/dev/null 2>&1 || true
+    adb kill-server >/dev/null 2>&1 || true
+    adb start-server >/dev/null 2>&1 || true
+    sleep 2
+  fi
+
   echo "▶ ${TARGET_AVD} を起動（バックグラウンド）..."
   # WSL から Windows の emulator.exe を起動すると ANDROID_HOME が Unix パスのため
   # skin.name(=pixel_8) の名前解決に失敗し `unknown skin name 'pixel_8'` で落ちる。
@@ -113,6 +130,16 @@ else
   echo "✓ boot 完了"
 fi
 
+# ── 前回起動した Dev Client を強制終了 ─────────────────
+# エミュレータを起動しっぱなしで使い回していると、前回セッションの
+# アプリプロセスが React context を持ったまま生き残ることがある。
+# その状態で expo-dev-launcher が同じプロセスへ再度ディープリンクすると
+# DevLauncherAppLoader の require(appHost.currentReactContext == null) に
+# 引っかかり "App react context shouldn't be created before." で
+# 即クラッシュする（検証済み）。起動前に必ず force-stop してプロセスを
+# 確実に作り直す。
+adb shell am force-stop "${ANDROID_PACKAGE}" >/dev/null 2>&1 || true
+
 # ── WSL → Windows エミュ間の Metro 接続を 127.0.0.1 経由に固定 ──
 # WSL2(mirrored) では Metro が WSL 側の LAN IP(例 192.168.x.x)を広告するが、
 # Windows 上のエミュからはそのIPに到達できず「Error loading app / could not
@@ -136,10 +163,29 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$SCRIPT_DIR/lib/load-env.sh"
 load_env_file "$PROJECT_ROOT/.env"
 
+# ── ローカルビルド済み Dev Client と現在の GOOGLE_MAPS_API_KEY の整合性確認 ──
+# Maps API キーはネイティブビルド時に AndroidManifest へ焼き込まれる値なので、
+# .env で新規設定/変更しても Metro のみの再起動（Dev Client インストール済み判定）
+# では反映されない。インストール済みの Dev Client が「古いキー（または無キー）」を
+# 参照したままになり、地図が表示されない不具合の原因になる（検証済み: インストール済み
+# APK の AndroidManifest に com.google.android.geo.API_KEY が無いケースを確認）。
+# 直近のローカルビルドで使ったキーを記録し、現在の値と食い違えば再ビルドさせる。
+LOCAL_MAPS_KEY_STATE_FILE="${PROJECT_ROOT}/.android-local-maps-key"
+last_built_maps_key=""
+if [[ -f "$LOCAL_MAPS_KEY_STATE_FILE" ]]; then
+  last_built_maps_key="$(cat "$LOCAL_MAPS_KEY_STATE_FILE")"
+fi
+local_maps_key_changed=false
+if [[ -n "${GOOGLE_MAPS_API_KEY:-}" && "${GOOGLE_MAPS_API_KEY}" != "$last_built_maps_key" ]]; then
+  local_maps_key_changed=true
+fi
+
 # ── Expo 起動 ─────────────────────────────────────
 # チーム共通: 全員 `pnpm android`（エミュレータ起動 + Dev Client + Metro）。
 # Dev Client インストール済みなら .env なし（EAS APK）でも Dev Client モードで起動する。
-if dev_client_installed; then
+# ただしローカルの GOOGLE_MAPS_API_KEY が前回ビルド時と変わっている場合は
+# Metro のみの起動をスキップし、下のローカル再ビルド分岐に進む。
+if dev_client_installed && [[ "$local_maps_key_changed" == false ]]; then
   if [[ -n "${GOOGLE_MAPS_API_KEY:-}" ]]; then
     echo "✓ Dev Client (${ANDROID_PACKAGE}) + .env（ローカル開発）"
   else
@@ -160,7 +206,12 @@ elif [[ -n "${GOOGLE_MAPS_API_KEY:-}" ]]; then
     echo "⚠ 古い Dev Client (com.anonymous.KOBEinYourPoketClient) が残っています"
     echo "  ビルド後に問題があれば: adb uninstall com.anonymous.KOBEinYourPoketClient"
   fi
+  if [[ "$local_maps_key_changed" == true ]] && dev_client_installed; then
+    echo "⚠ GOOGLE_MAPS_API_KEY が前回ローカルビルド時と異なります（地図が表示されない原因）"
+  fi
   echo "✓ GOOGLE_MAPS_API_KEY を検出 — Dev Client をローカルビルドします（初回のみ数分）"
+  # run_expo は exec するため以降のコードは実行されない。ビルド前に記録しておく。
+  printf '%s' "${GOOGLE_MAPS_API_KEY}" > "$LOCAL_MAPS_KEY_STATE_FILE"
   run_expo run:android
 else
   echo "ERROR: Dev Client (${ANDROID_PACKAGE}) が未インストールです。" >&2

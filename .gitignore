@@ -38,6 +38,9 @@ yarn-error.*
 .env
 .env*.local
 
+# start-android.sh: 直近ローカルビルドの GOOGLE_MAPS_API_KEY を記録（値そのものを含むため）
+/.android-local-maps-key
+
 # typescript
 *.tsbuildinfo
 
