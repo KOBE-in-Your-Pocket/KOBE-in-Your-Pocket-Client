@@ -12,7 +12,6 @@ import {
 import { useEvacuationShelters } from '../../application/hooks/use-evacuation-shelters';
 
 import { ShelterDatasetNotice } from './shelter-dataset-notice';
-import { ShelterImage } from './shelter-image';
 
 import { styles } from '../styles/evacuation-list.styles';
 
@@ -38,21 +37,6 @@ function ShelterListItem({
       accessibilityLabel={shelter.name}
     >
       <ThemedView style={styles.card}>
-        <View style={styles.imageWrapper}>
-          <ShelterImage
-            imageUrl={shelter.media.imageUrl}
-            facilityCategory={shelter.facilityCategory}
-            style={styles.image}
-          />
-          {shelter.distanceKm !== null ? (
-            <View style={styles.distanceBadge}>
-              <ThemedText style={styles.distanceText}>
-                {formatDistanceKm(shelter.distanceKm)}
-              </ThemedText>
-            </View>
-          ) : null}
-        </View>
-
         <View style={styles.content}>
           <View style={styles.categoryRow}>
             <ThemedText style={styles.category}>
@@ -73,8 +57,21 @@ function ShelterListItem({
             {shelter.address}
           </ThemedText>
 
-          {shelter.capacity !== undefined || shelter.phoneNumber ? (
+          {shelter.distanceKm !== null || shelter.capacity !== undefined || shelter.phoneNumber ? (
             <View style={styles.infoRow}>
+              {shelter.distanceKm !== null ? (
+                <View style={styles.infoItem}>
+                  <SymbolView
+                    tintColor={theme.textSecondary}
+                    name={{ ios: 'location.north.fill', android: 'near_me', web: 'near_me' }}
+                    size={14}
+                  />
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {formatDistanceKm(shelter.distanceKm)}
+                  </ThemedText>
+                </View>
+              ) : null}
+
               {shelter.capacity !== undefined ? (
                 <View style={styles.infoItem}>
                   <SymbolView
