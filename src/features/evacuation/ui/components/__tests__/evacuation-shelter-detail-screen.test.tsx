@@ -87,6 +87,14 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
+// 写真を再び差し込んだら検知できるよう、expo-image の Image をテスト用マーカーに差し替える（#627）。
+jest.mock('expo-image', () => {
+  const { View: RNView } = jest.requireActual<typeof import('react-native')>('react-native');
+  return {
+    Image: ({ source }: { source: { uri: string } }) => <RNView testID={`image-${source.uri}`} />,
+  };
+});
+
 // @/shared/lib/directions はあえてモックしない。
 // UI ボタン → confirmOpenDirections → openDirections → Linking.openURL の実経路を通す。
 
@@ -213,6 +221,27 @@ describe('避難所詳細からの外部マップ起動フォールバック分�
       'map.openDirections.errorTitle',
       'map.openDirections.errorMessage',
     );
+  });
+});
+
+describe('避難所詳細の写真表示', () => {
+  it('写真（Image）を表示しない', () => {
+    mockUseCurrentLocation.mockReturnValue({
+      coords: null,
+      permissionDenied: false,
+      servicesDisabled: false,
+      loading: false,
+      error: null,
+    });
+    mockUseEvacuationShelterDetail.mockReturnValue({
+      data: shelter,
+      isPending: false,
+      isError: false,
+    });
+
+    render(<EvacuationShelterDetailScreen shelterId="shelter-1" />);
+
+    expect(screen.queryByTestId(/^image-/)).toBeNull();
   });
 });
 
