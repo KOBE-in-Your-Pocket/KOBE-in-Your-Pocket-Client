@@ -1,4 +1,7 @@
-import type { EvacuationShelter } from '../../domain/evacuation-shelter';
+import type {
+  EvacuationShelter,
+  ShelterSuitabilityByDisaster,
+} from '../../domain/evacuation-shelter';
 
 import type { EvacuationShelterRecord, NewEvacuationShelterRecord } from './schema';
 
@@ -17,6 +20,7 @@ export function toEvacuationShelter(record: EvacuationShelterRecord): Evacuation
     capacity: record.capacity ?? undefined,
     accessible: record.accessible,
     phoneNumber: record.phoneNumber ?? undefined,
+    suitability: toSuitabilityByDisaster(record),
     externalUrl: record.externalUrl ?? undefined,
   };
 }
@@ -35,5 +39,24 @@ export function toEvacuationShelterRecord(shelter: EvacuationShelter): NewEvacua
     accessible: shelter.accessible,
     externalUrl: shelter.externalUrl ?? null,
     phoneNumber: shelter.phoneNumber ?? null,
+    suitabilityLandslide: shelter.suitability?.landslide ?? null,
+    suitabilityFlood: shelter.suitability?.flood ?? null,
+    suitabilityTsunami: shelter.suitability?.tsunami ?? null,
+    suitabilityLargeFire: shelter.suitability?.['large-fire'] ?? null,
   };
+}
+
+/** 適否の 4 列をドメインの形へ戻す。NULL の列はキーを持たせず、全列 NULL なら undefined にする。 */
+function toSuitabilityByDisaster(
+  record: EvacuationShelterRecord,
+): ShelterSuitabilityByDisaster | undefined {
+  const suitability: ShelterSuitabilityByDisaster = {};
+  if (record.suitabilityLandslide !== null) suitability.landslide = record.suitabilityLandslide;
+  if (record.suitabilityFlood !== null) suitability.flood = record.suitabilityFlood;
+  if (record.suitabilityTsunami !== null) suitability.tsunami = record.suitabilityTsunami;
+  if (record.suitabilityLargeFire !== null) {
+    suitability['large-fire'] = record.suitabilityLargeFire;
+  }
+
+  return Object.keys(suitability).length > 0 ? suitability : undefined;
 }
