@@ -1,3 +1,5 @@
+import type { ConfigPlugin } from 'expo/config-plugins';
+import { withEntitlementsPlist } from 'expo/config-plugins';
 import type { ExpoConfig } from 'expo/config';
 
 const googleMapsApiKey = process.env.GOOGLE_MAPS_API_KEY;
@@ -20,6 +22,24 @@ const iosBundleIdentifier = isLocalDevIos
   ? 'com.kobeinyourpocket.client.dev'
   : 'com.kobeinyourpocket.client';
 const iosAppleTeamId = isLocalDevIos ? process.env.IOS_DEV_TEAM_ID : undefined;
+
+// ── Apple サインイン（iOS）─────────────────────────────────
+// Sign in with Apple capability は無料の個人チームでは使えず、entitlement が入っていると
+// 署名に失敗する。LOCAL_DEV_IOS=1 のときは usesAppleSignIn を外し、entitlement も取り除く
+// （そのビルドでは Apple サインインは動作しない）。
+//
+// expo-apple-authentication の plugin は、plugins に書かなくてもインストールされているだけで
+// prebuild が自動適用し、entitlement を無条件に書き込む。plugins から外すだけでは消えないため、
+// 書き込まれた後に削除する plugin を別に挟む（mod は後から登録したものが先に走るため、
+// 自動適用より前のこのファイル内で適用すれば、自動適用の書き込みより後に削除される）。
+// ExpoConfig['plugins'] は関数 plugin を型で受け付けないので、config 全体に直接適用する。
+const usesAppleSignIn = !isLocalDevIos;
+
+const withoutAppleSignInEntitlement: ConfigPlugin = (config) =>
+  withEntitlementsPlist(config, (config) => {
+    delete config.modResults['com.apple.developer.applesignin'];
+    return config;
+  });
 
 // 開発用 backend が HTTP のときだけ ATS 例外を焼き込む（シミュレータ / EAS Dev Client 向け）。
 // デプロイ環境の backend は HTTPS 化済み（https://18-181-34-28.sslip.io）のため例外は不要で、
@@ -48,7 +68,7 @@ if (!googleMapsApiKey) {
   );
 }
 
-export default (): ExpoConfig => ({
+const config: ExpoConfig = {
   // ホーム画面・App Store に出る製品名。slug と EAS プロジェクトの紐付けは
   // 'KOBE-in-Your-Poket-Client' のままにする（変更すると EAS の参照が切れるため）。
   name: 'KOBE in Your Pocket',
@@ -64,6 +84,8 @@ export default (): ExpoConfig => ({
     // （./assets/images/app-icon.png）を使わせるため、iOS 側の指定は外す。
     bundleIdentifier: iosBundleIdentifier,
     ...(iosAppleTeamId ? { appleTeamId: iosAppleTeamId } : {}),
+    // EAS Build はこの値を見て App ID の Sign in with Apple capability を同期する。
+    ...(usesAppleSignIn ? { usesAppleSignIn: true } : {}),
     infoPlist: {
       // 非適用暗号（HTTPS 以外の独自暗号）を含まないことの申告。
       // 未設定だと提出のたびに App Store Connect で輸出コンプライアンスを聞かれる。
@@ -160,6 +182,8 @@ export default (): ExpoConfig => ({
     ],
     'expo-sqlite',
     'expo-secure-store',
+    // entitlement（com.apple.developer.applesignin）を書き込む。上の usesAppleSignIn と対で効く。
+    ...(usesAppleSignIn ? ['expo-apple-authentication'] : []),
     // GoogleSignIn → AppCheckCore 11.3+ が RecaptchaInterop を引き込み、Expo の静的
     // CocoaPods 統合で落ちるため、11.2.0 にピン留めする（issue #1517 の公式回避）。
     [
@@ -201,4 +225,6 @@ export default (): ExpoConfig => ({
       projectId: 'c2f0207f-1521-454c-8262-e6f22fea33bb',
     },
   },
-});
+};
+
+export default (): ExpoConfig => (usesAppleSignIn ? config : withoutAppleSignInEntitlement(config));
