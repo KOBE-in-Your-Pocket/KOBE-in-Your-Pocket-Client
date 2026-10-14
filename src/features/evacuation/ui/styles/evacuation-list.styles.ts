@@ -56,28 +56,6 @@ export const styles = StyleSheet.create({
       default: {},
     }),
   },
-  imageWrapper: {
-    position: 'relative',
-    height: 180,
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  distanceBadge: {
-    position: 'absolute',
-    top: Spacing.two,
-    right: Spacing.two,
-    backgroundColor: CATEGORY_COLOR,
-    borderRadius: Spacing.three,
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.one,
-  },
-  distanceText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
   content: {
     padding: Spacing.three,
     gap: Spacing.two,
