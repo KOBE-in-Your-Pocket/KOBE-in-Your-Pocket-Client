@@ -485,7 +485,7 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
 
           {spot.address.trim() !== '' && (
             <View style={styles.addressRow} testID="spot-address-row">
-              <View style={styles.addressIcon}>
+              <View style={styles.addressIcon} testID="spot-address-icon">
                 <SymbolView
                   tintColor={theme.textSecondary}
                   name={{ ios: 'mappin', android: 'location_on', web: 'location_on' }}

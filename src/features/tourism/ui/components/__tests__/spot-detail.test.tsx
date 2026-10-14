@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import {
   Pressable as MockPressable,
+  StyleSheet,
   Text as MockText,
   View as MockView,
   View as RNView,
@@ -8,6 +9,7 @@ import {
 
 import { SpotDetailContent } from '../spot-detail';
 
+import { SMALL_TEXT_LINE_HEIGHT } from '@/shared/config';
 import { useAgeRestrictionStore } from '@/shared/store';
 
 import { useReportedReviewStore } from '../../../store/use-reported-review-store';
@@ -344,6 +346,18 @@ describe('SpotDetailContent', () => {
       render(<SpotDetailContent spot={{ ...mockSpot, address: '' }} />);
 
       expect(screen.queryByTestId('spot-address-row')).toBeNull();
+    });
+
+    // RNTLは実レイアウトをしないため視覚的な整列ではなくスタイルの配線のみ検証する(#621)
+    it('住所行がテキストブロック中央寄せではなく、アイコンの箱がテキストの行の高さと同じスタイルになっている', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      const row = StyleSheet.flatten(screen.getByTestId('spot-address-row').props.style);
+      expect(row.alignItems).toBe('flex-start');
+
+      const icon = StyleSheet.flatten(screen.getByTestId('spot-address-icon').props.style);
+      expect(icon.height).toBe(SMALL_TEXT_LINE_HEIGHT);
+      expect(icon.justifyContent).toBe('center');
     });
   });
 

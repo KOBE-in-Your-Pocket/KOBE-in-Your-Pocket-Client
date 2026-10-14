@@ -1,6 +1,6 @@
 import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
 
-import { Fonts, ThemeColor } from '@/shared/config';
+import { Fonts, SMALL_TEXT_LINE_HEIGHT, ThemeColor } from '@/shared/config';
 import { useTheme } from '@/shared/lib/theme';
 
 export type ThemedTextProps = TextProps & {
@@ -33,12 +33,12 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 const styles = StyleSheet.create({
   small: {
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: SMALL_TEXT_LINE_HEIGHT,
     fontWeight: 500,
   },
   smallBold: {
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: SMALL_TEXT_LINE_HEIGHT,
     fontWeight: 700,
   },
   default: {
@@ -71,5 +71,3 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
-
-export const SMALL_TEXT_LINE_HEIGHT = styles.small.lineHeight as number;
