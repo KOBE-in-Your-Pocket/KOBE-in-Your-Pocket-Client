@@ -73,5 +73,8 @@ export const Spacing = {
   six: 64,
 } as const;
 
+/** ThemedText の `small`/`smallBold` の行の高さ。アイコンを本文1行目に揃える際にも使う。 */
+export const SMALL_TEXT_LINE_HEIGHT = 20;
+
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;

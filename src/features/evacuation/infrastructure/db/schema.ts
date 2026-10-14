@@ -1,5 +1,7 @@
 import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
+import { SHELTER_SUITABILITIES } from '../../domain/evacuation-shelter';
+
 /** 避難所一覧をオフライン保存する SQLite テーブル。 */
 export const evacuationShelters = sqliteTable('evacuation_shelters', {
   id: text('id').primaryKey(),
@@ -16,6 +18,11 @@ export const evacuationShelters = sqliteTable('evacuation_shelters', {
   accessible: integer('accessible', { mode: 'boolean' }).notNull(),
   externalUrl: text('external_url'),
   phoneNumber: text('phone_number'),
+  // 災害種別ごとの適否。絞り込みを SQL でも書けるよう、JSON 1 列ではなく種別ごとの列で持つ。
+  suitabilityLandslide: text('suitability_landslide', { enum: SHELTER_SUITABILITIES }),
+  suitabilityFlood: text('suitability_flood', { enum: SHELTER_SUITABILITIES }),
+  suitabilityTsunami: text('suitability_tsunami', { enum: SHELTER_SUITABILITIES }),
+  suitabilityLargeFire: text('suitability_large_fire', { enum: SHELTER_SUITABILITIES }),
 });
 
 /**
@@ -26,8 +33,9 @@ export const evacuationShelters = sqliteTable('evacuation_shelters', {
  * 次回起動時に避難所データを再取得して入れ替える。
  *
  * - 1: `phone_number` を追加（#601）
+ * - 2: `suitability_*`（災害種別ごとの適否）を追加（#548）
  */
-export const EVACUATION_SHELTERS_SEED_VERSION = 1;
+export const EVACUATION_SHELTERS_SEED_VERSION = 2;
 
 export type EvacuationShelterRecord = typeof evacuationShelters.$inferSelect;
 export type NewEvacuationShelterRecord = typeof evacuationShelters.$inferInsert;
