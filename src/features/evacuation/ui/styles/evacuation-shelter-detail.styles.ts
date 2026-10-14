@@ -22,23 +22,18 @@ export const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: Spacing.six,
   },
-  hero: {
-    position: 'relative',
-    height: 220,
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
+  backButtonRow: {
+    paddingHorizontal: Spacing.three,
+    paddingBottom: Spacing.two,
   },
   backButton: {
-    position: 'absolute',
-    left: Spacing.three,
     width: 36,
     height: 36,
     borderRadius: 18,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     alignItems: 'center',
     justifyContent: 'center',
+    alignSelf: 'flex-start',
   },
   body: {
     padding: Spacing.four,

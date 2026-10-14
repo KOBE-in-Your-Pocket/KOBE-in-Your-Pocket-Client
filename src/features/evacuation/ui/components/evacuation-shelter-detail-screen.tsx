@@ -9,7 +9,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEvacuationShelterDetail } from '../../application/hooks/use-evacuation-shelter-detail';
 
 import { ShelterDatasetNotice } from './shelter-dataset-notice';
-import { ShelterImage } from './shelter-image';
 
 import { EXTERNAL_LINK_COLOR, styles } from '../styles/evacuation-shelter-detail.styles';
 
@@ -34,19 +33,21 @@ function BackButton({ label }: { label: string }) {
   };
 
   return (
-    <Pressable
-      style={[styles.backButton, { top: insets.top + Spacing.two }]}
-      onPress={handleBack}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      hitSlop={Spacing.two}
-    >
-      <SymbolView
-        tintColor="#FFFFFF"
-        name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }}
-        size={20}
-      />
-    </Pressable>
+    <View style={[styles.backButtonRow, { paddingTop: insets.top + Spacing.two }]}>
+      <Pressable
+        style={styles.backButton}
+        onPress={handleBack}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        hitSlop={Spacing.two}
+      >
+        <SymbolView
+          tintColor="#FFFFFF"
+          name={{ ios: 'chevron.left', android: 'arrow_back', web: 'arrow_back' }}
+          size={20}
+        />
+      </Pressable>
+    </View>
   );
 }
 
@@ -72,14 +73,6 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
-      <View style={styles.hero}>
-        <ShelterImage
-          imageUrl={shelter.media.imageUrl}
-          facilityCategory={shelter.facilityCategory}
-          style={styles.heroImage}
-        />
-      </View>
-
       <View style={styles.body}>
         <ThemedText style={styles.category}>
           {t(`evacuation.list.category.${shelter.facilityCategory}`)}
@@ -195,6 +188,8 @@ export function EvacuationShelterDetailScreen({ shelterId }: { shelterId: string
 
   return (
     <ThemedView style={styles.container}>
+      {/* 戻る操作は正常系・異常系を問わず提供する（AC: 戻る操作で一覧へ戻れる）。 */}
+      <BackButton label={t('evacuation.shelterDetail.back')} />
       {isPending ? (
         <View style={styles.centered}>
           <ActivityIndicator />
@@ -208,8 +203,6 @@ export function EvacuationShelterDetailScreen({ shelterId }: { shelterId: string
       ) : (
         <ShelterDetailContent shelter={shelter} />
       )}
-      {/* 戻る操作は正常系・異常系を問わず提供する（AC: 戻る操作で一覧へ戻れる）。 */}
-      <BackButton label={t('evacuation.shelterDetail.back')} />
     </ThemedView>
   );
 }

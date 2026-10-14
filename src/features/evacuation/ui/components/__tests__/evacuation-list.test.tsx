@@ -80,11 +80,6 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
-// 写真を再び差し込んだら検知できるよう、ShelterImage はテスト用マーカーに差し替える（#626）。
-jest.mock('../shelter-image', () => ({
-  ShelterImage: () => <MockView testID="shelter-list-image" />,
-}));
-
 beforeEach(() => {
   useDisasterFilterStore.setState({ selectedDisasters: [] });
   mockUseEvacuationShelters.mockReturnValue({
@@ -168,19 +163,13 @@ describe('EvacuationList の位置情報フォールバック表示', () => {
   });
 });
 
-describe('EvacuationList の写真表示', () => {
+describe('EvacuationList の距離表示', () => {
   beforeEach(() => {
     mockUseCurrentLocation.mockReturnValue({
       coords: { latitude: 34.694722, longitude: 135.195833 },
       permissionDenied: false,
       servicesDisabled: false,
     });
-  });
-
-  it('写真（ShelterImage）を表示しない', () => {
-    render(<EvacuationList />);
-
-    expect(screen.queryByTestId('shelter-list-image')).toBeNull();
   });
 
   it('現在地があるとき距離をアイコン付きテキストで表示する', () => {
