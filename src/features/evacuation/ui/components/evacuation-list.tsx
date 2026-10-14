@@ -73,18 +73,33 @@ function ShelterListItem({
             {shelter.address}
           </ThemedText>
 
-          {shelter.capacity !== undefined ? (
+          {shelter.capacity !== undefined || shelter.phoneNumber ? (
             <View style={styles.infoRow}>
-              <View style={styles.infoItem}>
-                <SymbolView
-                  tintColor={theme.textSecondary}
-                  name={{ ios: 'person.2.fill', android: 'groups', web: 'groups' }}
-                  size={14}
-                />
-                <ThemedText type="small" themeColor="textSecondary">
-                  {t('evacuation.list.capacity', { count: shelter.capacity })}
-                </ThemedText>
-              </View>
+              {shelter.capacity !== undefined ? (
+                <View style={styles.infoItem}>
+                  <SymbolView
+                    tintColor={theme.textSecondary}
+                    name={{ ios: 'person.2.fill', android: 'groups', web: 'groups' }}
+                    size={14}
+                  />
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {t('evacuation.list.capacity', { count: shelter.capacity })}
+                  </ThemedText>
+                </View>
+              ) : null}
+
+              {shelter.phoneNumber ? (
+                <View style={styles.infoItem}>
+                  <SymbolView
+                    tintColor={theme.textSecondary}
+                    name={{ ios: 'phone.fill', android: 'call', web: 'call' }}
+                    size={14}
+                  />
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {t('evacuation.shelterCard.phoneLabel')}: {shelter.phoneNumber}
+                  </ThemedText>
+                </View>
+              ) : null}
             </View>
           ) : null}
         </View>

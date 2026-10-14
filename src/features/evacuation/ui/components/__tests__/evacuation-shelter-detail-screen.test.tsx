@@ -239,6 +239,30 @@ describe('避難所詳細の値の無い項目の表示分岐', () => {
     expect(screen.queryByText(/evacuation\.list\.accessible/)).toBeNull();
   });
 
+  it('電話番号がある避難所は電話番号を表示する', () => {
+    mockUseEvacuationShelterDetail.mockReturnValue({
+      data: { ...shelter, phoneNumber: '078-411-0556' },
+      isPending: false,
+      isError: false,
+    });
+
+    render(<EvacuationShelterDetailScreen shelterId="shelter-1" />);
+
+    expect(screen.getByText('evacuation.shelterCard.phoneLabel: 078-411-0556')).toBeTruthy();
+  });
+
+  it('電話番号が未登録の避難所は電話番号の行を表示しない', () => {
+    mockUseEvacuationShelterDetail.mockReturnValue({
+      data: shelter,
+      isPending: false,
+      isError: false,
+    });
+
+    render(<EvacuationShelterDetailScreen shelterId="shelter-1" />);
+
+    expect(screen.queryByText(/evacuation\.shelterCard\.phoneLabel/)).toBeNull();
+  });
+
   it('capacity・externalUrl が無い避難所ではその項目を表示しない', () => {
     mockUseEvacuationShelterDetail.mockReturnValue({
       data: shelter,

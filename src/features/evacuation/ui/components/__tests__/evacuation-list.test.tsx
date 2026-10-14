@@ -181,6 +181,24 @@ describe('EvacuationList の収容人数表示', () => {
     expect(screen.queryByText(/evacuation\.list\.accessible/)).toBeNull();
   });
 
+  it('電話番号がある避難所は電話番号を表示する', () => {
+    mockUseEvacuationShelters.mockReturnValue({
+      data: [{ ...DEFAULT_SHELTER, phoneNumber: '078-411-0556' }],
+      isPending: false,
+      isError: false,
+    });
+
+    render(<EvacuationList />);
+
+    expect(screen.getByText('evacuation.shelterCard.phoneLabel: 078-411-0556')).toBeTruthy();
+  });
+
+  it('電話番号が未登録の避難所は電話番号の行を表示しない', () => {
+    render(<EvacuationList />);
+
+    expect(screen.queryByText(/evacuation\.shelterCard\.phoneLabel/)).toBeNull();
+  });
+
   it('capacity が無い避難所は収容人数の行を表示しない', () => {
     render(<EvacuationList />);
 
