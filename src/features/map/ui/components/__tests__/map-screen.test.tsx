@@ -121,6 +121,9 @@ jest.mock('../spot-card', () => ({
 
 describe('MapScreen のマーカー出し分け', () => {
   beforeEach(() => {
+    // 呼び出し履歴を毎テストで初期化する（toHaveBeenCalledWith が前テストの履歴に
+    // マッチして回帰を見逃さないように）。実装は下で再設定する。
+    jest.clearAllMocks();
     useMapModeStore.setState({ mapMode: 'tourism' });
     // 既定: 現在地なし・絞り込みなし（全件返す）。個別テストで上書きする。
     mockUseCurrentLocation.mockReturnValue({
