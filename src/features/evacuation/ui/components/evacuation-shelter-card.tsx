@@ -37,32 +37,32 @@ export function EvacuationShelterCard({
 
   return (
     <ThemedView style={styles.card}>
-      <View style={styles.header}>
-        <View style={styles.headerText}>
-          <ThemedText themeColor="textSecondary" style={styles.category}>
-            {t(`evacuation.list.category.${shelter.facilityCategory}`).toUpperCase()}
-          </ThemedText>
-          <ThemedText style={styles.name} numberOfLines={1}>
-            {shelter.name}
-          </ThemedText>
+      <View style={styles.content}>
+        <View style={styles.headerRow}>
+          <View style={styles.headerText}>
+            <ThemedText themeColor="textSecondary" style={styles.category}>
+              {t(`evacuation.list.category.${shelter.facilityCategory}`).toUpperCase()}
+            </ThemedText>
+            <ThemedText style={styles.name} numberOfLines={1}>
+              {shelter.name}
+            </ThemedText>
+          </View>
+
+          <Pressable
+            onPress={onClose}
+            hitSlop={8}
+            style={styles.closeButton}
+            accessibilityRole="button"
+            accessibilityLabel={t('evacuation.shelterCard.close')}
+          >
+            <SymbolView
+              tintColor={theme.textSecondary}
+              name={{ ios: 'xmark', android: 'close', web: 'close' }}
+              size={14}
+            />
+          </Pressable>
         </View>
 
-        <Pressable
-          onPress={onClose}
-          hitSlop={8}
-          style={styles.closeButton}
-          accessibilityRole="button"
-          accessibilityLabel={t('evacuation.shelterCard.close')}
-        >
-          <SymbolView
-            tintColor={theme.textSecondary}
-            name={{ ios: 'xmark', android: 'close', web: 'close' }}
-            size={14}
-          />
-        </Pressable>
-      </View>
-
-      <View style={styles.footer}>
         <ThemedText
           type="small"
           themeColor="textSecondary"
