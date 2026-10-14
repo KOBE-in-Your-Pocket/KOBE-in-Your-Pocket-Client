@@ -8,6 +8,7 @@ export {
   CURSIVE_FONT_FAMILY,
   Fonts,
   MaxContentWidth,
+  SMALL_TEXT_LINE_HEIGHT,
   Spacing,
   type ThemeColor,
 } from './theme';
