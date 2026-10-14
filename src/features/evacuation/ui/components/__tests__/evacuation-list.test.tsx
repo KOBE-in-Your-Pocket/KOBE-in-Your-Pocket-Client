@@ -386,6 +386,15 @@ describe('EvacuationList の災害種別タグによる絞り込み', () => {
     expect(screen.getByText('evacuation.disasterFilter.large-fire')).toBeTruthy();
   });
 
+  it('避難所が 1 件も無く、タグも選んでいないときは通常の 0 件表示を出す', () => {
+    mockUseEvacuationShelters.mockReturnValue({ data: [], isPending: false, isError: false });
+
+    render(<EvacuationList />);
+
+    expect(screen.getByText('evacuation.list.empty')).toBeTruthy();
+    expect(screen.queryByText('evacuation.list.filterEmpty')).toBeNull();
+  });
+
   it('絞り込み後の先頭の避難所に「最寄り」バッジが付く', () => {
     mockUseCurrentLocation.mockReturnValue({
       coords: { latitude: 34.694722, longitude: 135.195833 },

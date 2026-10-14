@@ -5,13 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { filterSheltersByDisaster } from '../../application/use-cases/filter-shelters-by-disaster';
 import {
   sortSheltersByDistance,
   type ShelterWithDistance,
 } from '../../application/use-cases/sort-shelters-by-distance';
-import { useEvacuationShelters } from '../../application/hooks/use-evacuation-shelters';
-import { useDisasterFilterStore } from '../../store/use-disaster-filter-store';
+import { useFilteredShelters } from '../../application/hooks/use-filtered-shelters';
 
 import { DisasterFilter } from './disaster-filter';
 import { ShelterDatasetNotice } from './shelter-dataset-notice';
@@ -155,23 +153,22 @@ function ListHeader({
 /**
  * 避難所一覧を表示するコンポーネント。
  *
- * application 層の `useEvacuationShelters()` 経由でデータを取得し、各避難所の
+ * application 層の `useFilteredShelters()` 経由でデータを取得し、各避難所の
  * 画像・距離・施設種別・収容人数・電話番号を含むカード一覧を表示する。
  * 一覧の上の災害種別タグで絞り込める。絞り込みは取得済みの配列に対して行うため、
  * 通信なしで動く。
  */
 export function EvacuationList({ showHeader = true }: { showHeader?: boolean } = {}) {
   const { t } = useTranslation();
-  const { data: shelters, isPending, isError } = useEvacuationShelters();
+  const { data: shelters, isPending, isError, isFiltered } = useFilteredShelters();
   const { coords, permissionDenied, servicesDisabled } = useCurrentLocation();
-  const selectedDisasters = useDisasterFilterStore((state) => state.selectedDisasters);
 
-  // 絞り込んでから距離順に並べる。「最寄り」バッジは絞り込み後の先頭に付く。
+  // 絞り込み済みの一覧を距離順に並べる。「最寄り」バッジは絞り込み後の先頭に付く。
   const sheltersWithDistance = useMemo((): ShelterWithDistance[] | undefined => {
     if (!shelters) return undefined;
 
-    return sortSheltersByDistance(filterSheltersByDisaster(shelters, selectedDisasters), coords);
-  }, [coords, selectedDisasters, shelters]);
+    return sortSheltersByDistance(shelters, coords);
+  }, [coords, shelters]);
 
   if (isPending) {
     return (
@@ -189,7 +186,8 @@ export function EvacuationList({ showHeader = true }: { showHeader?: boolean } =
     );
   }
 
-  if (!sheltersWithDistance || !shelters || shelters.length === 0) {
+  // 絞り込みで 0 件になったときはタグを残して選択を外せるよう、FlatList の ListEmptyComponent で出す。
+  if (!sheltersWithDistance || (sheltersWithDistance.length === 0 && !isFiltered)) {
     return (
       <ThemedView style={styles.centered}>
         <ThemedText themeColor="textSecondary">{t('evacuation.list.empty')}</ThemedText>
