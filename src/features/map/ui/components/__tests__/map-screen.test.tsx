@@ -72,8 +72,9 @@ jest.mock('@/features/tourism', () => ({
 
 jest.mock('@/features/evacuation', () => ({
   useEvacuationShelters: () => ({ data: mockShelters }),
-  // 距離フィルタ本体は use-case 側で検証。ここでは返す避難所を差し替えられるようにする。
-  filterSheltersWithinRadius: (shelters: MockShelter[]) => mockFilterShelters(shelters),
+  // 距離フィルタ本体は use-case 側で検証。ここでは coords を受け取りつつ返す避難所を差し替えられるようにする。
+  filterSheltersWithinRadius: (shelters: MockShelter[], coords: unknown) =>
+    mockFilterShelters(shelters, coords),
   EvacuationShelterCard: ({
     shelter,
     onDetail,
@@ -120,6 +121,9 @@ jest.mock('../spot-card', () => ({
 
 describe('MapScreen のマーカー出し分け', () => {
   beforeEach(() => {
+    // 呼び出し履歴を毎テストで初期化する（toHaveBeenCalledWith が前テストの履歴に
+    // マッチして回帰を見逃さないように）。実装は下で再設定する。
+    jest.clearAllMocks();
     useMapModeStore.setState({ mapMode: 'tourism' });
     // 既定: 現在地なし・絞り込みなし（全件返す）。個別テストで上書きする。
     mockUseCurrentLocation.mockReturnValue({
@@ -268,5 +272,43 @@ describe('MapScreen のマーカー出し分け', () => {
     // ピンが消え、カード（と経路の起点）も残らない。
     expect(screen.queryByTestId('marker-shelter-1')).toBeNull();
     expect(screen.queryByTestId('shelter-card')).toBeNull();
+  });
+
+  describe('現在地未取得時のフォールバック（#604）', () => {
+    it('現在地が取得できないときは全件（フィルタ結果）をピン表示し、coords=null で絞り込む', () => {
+      useMapModeStore.setState({ mapMode: 'evacuation' });
+      // 既定（beforeEach）で現在地なし・全件返し。
+
+      render(<MapScreen />);
+
+      // 全避難所のピンが出る（半径で絞らない）。
+      expect(screen.getByTestId('marker-shelter-1')).toBeTruthy();
+      expect(screen.getByTestId('marker-shelter-2')).toBeTruthy();
+      // 画面は現在地（null）をフィルタに渡している。
+      expect(mockFilterShelters).toHaveBeenCalledWith(mockShelters, null);
+    });
+
+    it('現在地取得後は半径内の絞り込み結果へ切り替わる', () => {
+      useMapModeStore.setState({ mapMode: 'evacuation' });
+
+      // 最初は現在地なし＝全件。
+      const { rerender } = render(<MapScreen />);
+      expect(screen.getByTestId('marker-shelter-1')).toBeTruthy();
+      expect(screen.getByTestId('marker-shelter-2')).toBeTruthy();
+
+      // 現在地が取得でき、半径内が shelter-1 だけになる。
+      mockUseCurrentLocation.mockReturnValue({
+        coords: { latitude: 34.69, longitude: 135.19 },
+        servicesDisabled: false,
+        permissionDenied: false,
+      });
+      mockFilterShelters.mockImplementation((shelters: MockShelter[]) =>
+        shelters.filter((shelter) => shelter.id === 'shelter-1'),
+      );
+      rerender(<MapScreen />);
+
+      expect(screen.getByTestId('marker-shelter-1')).toBeTruthy();
+      expect(screen.queryByTestId('marker-shelter-2')).toBeNull();
+    });
   });
 });
