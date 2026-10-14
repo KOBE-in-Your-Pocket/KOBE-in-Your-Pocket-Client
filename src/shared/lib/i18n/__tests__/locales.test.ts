@@ -18,4 +18,14 @@ describe('locale files', () => {
   it.each(SUPPORTED_LANGUAGES)('%s に避難所カードの電話番号ラベルの翻訳がある', (language) => {
     expect(LOCALES[language].evacuation.shelterCard.phoneLabel).toBeTruthy();
   });
+
+  it.each(SUPPORTED_LANGUAGES)('%s に避難所の災害種別タグの翻訳がある', (language) => {
+    const locale = LOCALES[language];
+
+    expect(locale.evacuation.disasterFilter.landslide).toBeTruthy();
+    expect(locale.evacuation.disasterFilter.flood).toBeTruthy();
+    expect(locale.evacuation.disasterFilter.tsunami).toBeTruthy();
+    expect(locale.evacuation.disasterFilter['large-fire']).toBeTruthy();
+    expect(locale.evacuation.list.filterEmpty).toBeTruthy();
+  });
 });

@@ -178,6 +178,7 @@
       "subtitle": "近くの避難所",
       "loadError": "避難所を読み込めませんでした。",
       "empty": "避難所が見つかりませんでした。",
+      "filterEmpty": "選択した災害で利用できる避難所が見つかりませんでした。",
       "capacity": "収容 {{count}}人",
       "nearest": "一番近い避難所",
       "locationServicesDisabled": "位置情報サービスがオフのため、距離は表示されません。",
@@ -192,6 +193,12 @@
         "designated": "指定",
         "both": "兼用"
       }
+    },
+    "disasterFilter": {
+      "landslide": "土砂災害",
+      "flood": "洪水",
+      "tsunami": "津波",
+      "large-fire": "大火事"
     },
     "shelterCard": {
       "detail": "詳細を見る",

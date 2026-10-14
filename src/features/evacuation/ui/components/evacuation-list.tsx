@@ -5,12 +5,15 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { filterSheltersByDisaster } from '../../application/use-cases/filter-shelters-by-disaster';
 import {
   sortSheltersByDistance,
   type ShelterWithDistance,
 } from '../../application/use-cases/sort-shelters-by-distance';
 import { useEvacuationShelters } from '../../application/hooks/use-evacuation-shelters';
+import { useDisasterFilterStore } from '../../store/use-disaster-filter-store';
 
+import { DisasterFilter } from './disaster-filter';
 import { ShelterDatasetNotice } from './shelter-dataset-notice';
 import { ShelterImage } from './shelter-image';
 
@@ -120,8 +123,6 @@ function ListHeader({
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
 
-  if (!showHeader && !permissionDenied && !servicesDisabled) return null;
-
   return (
     <View
       style={
@@ -148,6 +149,8 @@ function ListHeader({
           </ThemedText>
         </View>
       ) : null}
+
+      <DisasterFilter />
     </View>
   );
 }
@@ -156,18 +159,22 @@ function ListHeader({
  * 避難所一覧を表示するコンポーネント。
  *
  * application 層の `useEvacuationShelters()` 経由でデータを取得し、各避難所の
- * 画像・距離・施設種別・収容人数・バリアフリー情報を含むカード一覧を表示する。
+ * 画像・距離・施設種別・収容人数・電話番号を含むカード一覧を表示する。
+ * 一覧の上の災害種別タグで絞り込める。絞り込みは取得済みの配列に対して行うため、
+ * 通信なしで動く。
  */
 export function EvacuationList({ showHeader = true }: { showHeader?: boolean } = {}) {
   const { t } = useTranslation();
   const { data: shelters, isPending, isError } = useEvacuationShelters();
   const { coords, permissionDenied, servicesDisabled } = useCurrentLocation();
+  const selectedDisasters = useDisasterFilterStore((state) => state.selectedDisasters);
 
+  // 絞り込んでから距離順に並べる。「最寄り」バッジは絞り込み後の先頭に付く。
   const sheltersWithDistance = useMemo((): ShelterWithDistance[] | undefined => {
     if (!shelters) return undefined;
 
-    return sortSheltersByDistance(shelters, coords);
-  }, [coords, shelters]);
+    return sortSheltersByDistance(filterSheltersByDisaster(shelters, selectedDisasters), coords);
+  }, [coords, selectedDisasters, shelters]);
 
   if (isPending) {
     return (
@@ -185,7 +192,7 @@ export function EvacuationList({ showHeader = true }: { showHeader?: boolean } =
     );
   }
 
-  if (!sheltersWithDistance || sheltersWithDistance.length === 0) {
+  if (!sheltersWithDistance || !shelters || shelters.length === 0) {
     return (
       <ThemedView style={styles.centered}>
         <ThemedText themeColor="textSecondary">{t('evacuation.list.empty')}</ThemedText>
@@ -206,6 +213,11 @@ export function EvacuationList({ showHeader = true }: { showHeader?: boolean } =
           permissionDenied={permissionDenied}
           servicesDisabled={servicesDisabled}
         />
+      }
+      ListEmptyComponent={
+        <ThemedText themeColor="textSecondary" style={styles.filterEmpty}>
+          {t('evacuation.list.filterEmpty')}
+        </ThemedText>
       }
       ListFooterComponent={<ShelterDatasetNotice />}
       contentContainerStyle={styles.listContent}
