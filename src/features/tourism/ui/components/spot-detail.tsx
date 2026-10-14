@@ -484,12 +484,14 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
           </View>
 
           {spot.address.trim() !== '' && (
-            <View style={styles.hoursRow} testID="spot-address-row">
-              <SymbolView
-                tintColor={theme.textSecondary}
-                name={{ ios: 'mappin', android: 'location_on', web: 'location_on' }}
-                size={14}
-              />
+            <View style={styles.addressRow} testID="spot-address-row">
+              <View style={styles.addressIcon}>
+                <SymbolView
+                  tintColor={theme.textSecondary}
+                  name={{ ios: 'mappin', android: 'location_on', web: 'location_on' }}
+                  size={14}
+                />
+              </View>
               <ThemedText type="small" themeColor="textSecondary" style={styles.addressText}>
                 {t('tourism.spotDetail.addressLabel')}: {spot.address}
               </ThemedText>

@@ -1,6 +1,7 @@
 import { Platform, StyleSheet } from 'react-native';
 
 import { Spacing } from '@/shared/config';
+import { SMALL_TEXT_LINE_HEIGHT } from '@/shared/ui';
 
 export const CATEGORY_COLOR = '#C67B4A';
 export const RATING_STAR_COLOR = '#F5A623';
@@ -78,6 +79,15 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one,
+  },
+  addressRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.one,
+  },
+  addressIcon: {
+    height: SMALL_TEXT_LINE_HEIGHT,
+    justifyContent: 'center',
   },
   addressText: {
     flex: 1,

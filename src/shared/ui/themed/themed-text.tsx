@@ -71,3 +71,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 });
+
+export const SMALL_TEXT_LINE_HEIGHT = styles.small.lineHeight as number;
