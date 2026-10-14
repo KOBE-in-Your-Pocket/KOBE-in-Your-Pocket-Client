@@ -80,6 +80,11 @@ jest.mock('react-native-safe-area-context', () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
+// 写真を再び差し込んだら検知できるよう、ShelterImage はテスト用マーカーに差し替える（#626）。
+jest.mock('../shelter-image', () => ({
+  ShelterImage: () => <MockView testID="shelter-list-image" />,
+}));
+
 beforeEach(() => {
   useDisasterFilterStore.setState({ selectedDisasters: [] });
   mockUseEvacuationShelters.mockReturnValue({
@@ -160,6 +165,57 @@ describe('EvacuationList の位置情報フォールバック表示', () => {
     expect(screen.queryByText('evacuation.list.title')).toBeNull();
     expect(screen.queryByText('location.permissionDeniedNotice')).toBeNull();
     expect(screen.getByText('避難所A')).toBeTruthy();
+  });
+});
+
+describe('EvacuationList の写真表示', () => {
+  beforeEach(() => {
+    mockUseCurrentLocation.mockReturnValue({
+      coords: { latitude: 34.694722, longitude: 135.195833 },
+      permissionDenied: false,
+      servicesDisabled: false,
+    });
+  });
+
+  it('写真（ShelterImage）を表示しない', () => {
+    render(<EvacuationList />);
+
+    expect(screen.queryByTestId('shelter-list-image')).toBeNull();
+  });
+
+  it('現在地があるとき距離をアイコン付きテキストで表示する', () => {
+    render(<EvacuationList />);
+
+    expect(screen.getByText('1 km')).toBeTruthy();
+  });
+
+  it('現在地がないとき距離を表示しない', () => {
+    mockUseCurrentLocation.mockReturnValue({
+      coords: null,
+      permissionDenied: false,
+      servicesDisabled: false,
+    });
+
+    render(<EvacuationList />);
+
+    expect(screen.queryByText('1 km')).toBeNull();
+  });
+
+  it('写真削除後も主要素（カテゴリ・名称・住所・距離・収容人数・電話番号）が揃って表示される', () => {
+    mockUseEvacuationShelters.mockReturnValue({
+      data: [{ ...DEFAULT_SHELTER, capacity: 120, phoneNumber: '078-411-0556' }],
+      isPending: false,
+      isError: false,
+    });
+
+    render(<EvacuationList />);
+
+    expect(screen.getByText('evacuation.list.category.school')).toBeTruthy();
+    expect(screen.getByText('避難所A')).toBeTruthy();
+    expect(screen.getByText('住所A')).toBeTruthy();
+    expect(screen.getByText('1 km')).toBeTruthy();
+    expect(screen.getByText('evacuation.list.capacity')).toBeTruthy();
+    expect(screen.getByText('evacuation.shelterCard.phoneLabel: 078-411-0556')).toBeTruthy();
   });
 });
 
