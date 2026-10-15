@@ -25,6 +25,7 @@ describe('use-email-auth', () => {
   const deps = () => ({
     authGateway: {
       signInWithGoogle: jest.fn(),
+      signInWithApple: jest.fn(),
       signUpWithEmail,
       signInWithEmail,
       refreshAuthSession: jest.fn(),
