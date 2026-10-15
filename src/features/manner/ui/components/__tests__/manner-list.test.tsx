@@ -58,14 +58,11 @@ jest.mock('../kind-badge', () => ({
   KindBadge: ({ kind }: { kind: string }) => <MockText>{`kind:${kind}`}</MockText>,
 }));
 
-// フィルタ本体の挙動は use-kind-filter-store / use-scope-filter-store 側で検証済み。
-// ここでは配置確認用のマーカーだけ出す。
-jest.mock('../kind-filter', () => ({
-  KindFilter: () => <MockText>kind-filter</MockText>,
-}));
-
-jest.mock('../scope-filter', () => ({
-  ScopeFilter: () => <MockText>scope-filter</MockText>,
+// 絞り込みモーダル本体の挙動は manner-filter-modal 側で検証済み。
+// ここでは「絞り込み」ボタンで開閉できることだけ確認するため、visible のときにマーカーを出す。
+jest.mock('../manner-filter-modal', () => ({
+  MannerFilterModal: ({ visible }: { visible: boolean }) =>
+    visible ? <MockText>filter-modal</MockText> : null,
 }));
 
 jest.mock('@/shared/lib/theme', () => ({
@@ -137,23 +134,27 @@ describe('MannerList', () => {
     expect(screen.getByText('kind:manner')).toBeTruthy();
   });
 
-  it('一覧上部に KindFilter と ScopeFilter を配置する', () => {
+  it('ヘッダーに絞り込みボタンを表示し、タップでモーダルを開く', () => {
     mockUseFilteredManners.mockReturnValue({ data: mockManners, isPending: false, isError: false });
 
     render(<MannerList />);
 
-    expect(screen.getByText('kind-filter')).toBeTruthy();
-    expect(screen.getByText('scope-filter')).toBeTruthy();
+    // 初期状態ではモーダルは閉じている。
+    expect(screen.queryByText('filter-modal')).toBeNull();
+
+    // 絞り込みボタンをタップするとモーダルが開く。
+    fireEvent.press(screen.getByLabelText('manner.filter.title'));
+
+    expect(screen.getByText('filter-modal')).toBeTruthy();
   });
 
-  it('絞り込み結果が 0 件でも KindFilter と ScopeFilter を表示し続ける', () => {
+  it('絞り込み結果が 0 件でも絞り込みボタンを表示し続ける', () => {
     mockUseFilteredManners.mockReturnValue({ data: [], isPending: false, isError: false });
 
     render(<MannerList />);
 
     expect(screen.getByText('manner.list.empty')).toBeTruthy();
-    expect(screen.getByText('kind-filter')).toBeTruthy();
-    expect(screen.getByText('scope-filter')).toBeTruthy();
+    expect(screen.getByLabelText('manner.filter.title')).toBeTruthy();
   });
 
   it('カードをタップすると該当マナーの詳細画面へ遷移する', () => {

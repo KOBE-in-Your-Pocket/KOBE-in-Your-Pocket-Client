@@ -1,4 +1,6 @@
 import { router } from 'expo-router';
+import { SymbolView } from 'expo-symbols';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Pressable, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,9 +17,11 @@ import { useTheme } from '@/shared/lib/theme';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
 import { KindBadge } from './kind-badge';
-import { KindFilter } from './kind-filter';
+import { MannerFilterModal } from './manner-filter-modal';
 import { MannerPictogram } from './manner-pictogram';
-import { ScopeFilter } from './scope-filter';
+
+/** ヘッダーのブランド副題。地名ブランドのため UI 言語に関わらず固定表記にする。 */
+const MANNER_REGION_LABEL = '神戸 · KOBE, JAPAN';
 
 /**
  * マナー項目1件分のカード（2列グリッドの1セル）。
@@ -53,21 +57,39 @@ function MannerCard({ manner }: { manner: MannerItem }) {
   );
 }
 
-function ListHeader() {
+function ListHeader({ onOpenFilter }: { onOpenFilter: () => void }) {
   const { t } = useTranslation();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
+  // 左にブランド副題＋筆記体タイトル、右に絞り込みを開くボタンを置く。
   return (
-    // 一覧画面（Tourist Spots）と同じ装飾タイトル：筆記体・中央揃えのタイトルを上下の区切り線で挟む。
     <View style={[styles.header, { paddingTop: insets.top + Spacing.four + Spacing.one }]}>
-      <View style={[styles.divider, { backgroundColor: theme.textSecondary }]} />
-      <ThemedText type="title" style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
-        {t('manner.list.title')}
-      </ThemedText>
-      <View style={[styles.divider, { backgroundColor: theme.textSecondary }]} />
-      <KindFilter />
-      <ScopeFilter />
+      <View style={styles.headerRow}>
+        <View style={styles.headerTitles}>
+          <ThemedText themeColor="textSecondary" style={styles.region}>
+            {MANNER_REGION_LABEL}
+          </ThemedText>
+          <ThemedText type="title" style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
+            {t('manner.list.title')}
+          </ThemedText>
+        </View>
+        <Pressable
+          style={[styles.filterButton, { backgroundColor: theme.backgroundElement }]}
+          onPress={onOpenFilter}
+          accessibilityRole="button"
+          accessibilityLabel={t('manner.filter.title')}
+        >
+          <SymbolView
+            tintColor={theme.text}
+            name={{ ios: 'line.3.horizontal.decrease', android: 'filter_list', web: 'filter_list' }}
+            size={16}
+          />
+          <ThemedText type="smallBold" style={styles.filterButtonText}>
+            {t('manner.filter.title')}
+          </ThemedText>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -77,11 +99,13 @@ function ListHeader() {
  *
  * application 層の `useFilteredManners()` 経由で選択中の種別・地域スコープに絞り込んだデータを
  * 取得し、各項目をピクトグラム主体のカードで並べる。カードをタップすると詳細画面（`/manner/[id]`）へ
- * 遷移する。上部の {@link KindFilter} と {@link ScopeFilter} で一覧が即座に更新される。
+ * 遷移する。ヘッダーの「絞り込み」ボタンから {@link MannerFilterModal} を開いて条件を変えると、
+ * 一覧が即座に更新される。
  */
 export function MannerList() {
   const { t } = useTranslation();
   const { data: manners, isPending, isError } = useFilteredManners();
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   if (isPending) {
     return (
@@ -99,20 +123,23 @@ export function MannerList() {
     );
   }
 
-  // 絞り込み結果が空でもヘッダーの KindFilter / ScopeFilter は表示し続け、他の条件へ切り替えられるようにする。
+  // 絞り込み結果が空でもヘッダー（絞り込みボタン）は表示し続け、他の条件へ切り替えられるようにする。
   return (
-    <FlatList
-      data={manners}
-      keyExtractor={(manner) => manner.id}
-      renderItem={({ item }) => <MannerCard manner={item} />}
-      numColumns={2}
-      ListHeaderComponent={<ListHeader />}
-      ListEmptyComponent={
-        <View style={styles.empty}>
-          <ThemedText themeColor="textSecondary">{t('manner.list.empty')}</ThemedText>
-        </View>
-      }
-      contentContainerStyle={styles.listContent}
-    />
+    <>
+      <FlatList
+        data={manners}
+        keyExtractor={(manner) => manner.id}
+        renderItem={({ item }) => <MannerCard manner={item} />}
+        numColumns={2}
+        ListHeaderComponent={<ListHeader onOpenFilter={() => setIsFilterOpen(true)} />}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <ThemedText themeColor="textSecondary">{t('manner.list.empty')}</ThemedText>
+          </View>
+        }
+        contentContainerStyle={styles.listContent}
+      />
+      <MannerFilterModal visible={isFilterOpen} onClose={() => setIsFilterOpen(false)} />
+    </>
   );
 }
