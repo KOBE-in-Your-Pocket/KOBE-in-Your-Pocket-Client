@@ -13,6 +13,7 @@ import { useFilteredShelters } from '../../application/hooks/use-filtered-shelte
 
 import { DisasterFilter } from './disaster-filter';
 import { ShelterDatasetNotice } from './shelter-dataset-notice';
+import { ShelterSuitabilityChips } from './shelter-suitability';
 
 import { styles } from '../styles/evacuation-list.styles';
 
@@ -100,6 +101,8 @@ function ShelterListItem({
               ) : null}
             </View>
           ) : null}
+
+          <ShelterSuitabilityChips suitability={shelter.suitability} />
         </View>
       </ThemedView>
     </Pressable>

@@ -22,10 +22,23 @@ describe('locale files', () => {
   it.each(SUPPORTED_LANGUAGES)('%s に避難所の災害種別タグの翻訳がある', (language) => {
     const locale = LOCALES[language];
 
-    expect(locale.evacuation.disasterFilter.landslide).toBeTruthy();
-    expect(locale.evacuation.disasterFilter.flood).toBeTruthy();
-    expect(locale.evacuation.disasterFilter.tsunami).toBeTruthy();
-    expect(locale.evacuation.disasterFilter['large-fire']).toBeTruthy();
+    expect(locale.evacuation.disasterType.landslide).toBeTruthy();
+    expect(locale.evacuation.disasterType.flood).toBeTruthy();
+    expect(locale.evacuation.disasterType.tsunami).toBeTruthy();
+    expect(locale.evacuation.disasterType['large-fire']).toBeTruthy();
     expect(locale.evacuation.list.filterEmpty).toBeTruthy();
+  });
+
+  it.each(SUPPORTED_LANGUAGES)('%s に避難所の災害ごとの利用可否の翻訳がある', (language) => {
+    const { suitability } = LOCALES[language].evacuation;
+
+    expect(suitability.title).toBeTruthy();
+    expect(suitability.suitable).toBeTruthy();
+    expect(suitability.conditional).toBeTruthy();
+    expect(suitability.unsuitable).toBeTruthy();
+    expect(suitability['not-applicable']).toBeTruthy();
+    expect(suitability.unknown).toBeTruthy();
+    expect(suitability.label).toContain('{{disaster}}');
+    expect(suitability.label).toContain('{{status}}');
   });
 });
