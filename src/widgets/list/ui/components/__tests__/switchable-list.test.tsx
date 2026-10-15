@@ -46,11 +46,13 @@ describe('SwitchableList', () => {
     );
   });
 
-  it('EvacuationList に showHeader=false を渡す', () => {
+  it('EvacuationList に showDisasterFilter=false・showHeader=false を渡す', () => {
     useListModeStore.setState({ listMode: 'evacuation' });
 
     render(<SwitchableList />);
 
-    expect(mockEvacuationList).toHaveBeenCalledWith(expect.objectContaining({ showHeader: false }));
+    expect(mockEvacuationList).toHaveBeenCalledWith(
+      expect.objectContaining({ showDisasterFilter: false, showHeader: false }),
+    );
   });
 });

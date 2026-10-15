@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import {
   Text as MockText,
   View as MockView,
@@ -6,6 +6,8 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
+
+import { useDisasterFilterStore } from '../../../store/use-disaster-filter-store';
 
 import { EvacuationList } from '../evacuation-list';
 
@@ -79,6 +81,7 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 beforeEach(() => {
+  useDisasterFilterStore.setState({ selectedDisasters: [] });
   mockUseEvacuationShelters.mockReturnValue({
     data: [DEFAULT_SHELTER],
     isPending: false,
@@ -260,5 +263,167 @@ describe('EvacuationList の収容人数表示', () => {
     render(<EvacuationList />);
 
     expect(screen.getByText('evacuation.list.capacity')).toBeTruthy();
+  });
+});
+
+describe('EvacuationList の災害種別タグによる絞り込み', () => {
+  const FLOOD_SHELTER: EvacuationShelter = {
+    ...DEFAULT_SHELTER,
+    id: 'flood',
+    name: '洪水で使える避難所',
+    suitability: {
+      landslide: 'unsuitable',
+      flood: 'suitable',
+      tsunami: 'unsuitable',
+      'large-fire': 'not-applicable',
+    },
+  };
+  const TSUNAMI_SHELTER: EvacuationShelter = {
+    ...DEFAULT_SHELTER,
+    id: 'tsunami',
+    name: '津波で使える避難所',
+    suitability: {
+      landslide: 'unsuitable',
+      flood: 'unsuitable',
+      tsunami: 'suitable',
+      'large-fire': 'not-applicable',
+    },
+  };
+  const FLOOD_CONDITIONAL_SHELTER: EvacuationShelter = {
+    ...DEFAULT_SHELTER,
+    id: 'flood-conditional',
+    name: '洪水は条件付きの避難所',
+    suitability: {
+      landslide: 'unsuitable',
+      flood: 'conditional',
+      tsunami: 'unsuitable',
+      'large-fire': 'not-applicable',
+    },
+  };
+
+  beforeEach(() => {
+    mockUseCurrentLocation.mockReturnValue({
+      coords: null,
+      permissionDenied: false,
+      servicesDisabled: false,
+    });
+    mockUseEvacuationShelters.mockReturnValue({
+      data: [FLOOD_CONDITIONAL_SHELTER, FLOOD_SHELTER, TSUNAMI_SHELTER],
+      isPending: false,
+      isError: false,
+    });
+  });
+
+  it.each(['landslide', 'flood', 'tsunami', 'large-fire'])('%s のタグを表示する', (disaster) => {
+    render(<EvacuationList />);
+
+    expect(screen.getByText(`evacuation.disasterFilter.${disaster}`)).toBeTruthy();
+  });
+
+  it('showHeader=false でもタグを表示する', () => {
+    render(<EvacuationList showHeader={false} />);
+
+    expect(screen.getByText('evacuation.disasterFilter.flood')).toBeTruthy();
+  });
+
+  it('showDisasterFilter=false のときはタグを表示しない', () => {
+    render(<EvacuationList showDisasterFilter={false} showHeader={false} />);
+
+    expect(screen.queryByText('evacuation.disasterFilter.flood')).toBeNull();
+    expect(screen.getByText('洪水で使える避難所')).toBeTruthy();
+  });
+
+  it('タグは複数選択のチェックボックスとして読み上げられる', () => {
+    render(<EvacuationList />);
+
+    expect(screen.getAllByRole('checkbox')).toHaveLength(4);
+    expect(screen.queryByRole('checkbox', { checked: true })).toBeNull();
+
+    fireEvent.press(screen.getByText('evacuation.disasterFilter.flood'));
+
+    expect(screen.getAllByRole('checkbox', { checked: true })).toHaveLength(1);
+  });
+
+  it('タグを選んでいなければ全件を表示する', () => {
+    render(<EvacuationList />);
+
+    expect(screen.getByText('洪水で使える避難所')).toBeTruthy();
+    expect(screen.getByText('津波で使える避難所')).toBeTruthy();
+    expect(screen.getByText('洪水は条件付きの避難所')).toBeTruthy();
+  });
+
+  it('タグを 1 つ選ぶと、その災害が suitable の避難所だけを表示する', () => {
+    render(<EvacuationList />);
+
+    fireEvent.press(screen.getByText('evacuation.disasterFilter.flood'));
+
+    expect(screen.getByText('洪水で使える避難所')).toBeTruthy();
+    expect(screen.queryByText('津波で使える避難所')).toBeNull();
+    expect(screen.queryByText('洪水は条件付きの避難所')).toBeNull();
+  });
+
+  it('タグを複数選ぶと、いずれかの災害で suitable の避難所を表示する', () => {
+    render(<EvacuationList />);
+
+    fireEvent.press(screen.getByText('evacuation.disasterFilter.flood'));
+    fireEvent.press(screen.getByText('evacuation.disasterFilter.tsunami'));
+
+    expect(screen.getByText('洪水で使える避難所')).toBeTruthy();
+    expect(screen.getByText('津波で使える避難所')).toBeTruthy();
+    expect(screen.queryByText('洪水は条件付きの避難所')).toBeNull();
+  });
+
+  it('選択中のタグをもう一度押すと選択が外れ、全件表示に戻る', () => {
+    render(<EvacuationList />);
+
+    fireEvent.press(screen.getByText('evacuation.disasterFilter.flood'));
+    fireEvent.press(screen.getByText('evacuation.disasterFilter.flood'));
+
+    expect(screen.getByText('津波で使える避難所')).toBeTruthy();
+    expect(screen.getByText('洪水は条件付きの避難所')).toBeTruthy();
+  });
+
+  it('該当 0 件のときは専用の文言を表示し、タグは残す', () => {
+    render(<EvacuationList />);
+
+    fireEvent.press(screen.getByText('evacuation.disasterFilter.large-fire'));
+
+    expect(screen.getByText('evacuation.list.filterEmpty')).toBeTruthy();
+    expect(screen.queryByText('evacuation.list.empty')).toBeNull();
+    expect(screen.getByText('evacuation.disasterFilter.large-fire')).toBeTruthy();
+  });
+
+  it('避難所が 1 件も無く、タグも選んでいないときは通常の 0 件表示を出す', () => {
+    mockUseEvacuationShelters.mockReturnValue({ data: [], isPending: false, isError: false });
+
+    render(<EvacuationList />);
+
+    expect(screen.getByText('evacuation.list.empty')).toBeTruthy();
+    expect(screen.queryByText('evacuation.list.filterEmpty')).toBeNull();
+  });
+
+  it('避難所が 1 件も無いときは、タグを選んでいても通常の 0 件表示を出す', () => {
+    useDisasterFilterStore.setState({ selectedDisasters: ['flood'] });
+    mockUseEvacuationShelters.mockReturnValue({ data: [], isPending: false, isError: false });
+
+    render(<EvacuationList />);
+
+    expect(screen.getByText('evacuation.list.empty')).toBeTruthy();
+    expect(screen.queryByText('evacuation.list.filterEmpty')).toBeNull();
+  });
+
+  it('絞り込み後の先頭の避難所に「最寄り」バッジが付く', () => {
+    mockUseCurrentLocation.mockReturnValue({
+      coords: { latitude: 34.694722, longitude: 135.195833 },
+      permissionDenied: false,
+      servicesDisabled: false,
+    });
+    render(<EvacuationList />);
+
+    fireEvent.press(screen.getByText('evacuation.disasterFilter.tsunami'));
+
+    expect(screen.getByText('津波で使える避難所')).toBeTruthy();
+    expect(screen.queryByText('洪水は条件付きの避難所')).toBeNull();
+    expect(screen.getAllByText('evacuation.list.nearest')).toHaveLength(1);
   });
 });

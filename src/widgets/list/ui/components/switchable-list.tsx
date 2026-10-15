@@ -8,6 +8,6 @@ export function SwitchableList() {
   return listMode === 'tourism' ? (
     <SpotList showGenreFilter={false} showHeader={false} />
   ) : (
-    <EvacuationList showHeader={false} />
+    <EvacuationList showDisasterFilter={false} showHeader={false} />
   );
 }
