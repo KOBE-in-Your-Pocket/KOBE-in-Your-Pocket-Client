@@ -227,7 +227,21 @@
       "externalLink": "開設状況を確認（自治体ページ）",
       "openDirectionsButton": "経路を開く",
       "linkErrorTitle": "エラー",
-      "linkErrorMessage": "ページを開けませんでした。"
+      "linkErrorMessage": "ページを開けませんでした。",
+      "typeBadge": {
+        "emergency": {
+          "label": "緊急避難場所",
+          "description": "危険が迫ったとき、すぐに逃げ込む場所です"
+        },
+        "designated": {
+          "label": "指定避難所",
+          "description": "災害後にしばらく滞在できる場所です"
+        },
+        "both": {
+          "label": "緊急避難場所・指定避難所",
+          "description": "すぐ逃げ込む場所と、滞在できる場所を兼ねています"
+        }
+      }
     },
     "dataset": {
       "source": "出典: {{source}}（データ基準日: {{asOf}}）",
