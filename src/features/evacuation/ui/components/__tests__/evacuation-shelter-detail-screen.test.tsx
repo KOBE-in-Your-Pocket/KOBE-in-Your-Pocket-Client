@@ -318,3 +318,48 @@ describe('避難所詳細の値の無い項目の表示分岐', () => {
     expect(screen.getByLabelText('evacuation.shelterDetail.externalLink')).toBeTruthy();
   });
 });
+
+describe('避難所詳細の災害ごとの利用可否', () => {
+  beforeEach(() => {
+    mockUseCurrentLocation.mockReturnValue({
+      coords: null,
+      permissionDenied: false,
+      servicesDisabled: false,
+      loading: false,
+      error: null,
+    });
+  });
+
+  it('適否がある避難所は災害ごとの利用可否を表示する', () => {
+    mockUseEvacuationShelterDetail.mockReturnValue({
+      data: {
+        ...shelter,
+        suitability: {
+          landslide: 'conditional',
+          flood: 'suitable',
+          tsunami: 'unsuitable',
+          'large-fire': 'not-applicable',
+        },
+      },
+      isPending: false,
+      isError: false,
+    });
+
+    render(<EvacuationShelterDetailScreen shelterId="shelter-1" />);
+
+    expect(screen.getByText('evacuation.suitability.title')).toBeTruthy();
+    expect(screen.getByText('evacuation.suitability.conditional')).toBeTruthy();
+  });
+
+  it('適否が無い避難所は欄ごと表示しない', () => {
+    mockUseEvacuationShelterDetail.mockReturnValue({
+      data: shelter,
+      isPending: false,
+      isError: false,
+    });
+
+    render(<EvacuationShelterDetailScreen shelterId="shelter-1" />);
+
+    expect(screen.queryByText('evacuation.suitability.title')).toBeNull();
+  });
+});

@@ -194,11 +194,20 @@
         "both": "겸용"
       }
     },
-    "disasterFilter": {
+    "disasterType": {
       "landslide": "산사태",
       "flood": "홍수",
       "tsunami": "쓰나미",
       "large-fire": "대형 화재"
+    },
+    "suitability": {
+      "title": "재해별 이용 가능 여부",
+      "suitable": "이용 가능",
+      "conditional": "조건부",
+      "unsuitable": "이용 불가",
+      "not-applicable": "해당 없음",
+      "unknown": "정보 없음",
+      "label": "{{disaster}}: {{status}}"
     },
     "shelterCard": {
       "detail": "상세 보기",
