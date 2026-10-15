@@ -34,75 +34,77 @@ function SpotListItem({ spot }: { spot: SpotWithDistance }) {
       accessibilityLabel={spot.name}
     >
       <ThemedView style={styles.card}>
-        <View style={styles.imageWrapper}>
-          <Image source={{ uri: spot.media.imageUrl }} style={styles.image} contentFit="cover" />
-          {spot.distanceKm !== null ? (
-            <View style={styles.distanceBadge}>
-              <ThemedText style={styles.distanceText}>
-                {formatDistanceKm(spot.distanceKm)}
-              </ThemedText>
-            </View>
-          ) : null}
-        </View>
-
-        <View style={styles.content}>
-          <View style={styles.metaRow}>
-            <ThemedText style={styles.category}>{spot.category.label}</ThemedText>
-            {spot.rating ? (
-              <View style={styles.ratingRow}>
-                <SymbolView
-                  tintColor={RATING_STAR_COLOR}
-                  name={{ ios: 'star.fill', android: 'star', web: 'star' }}
-                  size={14}
-                />
-                <ThemedText type="smallBold">{spot.rating.value.toFixed(1)}</ThemedText>
+        <View style={styles.cardInner}>
+          <View style={styles.imageWrapper}>
+            <Image source={{ uri: spot.media.imageUrl }} style={styles.image} contentFit="cover" />
+            {spot.distanceKm !== null ? (
+              <View style={styles.distanceBadge}>
+                <ThemedText style={styles.distanceText}>
+                  {formatDistanceKm(spot.distanceKm)}
+                </ThemedText>
               </View>
             ) : null}
           </View>
 
-          <ThemedText type="smallBold" style={styles.name}>
-            {spot.name}
-          </ThemedText>
+          <View style={styles.content}>
+            <View style={styles.metaRow}>
+              <ThemedText style={styles.category}>{spot.category.label}</ThemedText>
+              {spot.rating ? (
+                <View style={styles.ratingRow}>
+                  <SymbolView
+                    tintColor={RATING_STAR_COLOR}
+                    name={{ ios: 'star.fill', android: 'star', web: 'star' }}
+                    size={14}
+                  />
+                  <ThemedText type="smallBold">{spot.rating.value.toFixed(1)}</ThemedText>
+                </View>
+              ) : null}
+            </View>
 
-          <ThemedText
-            type="small"
-            themeColor="textSecondary"
-            numberOfLines={3}
-            style={styles.description}
-          >
-            {spot.description}
-          </ThemedText>
-
-          <View style={styles.hoursRow}>
-            <SymbolView
-              tintColor={theme.textSecondary}
-              name={{ ios: 'clock', android: 'schedule', web: 'schedule' }}
-              size={14}
-            />
-            <ThemedText type="small" themeColor="textSecondary">
-              {spot.businessHours}
+            <ThemedText type="smallBold" style={styles.name}>
+              {spot.name}
             </ThemedText>
+
+            <ThemedText
+              type="small"
+              themeColor="textSecondary"
+              numberOfLines={3}
+              style={styles.description}
+            >
+              {spot.description}
+            </ThemedText>
+
+            <View style={styles.hoursRow}>
+              <SymbolView
+                tintColor={theme.textSecondary}
+                name={{ ios: 'clock', android: 'schedule', web: 'schedule' }}
+                size={14}
+              />
+              <ThemedText type="small" themeColor="textSecondary">
+                {spot.businessHours}
+              </ThemedText>
+            </View>
+
+            <Pressable
+              style={styles.routeButton}
+              onPress={() => router.push({ pathname: '/map', params: { spotId: spot.id } })}
+              accessibilityRole="button"
+              accessibilityLabel={t('tourism.spotList.routeButton')}
+            >
+              <SymbolView
+                tintColor="#FFFFFF"
+                name={{
+                  ios: 'arrow.triangle.turn.up.right.diamond.fill',
+                  android: 'directions',
+                  web: 'directions',
+                }}
+                size={16}
+              />
+              <ThemedText style={styles.routeButtonText}>
+                {t('tourism.spotList.routeButton')}
+              </ThemedText>
+            </Pressable>
           </View>
-
-          <Pressable
-            style={styles.routeButton}
-            onPress={() => router.push({ pathname: '/map', params: { spotId: spot.id } })}
-            accessibilityRole="button"
-            accessibilityLabel={t('tourism.spotList.routeButton')}
-          >
-            <SymbolView
-              tintColor="#FFFFFF"
-              name={{
-                ios: 'arrow.triangle.turn.up.right.diamond.fill',
-                android: 'directions',
-                web: 'directions',
-              }}
-              size={16}
-            />
-            <ThemedText style={styles.routeButtonText}>
-              {t('tourism.spotList.routeButton')}
-            </ThemedText>
-          </Pressable>
         </View>
       </ThemedView>
     </Pressable>

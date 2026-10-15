@@ -26,9 +26,10 @@ export const styles = StyleSheet.create({
     fontSize: 28,
     lineHeight: 34,
   },
+  // iOS では overflow: 'hidden' を指定した View の影はクリップされて表示されないため、
+  // 影は外側の card、角丸の切り抜きは内側の cardInner に分けて指定する。
   card: {
     borderRadius: Spacing.three,
-    overflow: 'hidden',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -41,6 +42,10 @@ export const styles = StyleSheet.create({
       },
       default: {},
     }),
+  },
+  cardInner: {
+    borderRadius: Spacing.three,
+    overflow: 'hidden',
   },
   imageWrapper: {
     position: 'relative',
