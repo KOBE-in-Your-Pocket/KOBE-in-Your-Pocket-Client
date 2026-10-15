@@ -22,7 +22,8 @@ import { ThemedText } from '@/shared/ui';
 export function DisasterFilter() {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { selectedDisasters, toggleDisaster } = useDisasterFilterStore();
+  const selectedDisasters = useDisasterFilterStore((state) => state.selectedDisasters);
+  const toggleDisaster = useDisasterFilterStore((state) => state.toggleDisaster);
 
   return (
     <ScrollView
@@ -41,8 +42,9 @@ export function DisasterFilter() {
               { backgroundColor: isSelected ? SELECTED_CHIP_COLOR : theme.backgroundElement },
             ]}
             onPress={() => toggleDisaster(disaster)}
-            accessibilityRole="button"
-            accessibilityState={{ selected: isSelected }}
+            // 複数選択のトグルなので、選択・解除できることが伝わる checkbox として読み上げる。
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: isSelected }}
           >
             <ThemedText
               style={[styles.chipText, isSelected ? { color: SELECTED_CHIP_TEXT_COLOR } : null]}

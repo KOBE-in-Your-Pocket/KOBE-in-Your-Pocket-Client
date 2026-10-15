@@ -40,14 +40,14 @@ beforeEach(() => {
 });
 
 describe('useFilteredShelters', () => {
-  it('災害種別を選んでいなければ全件を返し、isFiltered は false', () => {
+  it('災害種別を選んでいなければ全件を返す', () => {
     const { result } = renderHook(() => useFilteredShelters());
 
     expect(result.current.data).toEqual([FLOOD, TSUNAMI]);
-    expect(result.current.isFiltered).toBe(false);
+    expect(result.current.totalCount).toBe(2);
   });
 
-  it('選んだ災害種別で絞り込み、isFiltered は true', () => {
+  it('選んだ災害種別で絞り込み、totalCount は絞り込み前の件数を返す', () => {
     const { result } = renderHook(() => useFilteredShelters());
 
     act(() => {
@@ -55,7 +55,7 @@ describe('useFilteredShelters', () => {
     });
 
     expect(result.current.data).toEqual([TSUNAMI]);
-    expect(result.current.isFiltered).toBe(true);
+    expect(result.current.totalCount).toBe(2);
   });
 
   it('取得前（data が undefined）は undefined のまま返す', () => {
@@ -65,6 +65,7 @@ describe('useFilteredShelters', () => {
     const { result } = renderHook(() => useFilteredShelters());
 
     expect(result.current.data).toBeUndefined();
+    expect(result.current.totalCount).toBeUndefined();
     expect(result.current.isPending).toBe(true);
   });
 });

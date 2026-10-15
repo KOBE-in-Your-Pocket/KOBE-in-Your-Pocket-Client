@@ -108,15 +108,19 @@ function ShelterListItem({
 
 function ListHeader({
   showHeader,
+  showDisasterFilter,
   permissionDenied,
   servicesDisabled,
 }: {
   showHeader: boolean;
+  showDisasterFilter: boolean;
   permissionDenied: boolean;
   servicesDisabled: boolean;
 }) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+
+  if (!showHeader && !showDisasterFilter && !permissionDenied && !servicesDisabled) return null;
 
   return (
     <View
@@ -145,7 +149,7 @@ function ListHeader({
         </View>
       ) : null}
 
-      <DisasterFilter />
+      {showDisasterFilter ? <DisasterFilter /> : null}
     </View>
   );
 }
@@ -157,10 +161,19 @@ function ListHeader({
  * 画像・距離・施設種別・収容人数・電話番号を含むカード一覧を表示する。
  * 一覧の上の災害種別タグで絞り込める。絞り込みは取得済みの配列に対して行うため、
  * 通信なしで動く。
+ *
+ * `showDisasterFilter=false` のときはタグを出さない。リストタブのように、親の固定ヘッダーで
+ * `DisasterFilter` を出してスクロールに追従させない場合に使う（観光側の `showGenreFilter` と同じ）。
  */
-export function EvacuationList({ showHeader = true }: { showHeader?: boolean } = {}) {
+export function EvacuationList({
+  showHeader = true,
+  showDisasterFilter = true,
+}: {
+  showHeader?: boolean;
+  showDisasterFilter?: boolean;
+} = {}) {
   const { t } = useTranslation();
-  const { data: shelters, isPending, isError, isFiltered } = useFilteredShelters();
+  const { data: shelters, isPending, isError, totalCount } = useFilteredShelters();
   const { coords, permissionDenied, servicesDisabled } = useCurrentLocation();
 
   // 絞り込み済みの一覧を距離順に並べる。「最寄り」バッジは絞り込み後の先頭に付く。
@@ -186,8 +199,9 @@ export function EvacuationList({ showHeader = true }: { showHeader?: boolean } =
     );
   }
 
+  // 元データが 0 件なら絞り込みに関係なく通常の 0 件表示にする。
   // 絞り込みで 0 件になったときはタグを残して選択を外せるよう、FlatList の ListEmptyComponent で出す。
-  if (!sheltersWithDistance || (sheltersWithDistance.length === 0 && !isFiltered)) {
+  if (!sheltersWithDistance || totalCount === 0) {
     return (
       <ThemedView style={styles.centered}>
         <ThemedText themeColor="textSecondary">{t('evacuation.list.empty')}</ThemedText>
@@ -205,6 +219,7 @@ export function EvacuationList({ showHeader = true }: { showHeader?: boolean } =
       ListHeaderComponent={
         <ListHeader
           showHeader={showHeader}
+          showDisasterFilter={showDisasterFilter}
           permissionDenied={permissionDenied}
           servicesDisabled={servicesDisabled}
         />

@@ -11,8 +11,9 @@ import { useEvacuationShelters } from './use-evacuation-shelters';
  * 取得は {@link useEvacuationShelters}（ローカル SQLite）に委譲し、selectedDisasters で
  * クライアント側フィルタする。通信なしで動く。
  *
- * `isFiltered` は災害種別を 1 つ以上選んでいるかどうか。絞り込みで 0 件になったのか、
- * そもそも避難所が無いのかを UI で出し分けるために返す。
+ * `totalCount` は絞り込み前の件数（取得前は undefined）。絞り込みで 0 件になったのか、
+ * そもそも避難所が無いのかを UI で出し分けるために返す。選択状態は画面をまたいで残るため、
+ * 選択の有無ではなく元データの件数で判定する。
  */
 export function useFilteredShelters() {
   const selectedDisasters = useDisasterFilterStore((state) => state.selectedDisasters);
@@ -26,6 +27,6 @@ export function useFilteredShelters() {
   return {
     ...sheltersQuery,
     data,
-    isFiltered: selectedDisasters.length > 0,
+    totalCount: sheltersQuery.data?.length,
   };
 }

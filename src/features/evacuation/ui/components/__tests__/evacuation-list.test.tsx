@@ -326,6 +326,24 @@ describe('EvacuationList の災害種別タグによる絞り込み', () => {
     expect(screen.getByText('evacuation.disasterFilter.flood')).toBeTruthy();
   });
 
+  it('showDisasterFilter=false のときはタグを表示しない', () => {
+    render(<EvacuationList showDisasterFilter={false} showHeader={false} />);
+
+    expect(screen.queryByText('evacuation.disasterFilter.flood')).toBeNull();
+    expect(screen.getByText('洪水で使える避難所')).toBeTruthy();
+  });
+
+  it('タグは複数選択のチェックボックスとして読み上げられる', () => {
+    render(<EvacuationList />);
+
+    expect(screen.getAllByRole('checkbox')).toHaveLength(4);
+    expect(screen.queryByRole('checkbox', { checked: true })).toBeNull();
+
+    fireEvent.press(screen.getByText('evacuation.disasterFilter.flood'));
+
+    expect(screen.getAllByRole('checkbox', { checked: true })).toHaveLength(1);
+  });
+
   it('タグを選んでいなければ全件を表示する', () => {
     render(<EvacuationList />);
 
@@ -376,6 +394,16 @@ describe('EvacuationList の災害種別タグによる絞り込み', () => {
   });
 
   it('避難所が 1 件も無く、タグも選んでいないときは通常の 0 件表示を出す', () => {
+    mockUseEvacuationShelters.mockReturnValue({ data: [], isPending: false, isError: false });
+
+    render(<EvacuationList />);
+
+    expect(screen.getByText('evacuation.list.empty')).toBeTruthy();
+    expect(screen.queryByText('evacuation.list.filterEmpty')).toBeNull();
+  });
+
+  it('避難所が 1 件も無いときは、タグを選んでいても通常の 0 件表示を出す', () => {
+    useDisasterFilterStore.setState({ selectedDisasters: ['flood'] });
     mockUseEvacuationShelters.mockReturnValue({ data: [], isPending: false, isError: false });
 
     render(<EvacuationList />);
