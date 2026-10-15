@@ -18,16 +18,18 @@ function SpotMannerItem({ manner }: { manner: MannerItem }) {
   const accent = KIND_ACCENT_COLOR[manner.kind];
 
   return (
-    <ThemedView
-      style={[
-        styles.card,
-        { backgroundColor: KIND_CARD_BACKGROUND_SUBTLE[manner.kind], borderColor: accent },
-      ]}
-    >
-      <View style={[styles.iconWrapper, { backgroundColor: theme.backgroundElement }]}>
-        <MannerPictogram manner={manner} size={56} />
-      </View>
-    </ThemedView>
+    <View style={styles.cell}>
+      <ThemedView
+        style={[
+          styles.card,
+          { backgroundColor: KIND_CARD_BACKGROUND_SUBTLE[manner.kind], borderColor: accent },
+        ]}
+      >
+        <View style={[styles.iconWrapper, { backgroundColor: theme.backgroundElement }]}>
+          <MannerPictogram manner={manner} size={56} />
+        </View>
+      </ThemedView>
+    </View>
   );
 }
 
@@ -39,7 +41,7 @@ type SpotMannerSectionProps = {
  * 観光名所詳細向けの「この場所のマナー」セクション。
  *
  * application 層の {@link useSpotManners} でスポット固有のマナーを取得し、
- * タイトル・短い説明・KindBadge をコンパクトに表示する。
+ * ピクトグラムのみのカードを3列グリッドでコンパクトに表示する。
  * 該当マナーが無い・取得中・取得失敗時は何も描画しない。
  */
 export function SpotMannerSection({ spotId }: SpotMannerSectionProps) {

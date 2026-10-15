@@ -23,21 +23,26 @@ export const styles = StyleSheet.create({
     flex: 1,
     height: 1,
   },
-  // 3列グリッド。横並び＋折り返しで、カードを1行に3枚ずつ並べる。
-  // alignItems:'flex-start' で各カードを縦方向にストレッチさせない（既定 stretch だと
-  // カード高さが行の高さに合わされ、card の aspectRatio:1 が打ち消されて横長になるため）。
+  // 3列グリッド。横並び＋折り返しで1行に3枚並べる。
+  // 列間・行間のすき間は gap ではなくセル（cell）の内側 padding で作る。% 幅と gap（固定dp）を
+  // 併用すると、幅の狭い端末（分割画面・フォルダブル等）で 3×% + gap がコンテナ幅を超え、
+  // 3枚目が折り返して2列になってしまうため、gap は使わない（manner-list の2列グリッドと同方式）。
+  // セル外周の padding 分は marginHorizontal の負値で相殺し、左右をセクション端に揃える。
   itemList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    alignItems: 'flex-start',
-    gap: Spacing.two,
+    marginHorizontal: -Spacing.one,
   },
-  // カードは分類アクセント色の枠線＋控えめな背景で強調する（色はコンポーネントで分類ごとに指定）。
-  // 3列グリッドの1セル。width を 1/3 弱にして gap と合わせ、端末幅が変わっても常に3列で折り返す
-  // （flexShrink の既定 0 と合わせ、端数行のカードが横に伸びて不揃いにならないようにする）。
-  // 中身はピクトグラムのみを中央に置く。aspectRatio:1 でセルをほぼ正方形にする。
+  // 3列グリッドの1セル。幅を 1/3 に固定し、画面幅に関わらず必ず3列になるようにする。
+  // 内側の余白（padding）が列間・行間のすき間になる。
+  cell: {
+    width: '33.33%',
+    padding: Spacing.one,
+  },
+  // カードはセル幅いっぱいに広がり（width 指定なし）、aspectRatio:1 でほぼ正方形にする。
+  // 中身はピクトグラムのみを縦横中央に置く。分類アクセント色の枠線＋控えめな背景で強調する
+  // （色はコンポーネントで分類ごとに指定）。
   card: {
-    width: '31%',
     aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
