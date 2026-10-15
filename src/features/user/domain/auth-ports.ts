@@ -10,6 +10,12 @@ export type AppleSignInParams = {
   nonce: string;
   /** Apple が初回認証時のみ返す表示名。backend はプロフィール新規作成時のみ使う。 */
   name?: string;
+  /**
+   * signInAsync が返す authorizationCode。backend が refresh token に交換して保存し、
+   * 退会時に Apple のトークンを失効させるのに使う（Backend #213）。
+   * 有効期限 5 分・1 回限りのため、一時保存して再送はしない。
+   */
+  authorizationCode?: string;
 };
 
 /** backend 認証 API へのアクセスを抽象化するポート。 */

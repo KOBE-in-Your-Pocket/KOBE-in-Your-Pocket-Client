@@ -87,10 +87,42 @@ describe('performAppleSignIn', () => {
       idToken: 'apple-id-token',
       nonce: RAW_NONCE,
       name: undefined,
+      authorizationCode: 'auth-code',
     });
     expect(savePersistedSession).toHaveBeenCalledWith(SESSION);
     expect(useAuthStore.getState().currentUser).toEqual(SESSION.user);
     expect(result).toEqual(SESSION);
+  });
+
+  it('authorizationCode が null なら backend へ渡さない', async () => {
+    (AppleAuthentication.signInAsync as jest.Mock).mockResolvedValue(
+      credential({ authorizationCode: null }),
+    );
+
+    await performAppleSignIn(deps());
+
+    expect(signInWithApple).toHaveBeenCalledWith(
+      expect.objectContaining({ authorizationCode: undefined }),
+    );
+  });
+
+  it('authorizationCode は一時保存せず、backend 失敗後の再試行では新しいコードを送る', async () => {
+    (AppleAuthentication.signInAsync as jest.Mock).mockResolvedValueOnce(
+      credential({ authorizationCode: 'first-code' }),
+    );
+    signInWithApple.mockRejectedValueOnce(new Error('network'));
+
+    await expect(performAppleSignIn(deps())).rejects.toThrow('network');
+    expect(pendingNameStore.savePendingAppleName).not.toHaveBeenCalled();
+
+    (AppleAuthentication.signInAsync as jest.Mock).mockResolvedValueOnce(
+      credential({ authorizationCode: 'second-code' }),
+    );
+    await performAppleSignIn(deps());
+
+    expect(signInWithApple).toHaveBeenLastCalledWith(
+      expect.objectContaining({ authorizationCode: 'second-code' }),
+    );
   });
 
   it('Apple には nonce の SHA-256 ハッシュを、backend には元の nonce を渡す', async () => {

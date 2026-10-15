@@ -130,7 +130,28 @@ describe('auth-api', () => {
       expect(session.user).toEqual({ id: 'user-1', name: 'Google 太郎', iconUrl: '' });
     });
 
-    it('name が無ければ body に含めない', async () => {
+    it('authorizationCode があれば body に含める', async () => {
+      const fetchMock = mockFetchResponse(200, SESSION_BODY);
+      global.fetch = fetchMock;
+
+      await signInWithApple(
+        { idToken: 'apple-id-token', nonce: 'raw-nonce', authorizationCode: 'auth-code' },
+        { baseUrl: BASE_URL },
+      );
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        `${BASE_URL}/api/v1/auth/apple`,
+        expect.objectContaining({
+          body: JSON.stringify({
+            idToken: 'apple-id-token',
+            nonce: 'raw-nonce',
+            authorizationCode: 'auth-code',
+          }),
+        }),
+      );
+    });
+
+    it('name・authorizationCode が無ければ body に含めない', async () => {
       const fetchMock = mockFetchResponse(200, SESSION_BODY);
       global.fetch = fetchMock;
 

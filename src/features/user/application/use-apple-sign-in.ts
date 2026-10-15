@@ -80,7 +80,7 @@ async function resolveDisplayName(
 /**
  * Apple サインインの一連の流れを実行する。
  *
- * Apple のネイティブサインイン → ID トークン・nonce・初回の表示名を backend へ POST →
+ * Apple のネイティブサインイン → ID トークン・nonce・初回の表示名・authorizationCode を backend へ POST →
  * secure-store への永続化 → ストア更新。
  * ユーザーがサインインをキャンセルした場合は null を返す（エラーにしない）。
  */
@@ -119,7 +119,13 @@ export async function performAppleSignIn(
 
   const name = await resolveDisplayName(credential, deps.pendingNameStore);
 
-  const session = await deps.authGateway.signInWithApple({ idToken, nonce: rawNonce, name });
+  // authorizationCode は退会時のトークン失効用（Backend #213）。5 分・1 回限りのため一時保存はしない。
+  const session = await deps.authGateway.signInWithApple({
+    idToken,
+    nonce: rawNonce,
+    name,
+    authorizationCode: credential.authorizationCode ?? undefined,
+  });
 
   // backend へ渡せたので一時保存は不要。消せなくても既存プロフィールは上書きされないため無害。
   try {

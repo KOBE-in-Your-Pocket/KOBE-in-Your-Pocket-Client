@@ -169,13 +169,19 @@ export async function signInWithGoogle(
  * Apple 発行の ID トークンで backend にサインインする。
  * Google と同じく初回は backend 側でユーザーが自動作成される。
  * name は Apple が初回のみ返す表示名で、未取得なら body に含めない。
+ * authorizationCode は退会時のトークン失効用（Backend #213）で、未取得なら body に含めない。
  */
 export async function signInWithApple(
-  { idToken, nonce, name }: AppleSignInParams,
+  { idToken, nonce, name, authorizationCode }: AppleSignInParams,
   options: AuthApiOptions = {},
 ): Promise<AuthSession> {
   const response = await postJson(`${resolveBaseUrl(options.baseUrl)}/api/v1/auth/apple`, {
-    body: { idToken, nonce, ...(name ? { name } : {}) },
+    body: {
+      idToken,
+      nonce,
+      ...(name ? { name } : {}),
+      ...(authorizationCode ? { authorizationCode } : {}),
+    },
     signal: options.signal,
   });
 
