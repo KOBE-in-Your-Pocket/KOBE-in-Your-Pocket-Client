@@ -9,8 +9,9 @@ import {
   sortSheltersByDistance,
   type ShelterWithDistance,
 } from '../../application/use-cases/sort-shelters-by-distance';
-import { useEvacuationShelters } from '../../application/hooks/use-evacuation-shelters';
+import { useFilteredShelters } from '../../application/hooks/use-filtered-shelters';
 
+import { DisasterFilter } from './disaster-filter';
 import { ShelterDatasetNotice } from './shelter-dataset-notice';
 
 import { styles } from '../styles/evacuation-list.styles';
@@ -107,17 +108,19 @@ function ShelterListItem({
 
 function ListHeader({
   showHeader,
+  showDisasterFilter,
   permissionDenied,
   servicesDisabled,
 }: {
   showHeader: boolean;
+  showDisasterFilter: boolean;
   permissionDenied: boolean;
   servicesDisabled: boolean;
 }) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
 
-  if (!showHeader && !permissionDenied && !servicesDisabled) return null;
+  if (!showHeader && !showDisasterFilter && !permissionDenied && !servicesDisabled) return null;
 
   return (
     <View
@@ -145,6 +148,8 @@ function ListHeader({
           </ThemedText>
         </View>
       ) : null}
+
+      {showDisasterFilter ? <DisasterFilter /> : null}
     </View>
   );
 }
@@ -152,14 +157,26 @@ function ListHeader({
 /**
  * 避難所一覧を表示するコンポーネント。
  *
- * application 層の `useEvacuationShelters()` 経由でデータを取得し、各避難所の
- * 画像・距離・施設種別・収容人数・バリアフリー情報を含むカード一覧を表示する。
+ * application 層の `useFilteredShelters()` 経由でデータを取得し、各避難所の
+ * 画像・距離・施設種別・収容人数・電話番号を含むカード一覧を表示する。
+ * 一覧の上の災害種別タグで絞り込める。絞り込みは取得済みの配列に対して行うため、
+ * 通信なしで動く。
+ *
+ * `showDisasterFilter=false` のときはタグを出さない。リストタブのように、親の固定ヘッダーで
+ * `DisasterFilter` を出してスクロールに追従させない場合に使う（観光側の `showGenreFilter` と同じ）。
  */
-export function EvacuationList({ showHeader = true }: { showHeader?: boolean } = {}) {
+export function EvacuationList({
+  showHeader = true,
+  showDisasterFilter = true,
+}: {
+  showHeader?: boolean;
+  showDisasterFilter?: boolean;
+} = {}) {
   const { t } = useTranslation();
-  const { data: shelters, isPending, isError } = useEvacuationShelters();
+  const { data: shelters, isPending, isError, totalCount } = useFilteredShelters();
   const { coords, permissionDenied, servicesDisabled } = useCurrentLocation();
 
+  // 絞り込み済みの一覧を距離順に並べる。「最寄り」バッジは絞り込み後の先頭に付く。
   const sheltersWithDistance = useMemo((): ShelterWithDistance[] | undefined => {
     if (!shelters) return undefined;
 
@@ -182,7 +199,9 @@ export function EvacuationList({ showHeader = true }: { showHeader?: boolean } =
     );
   }
 
-  if (!sheltersWithDistance || sheltersWithDistance.length === 0) {
+  // 元データが 0 件なら絞り込みに関係なく通常の 0 件表示にする。
+  // 絞り込みで 0 件になったときはタグを残して選択を外せるよう、FlatList の ListEmptyComponent で出す。
+  if (!sheltersWithDistance || totalCount === 0) {
     return (
       <ThemedView style={styles.centered}>
         <ThemedText themeColor="textSecondary">{t('evacuation.list.empty')}</ThemedText>
@@ -200,9 +219,15 @@ export function EvacuationList({ showHeader = true }: { showHeader?: boolean } =
       ListHeaderComponent={
         <ListHeader
           showHeader={showHeader}
+          showDisasterFilter={showDisasterFilter}
           permissionDenied={permissionDenied}
           servicesDisabled={servicesDisabled}
         />
+      }
+      ListEmptyComponent={
+        <ThemedText themeColor="textSecondary" style={styles.filterEmpty}>
+          {t('evacuation.list.filterEmpty')}
+        </ThemedText>
       }
       ListFooterComponent={<ShelterDatasetNotice />}
       contentContainerStyle={styles.listContent}

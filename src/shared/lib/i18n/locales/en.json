@@ -178,6 +178,7 @@
       "subtitle": "Nearby shelters",
       "loadError": "Could not load shelters.",
       "empty": "No shelters found.",
+      "filterEmpty": "No shelters available for the selected disasters.",
       "capacity": "Capacity: {{count}}",
       "nearest": "Nearest Shelter",
       "locationServicesDisabled": "Distance unavailable because location services are off.",
@@ -192,6 +193,12 @@
         "designated": "Designated",
         "both": "Both"
       }
+    },
+    "disasterFilter": {
+      "landslide": "Landslide",
+      "flood": "Flood",
+      "tsunami": "Tsunami",
+      "large-fire": "Large fire"
     },
     "shelterCard": {
       "detail": "Shelter Detail",

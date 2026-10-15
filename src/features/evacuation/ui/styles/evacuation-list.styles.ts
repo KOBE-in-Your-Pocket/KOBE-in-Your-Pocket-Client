@@ -40,6 +40,10 @@ export const styles = StyleSheet.create({
   locationBannerText: {
     color: LOCATION_BANNER_TEXT_COLOR,
   },
+  filterEmpty: {
+    textAlign: 'center',
+    paddingVertical: Spacing.five,
+  },
   card: {
     borderRadius: Spacing.three,
     overflow: 'hidden',
