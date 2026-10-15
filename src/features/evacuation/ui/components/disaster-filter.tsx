@@ -49,7 +49,7 @@ export function DisasterFilter() {
             <ThemedText
               style={[styles.chipText, isSelected ? { color: SELECTED_CHIP_TEXT_COLOR } : null]}
             >
-              {t(`evacuation.disasterFilter.${disaster}`)}
+              {t(`evacuation.disasterType.${disaster}`)}
             </ThemedText>
           </Pressable>
         );

@@ -195,3 +195,27 @@ describe('EvacuationShelterCard', () => {
     });
   });
 });
+
+describe('EvacuationShelterCard の災害ごとの利用可否', () => {
+  it('適否がある避難所は 4 種別のチップを表示する', () => {
+    renderCard({
+      shelter: {
+        ...shelter,
+        suitability: {
+          landslide: 'conditional',
+          flood: 'suitable',
+          tsunami: 'unsuitable',
+          'large-fire': 'not-applicable',
+        },
+      },
+    });
+
+    expect(screen.getAllByLabelText('evacuation.suitability.label')).toHaveLength(4);
+  });
+
+  it('適否が無い避難所はチップを表示しない', () => {
+    renderCard();
+
+    expect(screen.queryAllByLabelText('evacuation.suitability.label')).toHaveLength(0);
+  });
+});

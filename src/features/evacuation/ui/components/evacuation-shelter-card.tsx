@@ -7,6 +7,8 @@ import { formatDistanceKm, getDistanceKm, type GeoCoordinates } from '@/shared/l
 import { useTheme } from '@/shared/lib/theme';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
+import { ShelterSuitabilityChips } from './shelter-suitability';
+
 import { styles } from '../styles/evacuation-shelter-card.styles';
 
 import type { EvacuationShelter } from '../../domain/evacuation-shelter';
@@ -112,6 +114,8 @@ export function EvacuationShelterCard({
             </View>
           ) : null}
         </View>
+
+        <ShelterSuitabilityChips suitability={shelter.suitability} />
 
         <View style={styles.actionsRow}>
           <Pressable

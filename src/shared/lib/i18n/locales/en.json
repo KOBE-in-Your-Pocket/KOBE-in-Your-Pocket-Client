@@ -194,11 +194,20 @@
         "both": "Both"
       }
     },
-    "disasterFilter": {
+    "disasterType": {
       "landslide": "Landslide",
       "flood": "Flood",
       "tsunami": "Tsunami",
       "large-fire": "Large fire"
+    },
+    "suitability": {
+      "title": "Availability by disaster",
+      "suitable": "Available",
+      "conditional": "Conditional",
+      "unsuitable": "Not available",
+      "not-applicable": "Not applicable",
+      "unknown": "No information",
+      "label": "{{disaster}}: {{status}}"
     },
     "shelterCard": {
       "detail": "Shelter Detail",

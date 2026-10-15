@@ -194,11 +194,20 @@
         "both": "兼用"
       }
     },
-    "disasterFilter": {
+    "disasterType": {
       "landslide": "土砂災害",
       "flood": "洪水",
       "tsunami": "津波",
       "large-fire": "大火事"
+    },
+    "suitability": {
+      "title": "災害ごとの利用可否",
+      "suitable": "利用できる",
+      "conditional": "条件付き",
+      "unsuitable": "利用できない",
+      "not-applicable": "対象外",
+      "unknown": "情報なし",
+      "label": "{{disaster}}: {{status}}"
     },
     "shelterCard": {
       "detail": "詳細を見る",

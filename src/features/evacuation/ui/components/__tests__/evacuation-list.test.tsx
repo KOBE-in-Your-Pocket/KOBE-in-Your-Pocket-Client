@@ -317,19 +317,21 @@ describe('EvacuationList の災害種別タグによる絞り込み', () => {
   it.each(['landslide', 'flood', 'tsunami', 'large-fire'])('%s のタグを表示する', (disaster) => {
     render(<EvacuationList />);
 
-    expect(screen.getByText(`evacuation.disasterFilter.${disaster}`)).toBeTruthy();
+    expect(
+      screen.getByRole('checkbox', { name: `evacuation.disasterType.${disaster}` }),
+    ).toBeTruthy();
   });
 
   it('showHeader=false でもタグを表示する', () => {
     render(<EvacuationList showHeader={false} />);
 
-    expect(screen.getByText('evacuation.disasterFilter.flood')).toBeTruthy();
+    expect(screen.getByRole('checkbox', { name: 'evacuation.disasterType.flood' })).toBeTruthy();
   });
 
   it('showDisasterFilter=false のときはタグを表示しない', () => {
     render(<EvacuationList showDisasterFilter={false} showHeader={false} />);
 
-    expect(screen.queryByText('evacuation.disasterFilter.flood')).toBeNull();
+    expect(screen.queryByRole('checkbox', { name: 'evacuation.disasterType.flood' })).toBeNull();
     expect(screen.getByText('洪水で使える避難所')).toBeTruthy();
   });
 
@@ -339,7 +341,7 @@ describe('EvacuationList の災害種別タグによる絞り込み', () => {
     expect(screen.getAllByRole('checkbox')).toHaveLength(4);
     expect(screen.queryByRole('checkbox', { checked: true })).toBeNull();
 
-    fireEvent.press(screen.getByText('evacuation.disasterFilter.flood'));
+    fireEvent.press(screen.getByRole('checkbox', { name: 'evacuation.disasterType.flood' }));
 
     expect(screen.getAllByRole('checkbox', { checked: true })).toHaveLength(1);
   });
@@ -355,7 +357,7 @@ describe('EvacuationList の災害種別タグによる絞り込み', () => {
   it('タグを 1 つ選ぶと、その災害が suitable の避難所だけを表示する', () => {
     render(<EvacuationList />);
 
-    fireEvent.press(screen.getByText('evacuation.disasterFilter.flood'));
+    fireEvent.press(screen.getByRole('checkbox', { name: 'evacuation.disasterType.flood' }));
 
     expect(screen.getByText('洪水で使える避難所')).toBeTruthy();
     expect(screen.queryByText('津波で使える避難所')).toBeNull();
@@ -365,8 +367,8 @@ describe('EvacuationList の災害種別タグによる絞り込み', () => {
   it('タグを複数選ぶと、いずれかの災害で suitable の避難所を表示する', () => {
     render(<EvacuationList />);
 
-    fireEvent.press(screen.getByText('evacuation.disasterFilter.flood'));
-    fireEvent.press(screen.getByText('evacuation.disasterFilter.tsunami'));
+    fireEvent.press(screen.getByRole('checkbox', { name: 'evacuation.disasterType.flood' }));
+    fireEvent.press(screen.getByRole('checkbox', { name: 'evacuation.disasterType.tsunami' }));
 
     expect(screen.getByText('洪水で使える避難所')).toBeTruthy();
     expect(screen.getByText('津波で使える避難所')).toBeTruthy();
@@ -376,8 +378,8 @@ describe('EvacuationList の災害種別タグによる絞り込み', () => {
   it('選択中のタグをもう一度押すと選択が外れ、全件表示に戻る', () => {
     render(<EvacuationList />);
 
-    fireEvent.press(screen.getByText('evacuation.disasterFilter.flood'));
-    fireEvent.press(screen.getByText('evacuation.disasterFilter.flood'));
+    fireEvent.press(screen.getByRole('checkbox', { name: 'evacuation.disasterType.flood' }));
+    fireEvent.press(screen.getByRole('checkbox', { name: 'evacuation.disasterType.flood' }));
 
     expect(screen.getByText('津波で使える避難所')).toBeTruthy();
     expect(screen.getByText('洪水は条件付きの避難所')).toBeTruthy();
@@ -386,11 +388,13 @@ describe('EvacuationList の災害種別タグによる絞り込み', () => {
   it('該当 0 件のときは専用の文言を表示し、タグは残す', () => {
     render(<EvacuationList />);
 
-    fireEvent.press(screen.getByText('evacuation.disasterFilter.large-fire'));
+    fireEvent.press(screen.getByRole('checkbox', { name: 'evacuation.disasterType.large-fire' }));
 
     expect(screen.getByText('evacuation.list.filterEmpty')).toBeTruthy();
     expect(screen.queryByText('evacuation.list.empty')).toBeNull();
-    expect(screen.getByText('evacuation.disasterFilter.large-fire')).toBeTruthy();
+    expect(
+      screen.getByRole('checkbox', { name: 'evacuation.disasterType.large-fire' }),
+    ).toBeTruthy();
   });
 
   it('避難所が 1 件も無く、タグも選んでいないときは通常の 0 件表示を出す', () => {
@@ -420,10 +424,48 @@ describe('EvacuationList の災害種別タグによる絞り込み', () => {
     });
     render(<EvacuationList />);
 
-    fireEvent.press(screen.getByText('evacuation.disasterFilter.tsunami'));
+    fireEvent.press(screen.getByRole('checkbox', { name: 'evacuation.disasterType.tsunami' }));
 
     expect(screen.getByText('津波で使える避難所')).toBeTruthy();
     expect(screen.queryByText('洪水は条件付きの避難所')).toBeNull();
     expect(screen.getAllByText('evacuation.list.nearest')).toHaveLength(1);
+  });
+});
+
+describe('EvacuationList の災害ごとの利用可否', () => {
+  beforeEach(() => {
+    mockUseCurrentLocation.mockReturnValue({
+      coords: null,
+      permissionDenied: false,
+      servicesDisabled: false,
+    });
+  });
+
+  it('適否がある避難所はカードに 4 種別のチップを表示する', () => {
+    mockUseEvacuationShelters.mockReturnValue({
+      data: [
+        {
+          ...DEFAULT_SHELTER,
+          suitability: {
+            landslide: 'conditional',
+            flood: 'suitable',
+            tsunami: 'unsuitable',
+            'large-fire': 'not-applicable',
+          },
+        },
+      ],
+      isPending: false,
+      isError: false,
+    });
+
+    render(<EvacuationList />);
+
+    expect(screen.getAllByLabelText('evacuation.suitability.label')).toHaveLength(4);
+  });
+
+  it('適否が無い避難所はチップを表示しない', () => {
+    render(<EvacuationList />);
+
+    expect(screen.queryAllByLabelText('evacuation.suitability.label')).toHaveLength(0);
   });
 });
