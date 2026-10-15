@@ -11,7 +11,6 @@ import { ThemedText, ThemedView } from '@/shared/ui';
 import { KIND_ACCENT_COLOR, KIND_CARD_BACKGROUND_SUBTLE } from '../styles/kind-badge.styles';
 import { styles } from '../styles/spot-manner-section.styles';
 
-import { KindBadge } from './kind-badge';
 import { MannerPictogram } from './manner-pictogram';
 
 function SpotMannerItem({ manner }: { manner: MannerItem }) {
@@ -26,15 +25,7 @@ function SpotMannerItem({ manner }: { manner: MannerItem }) {
       ]}
     >
       <View style={[styles.iconWrapper, { backgroundColor: theme.backgroundElement }]}>
-        <MannerPictogram manner={manner} size={32} />
-      </View>
-
-      <View style={styles.content}>
-        <KindBadge kind={manner.kind} />
-        <ThemedText style={[styles.itemTitle, { color: accent }]}>{manner.title}</ThemedText>
-        <ThemedText type="small" themeColor="textSecondary" style={styles.itemDescription}>
-          {manner.description}
-        </ThemedText>
+        <MannerPictogram manner={manner} size={56} />
       </View>
     </ThemedView>
   );

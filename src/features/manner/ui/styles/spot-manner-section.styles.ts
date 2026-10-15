@@ -23,35 +23,33 @@ export const styles = StyleSheet.create({
     flex: 1,
     height: 1,
   },
+  // 3列グリッド。横並び＋折り返しで、カードを1行に3枚ずつ並べる。
+  // alignItems:'flex-start' で各カードを縦方向にストレッチさせない（既定 stretch だと
+  // カード高さが行の高さに合わされ、card の aspectRatio:1 が打ち消されて横長になるため）。
   itemList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'flex-start',
     gap: Spacing.two,
   },
   // カードは分類アクセント色の枠線＋控えめな背景で強調する（色はコンポーネントで分類ごとに指定）。
+  // 3列グリッドの1セル。width を 1/3 弱にして gap と合わせ、端末幅が変わっても常に3列で折り返す
+  // （flexShrink の既定 0 と合わせ、端数行のカードが横に伸びて不揃いにならないようにする）。
+  // 中身はピクトグラムのみを中央に置く。aspectRatio:1 でセルをほぼ正方形にする。
   card: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: Spacing.two,
+    width: '31%',
+    aspectRatio: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: Spacing.two,
     borderRadius: Spacing.two,
     borderWidth: 1,
   },
   iconWrapper: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  content: {
-    flex: 1,
-    gap: Spacing.half,
-  },
-  // タイトルは分類アクセント色で強調する（色はコンポーネントで指定）。
-  itemTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  itemDescription: {
-    lineHeight: 18,
   },
 });
