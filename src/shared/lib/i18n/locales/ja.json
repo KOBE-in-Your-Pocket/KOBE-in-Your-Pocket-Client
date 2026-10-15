@@ -264,7 +264,9 @@
     },
     "filter": {
       "category": "カテゴリー",
-      "target": "対象"
+      "target": "対象",
+      "title": "絞り込み",
+      "close": "閉じる"
     },
     "kind": {
       "manner": "マナー",

@@ -1,4 +1,4 @@
-import { PixelRatio, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 import { BottomTabInset, Fonts, Spacing } from '@/shared/config';
 
@@ -20,21 +20,46 @@ export const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
   },
   header: {
-    paddingBottom: Spacing.two,
-    gap: Spacing.two,
+    paddingHorizontal: Spacing.two,
+    paddingBottom: Spacing.three,
   },
-  // 一覧画面・ホーム画面と同じ装飾タイトル（筆記体・中央揃え・fontSize 30 / lineHeight 40）。
+  // 左にブランド副題＋タイトル、右に絞り込みボタンを並べる行。
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.three,
+  },
+  headerTitles: {
+    // タイトルが長い言語でも絞り込みボタンを押し出さないよう、タイトル側を縮小可能にする。
+    flexShrink: 1,
+  },
+  // ブランド副題（神戸 · KOBE, JAPAN）。小さめ・字間広め・大文字。
+  region: {
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  // 装飾タイトル（筆記体）。ヘッダー刷新に合わせて左寄せにする。
   title: {
     fontFamily: Fonts.cursive,
     fontWeight: 'normal',
     fontSize: 30,
     lineHeight: 40,
-    textAlign: 'center',
+    textAlign: 'left',
   },
-  // タイトルを上下で挟む区切り線（一覧画面・ホーム画面と同一スタイル）。
-  divider: {
-    height: PixelRatio.roundToNearestPixel(1),
-    alignSelf: 'stretch',
+  // 絞り込みモーダルを開くボタン（アイコン＋ラベルのピル）。
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Spacing.five,
+  },
+  filterButtonText: {
+    fontWeight: '700',
   },
   // 2 列グリッドの1セル。幅を 50% に固定し、奇数件でも最後のカードが2列分に広がらないようにする。
   // 内側の余白（padding）が列間・行間のすき間になる。
