@@ -178,6 +178,7 @@
       "subtitle": "附近的避难所",
       "loadError": "无法加载避难所。",
       "empty": "未找到避难所。",
+      "filterEmpty": "未找到可用于所选灾害的避难所。",
       "capacity": "容纳 {{count}}人",
       "nearest": "最近的避难所",
       "locationServicesDisabled": "定位服务已关闭，无法显示距离。",
@@ -192,6 +193,21 @@
         "designated": "指定",
         "both": "兼用"
       }
+    },
+    "disasterType": {
+      "landslide": "泥石流",
+      "flood": "洪水",
+      "tsunami": "海啸",
+      "large-fire": "大规模火灾"
+    },
+    "suitability": {
+      "title": "按灾害类型的可用性",
+      "suitable": "可使用",
+      "conditional": "有条件",
+      "unsuitable": "不可使用",
+      "not-applicable": "不适用",
+      "unknown": "无信息",
+      "label": "{{disaster}}：{{status}}"
     },
     "shelterCard": {
       "detail": "查看详情",

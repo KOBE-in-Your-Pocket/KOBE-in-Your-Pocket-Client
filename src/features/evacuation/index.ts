@@ -26,6 +26,7 @@ export type {
   ShelterType,
 } from './domain/evacuation-shelter';
 export type { ShelterDataset, ShelterDatasetMetadata } from './domain/shelter-dataset-metadata';
+export { DisasterFilter } from './ui/components/disaster-filter';
 export { EvacuationList } from './ui/components/evacuation-list';
 export { EvacuationScreen } from './ui/components/evacuation-screen';
 export { EvacuationShelterCard } from './ui/components/evacuation-shelter-card';
