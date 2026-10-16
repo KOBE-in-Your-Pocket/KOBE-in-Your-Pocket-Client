@@ -28,10 +28,10 @@ export function MapScreen() {
   const mapMode = useMapModeStore((state) => state.mapMode);
   const { data: spots } = useSpots();
   const { data: shelters } = useEvacuationShelters();
-  const { spotId } = useLocalSearchParams<{ spotId?: string }>();
+  const { spotId, requestedAt } = useLocalSearchParams<{ spotId?: string; requestedAt?: string }>();
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
   const [selectedShelter, setSelectedShelter] = useState<EvacuationShelter | null>(null);
-  const [appliedSpotId, setAppliedSpotId] = useState<string | undefined>(undefined);
+  const [appliedSpotRequest, setAppliedSpotRequest] = useState<string | undefined>(undefined);
   const [showServicesModal, setShowServicesModal] = useState(false);
 
   // 一度でも現在地が取れたあとに、位置情報が使えなくなった瞬間だけモーダルを開く。
@@ -80,13 +80,17 @@ export function MapScreen() {
   }, [mapMode, spots, visibleShelters]);
 
   // 観光地リストの「経路」ボタンから spotId 付きで遷移してきたら、その地点を選択状態にする。
-  // render 中に前回適用した spotId と比較して反映する（effect 内 setState を避ける公式パターン）。
+  // render 中に前回適用した遷移と比較して反映する（effect 内 setState を避ける公式パターン）。
+  // 地図タブはマウントされたままなので、spotId だけで比較すると同じスポットへの再遷移
+  // （カードを閉じたあとにもう一度「経路」を押す等）が適用済み扱いになりカードが出ない。
+  // そのため遷移ごとに変わる requestedAt と組み合わせ、押下のたびに一度だけ適用する。
   // spots が後から読み込まれた場合も、該当スポットが見つかった時点で一度だけ適用される。
   // spotId は観光導線からのみ渡るため、観光モードのときだけ適用する。
-  if (mapMode === 'tourism' && spotId && spotId !== appliedSpotId) {
+  const spotRequest = spotId ? `${spotId}:${requestedAt ?? ''}` : undefined;
+  if (mapMode === 'tourism' && spotRequest && spotRequest !== appliedSpotRequest) {
     const spot = spots?.find((candidate) => candidate.id === spotId);
     if (spot) {
-      setAppliedSpotId(spotId);
+      setAppliedSpotRequest(spotRequest);
       setSelectedSpot(spot);
     }
   }

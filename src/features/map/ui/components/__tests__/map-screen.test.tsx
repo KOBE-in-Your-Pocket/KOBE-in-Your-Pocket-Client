@@ -35,6 +35,7 @@ const mockShelters = [
 // jest.mock ファクトリから差し替えるため、mock プレフィックス付きで宣言する。
 const mockUseCurrentLocation = jest.fn();
 const mockFilterShelters = jest.fn();
+const mockUseLocalSearchParams = jest.fn();
 
 // Map は markers を受け取る共有 UI。ここでは各マーカーの id を testID、variant をテキストとして
 // 描画するスタブに差し替え、「どのピンが・どの見た目で」渡されたかを検証できるようにする。
@@ -107,15 +108,20 @@ jest.mock('react-i18next', () => ({
 
 jest.mock('expo-router', () => ({
   router: { push: jest.fn() },
-  useLocalSearchParams: () => ({}),
+  useLocalSearchParams: () => mockUseLocalSearchParams(),
 }));
 
 // MapModeToggle は出し分けの対象外なのでスタブ化する。
 jest.mock('../map-mode-toggle', () => ({ MapModeToggle: () => null }));
 // SpotCard は選択状態の可視化に使うため、表示中は spot の id を出すスタブにする。
 jest.mock('../spot-card', () => ({
-  SpotCard: ({ spot }: { spot: { id: string } }) => (
-    <MockText testID="spot-card">{spot.id}</MockText>
+  SpotCard: ({ spot, onClose }: { spot: { id: string }; onClose: () => void }) => (
+    <MockView>
+      <MockText testID="spot-card">{spot.id}</MockText>
+      <MockText testID="spot-card-close" onPress={onClose}>
+        close
+      </MockText>
+    </MockView>
   ),
 }));
 
@@ -132,6 +138,24 @@ describe('MapScreen のマーカー出し分け', () => {
       permissionDenied: false,
     });
     mockFilterShelters.mockImplementation((shelters: MockShelter[]) => shelters);
+    mockUseLocalSearchParams.mockReturnValue({});
+  });
+
+  it('観光一覧の「経路」から同じスポットへ再遷移すると、閉じた SpotCard が再表示される', () => {
+    mockUseLocalSearchParams.mockReturnValue({ spotId: 'spot-1', requestedAt: '1' });
+    const { rerender } = render(<MapScreen />);
+    expect(screen.getByTestId('spot-card').props.children).toBe('spot-1');
+
+    // ×ボタンでカードを閉じる。同じ遷移のパラメータのままでは再表示されない。
+    fireEvent.press(screen.getByTestId('spot-card-close'));
+    expect(screen.queryByTestId('spot-card')).toBeNull();
+    rerender(<MapScreen />);
+    expect(screen.queryByTestId('spot-card')).toBeNull();
+
+    // 地図タブはマウントされたまま、もう一度「経路」を押して同じスポットで遷移してくる。
+    mockUseLocalSearchParams.mockReturnValue({ spotId: 'spot-1', requestedAt: '2' });
+    rerender(<MapScreen />);
+    expect(screen.getByTestId('spot-card').props.children).toBe('spot-1');
   });
 
   it('tourism モードでは観光スポットのピンを表示する', () => {
