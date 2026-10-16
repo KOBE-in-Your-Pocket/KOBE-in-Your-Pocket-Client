@@ -1,3 +1,5 @@
+import { TERMS_OF_USE_VERSION } from './terms-of-use';
+
 import { FALLBACK_LANGUAGE, SUPPORTED_LANGUAGES, type SupportedLanguage } from '@/shared/lib/i18n';
 
 /**
@@ -17,10 +19,17 @@ export const PRIVACY_POLICY_VERSION = '2026-09-16';
  */
 export const PRIVACY_POLICY_BASE_URL = 'https://kobe-in-your-pocket.github.io/privacy';
 
-/** 端末内に保存する同意記録。 */
+/** 端末内に保存する同意記録。プライバシーポリシーと利用規約への同意を 1 件で持つ。 */
 export type PolicyConsent = {
-  /** 同意した版数。 */
+  /** 同意したプライバシーポリシーの版数。 */
   version: string;
+  /**
+   * 同意した利用規約の版数（#665）。
+   *
+   * 利用規約の追加より前に保存された記録には無い（null）。その場合は利用規約に同意していないので、
+   * 起動時に再同意を求める。
+   */
+  termsVersion: string | null;
   /** 同意した日時（ISO 8601 拡張形式・UTC）。 */
   agreedAt: string;
   /**
@@ -38,9 +47,11 @@ export type ConsentStore = {
   saveConsent: (consent: PolicyConsent) => Promise<void>;
 };
 
-/** 保存済みの同意が現在の版数に対するものかどうかを返す。 */
+/** 保存済みの同意が、プライバシーポリシー・利用規約ともに現在の版数に対するものかどうかを返す。 */
 export function isConsentCurrent(consent: PolicyConsent | null): boolean {
-  return consent?.version === PRIVACY_POLICY_VERSION;
+  return (
+    consent?.version === PRIVACY_POLICY_VERSION && consent.termsVersion === TERMS_OF_USE_VERSION
+  );
 }
 
 /**

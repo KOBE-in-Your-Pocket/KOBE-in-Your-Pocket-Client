@@ -1,10 +1,12 @@
 import { isConsentCurrent, PRIVACY_POLICY_VERSION, privacyPolicyUrl } from '../privacy-policy';
+import { TERMS_OF_USE_VERSION } from '../terms-of-use';
 
 describe('isConsentCurrent', () => {
   it('現在の版数と一致する場合のみ true', () => {
     expect(
       isConsentCurrent({
         version: PRIVACY_POLICY_VERSION,
+        termsVersion: TERMS_OF_USE_VERSION,
         agreedAt: '2026-09-07T00:00:00.000Z',
         isAdult: true,
       }),
@@ -12,11 +14,23 @@ describe('isConsentCurrent', () => {
     expect(
       isConsentCurrent({
         version: '2000-01-01',
+        termsVersion: TERMS_OF_USE_VERSION,
         agreedAt: '2000-01-01T00:00:00.000Z',
         isAdult: true,
       }),
     ).toBe(false);
     expect(isConsentCurrent(null)).toBe(false);
+  });
+
+  it('利用規約の版数が無い・古い記録は現在の同意とみなさない（#665）', () => {
+    const base = {
+      version: PRIVACY_POLICY_VERSION,
+      agreedAt: '2026-09-07T00:00:00.000Z',
+      isAdult: true,
+    };
+
+    expect(isConsentCurrent({ ...base, termsVersion: null })).toBe(false);
+    expect(isConsentCurrent({ ...base, termsVersion: '2000-01-01' })).toBe(false);
   });
 
   it('年齢区分は版数の判定に影響しない', () => {
@@ -25,6 +39,7 @@ describe('isConsentCurrent', () => {
     expect(
       isConsentCurrent({
         version: PRIVACY_POLICY_VERSION,
+        termsVersion: TERMS_OF_USE_VERSION,
         agreedAt: '2026-09-07T00:00:00.000Z',
         isAdult: false,
       }),

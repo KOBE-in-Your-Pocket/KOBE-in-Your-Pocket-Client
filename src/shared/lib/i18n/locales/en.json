@@ -68,6 +68,7 @@
     "retry": "Retry",
     "cancel": "Cancel",
     "about": "About",
+    "termsOfUse": "Terms of Use",
     "privacyPolicy": "Privacy Policy",
     "credits": "Credits",
     "contact": "Contact us",
@@ -307,8 +308,9 @@
   "legal": {
     "consent": {
       "title": "Before you start",
-      "description": "Using this app requires your acceptance of our Privacy Policy. It explains how we use your location to show tourist spots and walking directions, and what we store if you create an account, such as your email address and display name. Please read it and then continue.",
+      "description": "Using this app requires your acceptance of our Terms of Use and Privacy Policy. The Terms of Use state that we have zero tolerance for objectionable content and abusive users, and that we remove violating content and accounts. The Privacy Policy explains how we use your location to show tourist spots and walking directions, and what we store if you create an account, such as your email address and display name. Please read them and then continue.",
       "ageNotice": "If you are under {{age}}, you can still use the app, but location, accounts, and posting reviews are turned off. Browsing sightseeing spots and evacuation shelters is available at any age.",
+      "readTerms": "Read the Terms of Use",
       "readPolicy": "Read the Privacy Policy",
       "acceptAdult": "I am {{age}} or older — accept and start",
       "acceptMinor": "I am under {{age}} — accept and start",

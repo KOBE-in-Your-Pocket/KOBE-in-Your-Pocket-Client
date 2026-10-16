@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ADULT_AGE_THRESHOLD } from '../../domain/age-restriction';
 import { privacyPolicyUrl } from '../../domain/privacy-policy';
+import { termsOfUseUrl } from '../../domain/terms-of-use';
 
 import { MaxContentWidth, Spacing } from '@/shared/config';
 import { useTheme } from '@/shared/lib/theme';
@@ -43,8 +44,8 @@ export function PrivacyConsentScreen({ onAccept }: PrivacyConsentScreenProps) {
 
   const isSaving = savingChoice !== null;
 
-  const openPolicy = async () => {
-    await openBrowserAsync(privacyPolicyUrl(i18n.language), {
+  const openDocument = async (url: string) => {
+    await openBrowserAsync(url, {
       presentationStyle: WebBrowserPresentationStyle.AUTOMATIC,
     });
   };
@@ -79,7 +80,17 @@ export function PrivacyConsentScreen({ onAccept }: PrivacyConsentScreenProps) {
           <Pressable
             accessibilityRole="link"
             onPress={() => {
-              void openPolicy();
+              void openDocument(termsOfUseUrl(i18n.language));
+            }}
+            style={[styles.policyLink, { backgroundColor: theme.backgroundElement }]}
+          >
+            <ThemedText style={styles.policyLinkLabel}>{t('legal.consent.readTerms')}</ThemedText>
+          </Pressable>
+
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => {
+              void openDocument(privacyPolicyUrl(i18n.language));
             }}
             style={[styles.policyLink, { backgroundColor: theme.backgroundElement }]}
           >
