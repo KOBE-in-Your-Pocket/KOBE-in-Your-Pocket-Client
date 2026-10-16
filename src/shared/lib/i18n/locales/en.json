@@ -187,11 +187,6 @@
         "school": "School",
         "park": "Park",
         "gymnasium": "Gymnasium"
-      },
-      "type": {
-        "emergency": "Emergency",
-        "designated": "Designated",
-        "both": "Both"
       }
     },
     "disasterType": {
@@ -234,7 +229,8 @@
         "both": {
           "label": "Emergency site & designated shelter",
           "description": "Serves both as an escape site and a place to stay"
-        }
+        },
+        "accessibilityLabel": "{{label}}. {{description}}"
       }
     },
     "dataset": {

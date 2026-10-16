@@ -1,16 +1,16 @@
-import { type AndroidSymbol, type SFSymbol } from 'expo-symbols';
 import { StyleSheet } from 'react-native';
 
 import type { ShelterType } from '../../domain/evacuation-shelter';
+import type { PlatformSymbolName } from '../types';
 
 import { Spacing } from '@/shared/config';
 
-type ShelterTypeBadgeStyle = {
+export type ShelterTypeBadgeStyle = {
   /** 文字・アイコン・枠線の強調色。 */
   color: string;
   /** バッジ背景（強調色を薄く敷く）。 */
   background: string;
-  icon: { ios: SFSymbol; android: AndroidSymbol; web: AndroidSymbol };
+  icon: PlatformSymbolName;
 };
 
 /**

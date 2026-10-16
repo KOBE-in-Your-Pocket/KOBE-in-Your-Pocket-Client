@@ -1,4 +1,4 @@
-import { SymbolView, type AndroidSymbol, type SFSymbol } from 'expo-symbols';
+import { SymbolView } from 'expo-symbols';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
@@ -14,6 +14,7 @@ import {
   SUITABILITY_CHIP_BACKGROUNDS,
   SUITABILITY_COLORS,
 } from '../styles/shelter-suitability.styles';
+import type { PlatformSymbolName } from '../types';
 
 import { useTheme } from '@/shared/lib/theme';
 import { ThemedText } from '@/shared/ui';
@@ -25,10 +26,7 @@ type DisplaySuitability = ShelterSuitability | 'unknown';
  * 適否ごとのアイコン。○△× は日本独自の記号で外国人観光客に伝わりにくいため使わない。
  * アイコンだけに頼らないよう、詳細では必ず文言を、カードでは読み上げ用ラベルを添える。
  */
-const SUITABILITY_ICONS: Record<
-  DisplaySuitability,
-  { ios: SFSymbol; android: AndroidSymbol; web: AndroidSymbol }
-> = {
+const SUITABILITY_ICONS: Record<DisplaySuitability, PlatformSymbolName> = {
   suitable: { ios: 'checkmark.circle.fill', android: 'check_circle', web: 'check_circle' },
   conditional: {
     ios: 'exclamationmark.triangle.fill',

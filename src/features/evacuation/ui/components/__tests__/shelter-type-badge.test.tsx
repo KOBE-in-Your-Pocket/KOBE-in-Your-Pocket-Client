@@ -49,4 +49,11 @@ describe('ShelterTypeBadge', () => {
 
     expect(new Set(colors).size).toBe(colors.length);
   });
+
+  it('未知の区分ではバッジを表示しない（クラッシュしない）', () => {
+    // バックエンドが想定外の値を返しても例外にならず、何も描画しないこと。
+    const { toJSON } = render(<ShelterTypeBadge type={'unknown' as never} />);
+
+    expect(toJSON()).toBeNull();
+  });
 });
