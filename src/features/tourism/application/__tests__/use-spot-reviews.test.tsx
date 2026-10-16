@@ -138,14 +138,14 @@ describe('useSpotReviews', () => {
     fetchReviewsMock.mockResolvedValue({ reviews: [OWN_REVIEW], hiddenReviewIds: [] });
   });
 
-  it('currentUser の変更だけで（再取得せずに）自分のレビュー表示が更新される', async () => {
+  it('プロフィールの変更だけで（再取得せずに）自分のレビュー表示が更新される', async () => {
     const wrapper = createWrapper();
     const { result, rerender } = renderHook<
       ReturnType<typeof useSpotReviews>,
       { currentUser: Review['author'] | null }
     >(({ currentUser }) => useSpotReviews('spot-a', currentUser), {
       wrapper,
-      initialProps: { currentUser: null },
+      initialProps: { currentUser: OWN_REVIEW.author },
     });
 
     await waitFor(() => expect(result.current.isPending).toBe(false));
@@ -172,7 +172,30 @@ describe('useSpotReviews', () => {
     expect(fetchReviewsMock).toHaveBeenCalledWith('spot-a');
   });
 
-  it('他人のレビューは currentUser が変わっても変わらない', async () => {
+  it('他人のレビューは閲覧者のプロフィールが変わっても変わらない', async () => {
+    const wrapper = createWrapper();
+    const { result, rerender } = renderHook<
+      ReturnType<typeof useSpotReviews>,
+      { currentUser: Review['author'] | null }
+    >(({ currentUser }) => useSpotReviews('spot-a', currentUser), {
+      wrapper,
+      initialProps: { currentUser: { id: 'other-user', name: '別の人', iconUrl: '' } },
+    });
+
+    await waitFor(() => expect(result.current.isPending).toBe(false));
+
+    rerender({
+      currentUser: {
+        id: 'other-user',
+        name: '改名した人',
+        iconUrl: 'https://example.com/other.png',
+      },
+    });
+
+    expect(result.current.data[0]?.author).toEqual(OWN_REVIEW.author);
+  });
+
+  it('サインインすると取り直す（ブロック中の投稿者をサーバー側で除かせるため / #663）', async () => {
     const wrapper = createWrapper();
     const { result, rerender } = renderHook<
       ReturnType<typeof useSpotReviews>,
@@ -184,10 +207,8 @@ describe('useSpotReviews', () => {
 
     await waitFor(() => expect(result.current.isPending).toBe(false));
 
-    rerender({
-      currentUser: { id: 'other-user', name: '別の人', iconUrl: 'https://example.com/other.png' },
-    });
+    rerender({ currentUser: OWN_REVIEW.author });
 
-    expect(result.current.data[0]?.author).toEqual(OWN_REVIEW.author);
+    await waitFor(() => expect(fetchReviewsMock).toHaveBeenCalledTimes(2));
   });
 });

@@ -12,6 +12,7 @@ import { SpotDetailContent } from '../spot-detail';
 import { SMALL_TEXT_LINE_HEIGHT } from '@/shared/config';
 import { useAgeRestrictionStore } from '@/shared/store';
 
+import { useBlockedAuthorStore } from '../../../store/use-blocked-author-store';
 import { useReportedReviewStore } from '../../../store/use-reported-review-store';
 
 import type { Spot } from '../../../domain/spot';
@@ -37,6 +38,7 @@ const mockUseCurrentLocation = jest.fn();
 const mockUpdateReviewAsync = jest.fn();
 const mockDeleteReviewAsync = jest.fn();
 const mockReportReviewAsync = jest.fn();
+const mockBlockReviewAuthorAsync = jest.fn();
 
 jest.mock('../../../application/use-spot-reviews', () => ({
   useSpotReviews: (spotId: string, currentUser: unknown) => mockUseSpotReviews(spotId, currentUser),
@@ -52,6 +54,10 @@ jest.mock('../../../application/use-delete-review', () => ({
 
 jest.mock('../../../application/use-report-review', () => ({
   useReportReview: () => ({ mutateAsync: mockReportReviewAsync }),
+}));
+
+jest.mock('../../../application/use-block-review-author', () => ({
+  useBlockReviewAuthor: () => ({ mutateAsync: mockBlockReviewAuthorAsync }),
 }));
 
 jest.mock('../report-review-modal', () => ({
@@ -237,7 +243,9 @@ describe('SpotDetailContent', () => {
     mockUpdateReviewAsync.mockReset();
     mockDeleteReviewAsync.mockReset();
     mockReportReviewAsync.mockReset();
+    mockBlockReviewAuthorAsync.mockReset();
     useReportedReviewStore.setState({ reportedReviewIds: {} });
+    useBlockedAuthorStore.setState({ blockedAuthorIds: {} });
     mockUseSpotReviews.mockReturnValue({ data: [], isPending: false });
     mockUseCurrentUser.mockReturnValue({ name: 'test-user' });
     mockUseCurrentLocation.mockReturnValue({ coords: null });
@@ -699,6 +707,155 @@ describe('SpotDetailContent', () => {
 
       expect(screen.queryByTestId('report-review-modal')).toBeNull();
       expect(mockReportReviewAsync).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('投稿者のブロック（#663）', () => {
+    beforeEach(() => {
+      stubMeasureInWindow();
+      mockUseSpotReviews.mockReturnValue({ data: [OTHERS_REVIEW], isPending: false });
+      mockUseCurrentUser.mockReturnValue(VIEWER);
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    function pressBlock() {
+      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
+      fireEvent.press(screen.getByText('tourism.reviewCard.block'));
+    }
+
+    it('他人のレビューのメニューに通報と並べてブロックを出す', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
+
+      expect(screen.getByText('tourism.reviewCard.report')).toBeTruthy();
+      expect(screen.getByText('tourism.reviewCard.block')).toBeTruthy();
+    });
+
+    it('自分のレビューにはブロックを出さない', () => {
+      mockUseSpotReviews.mockReturnValue({ data: [OWN_REVIEW], isPending: false });
+
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
+
+      expect(screen.queryByText('tourism.reviewCard.block')).toBeNull();
+    });
+
+    it('投稿者を特定できないレビュー（V17 以前の投稿）にはブロックを出さない', () => {
+      const reviewWithoutAuthorId = {
+        ...OTHERS_REVIEW,
+        author: { ...OTHERS_REVIEW.author, id: '' },
+      };
+      mockUseSpotReviews.mockReturnValue({ data: [reviewWithoutAuthorId], isPending: false });
+
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      fireEvent.press(screen.getByLabelText('tourism.reviewCard.openMenu'));
+
+      expect(screen.getByText('tourism.reviewCard.report')).toBeTruthy();
+      expect(screen.queryByText('tourism.reviewCard.block')).toBeNull();
+    });
+
+    it('未ログインでブロックを押すとサインインを促し、確認は出さない', () => {
+      mockUseCurrentUser.mockReturnValue(null);
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      pressBlock();
+
+      expect(screen.getByTestId('sign-in-modal')).toBeTruthy();
+      expect(screen.queryByTestId('destructive-confirm-dialog')).toBeNull();
+    });
+
+    it('ブロックを押しただけでは確認を出すのみで、まだブロックしない', async () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      pressBlock();
+
+      await waitFor(
+        () => expect(screen.getByText('tourism.reviewCard.blockConfirmTitle')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
+      expect(mockBlockReviewAuthorAsync).not.toHaveBeenCalled();
+    });
+
+    it('確認で「ブロック」を選ぶと投稿者の ID でブロックし、そのレビューを隠して完了を表示する', async () => {
+      mockBlockReviewAuthorAsync.mockImplementation(async ({ authorId }: { authorId: string }) => {
+        useBlockedAuthorStore.getState().markBlocked(VIEWER.id, authorId);
+      });
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      pressBlock();
+      await waitFor(
+        () => expect(screen.getByTestId('destructive-confirm-dialog')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
+      fireEvent.press(screen.getByTestId('destructive-confirm-dialog-confirm'));
+
+      await waitFor(
+        () => expect(screen.getByText('tourism.reviewCard.blockedNotice')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
+      expect(mockBlockReviewAuthorAsync).toHaveBeenCalledWith({
+        authorId: OTHERS_REVIEW.author.id,
+      });
+      expect(screen.queryByText(OTHERS_REVIEW.comment)).toBeNull();
+    });
+
+    it('ブロックに失敗したらエラーを表示し、レビューは残す', async () => {
+      mockBlockReviewAuthorAsync.mockRejectedValue(new Error('network'));
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      pressBlock();
+      await waitFor(
+        () => expect(screen.getByTestId('destructive-confirm-dialog')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
+      fireEvent.press(screen.getByTestId('destructive-confirm-dialog-confirm'));
+
+      await waitFor(
+        () => expect(screen.getByText('tourism.reviewCard.blockError')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
+      expect(screen.getByText(OTHERS_REVIEW.comment)).toBeTruthy();
+    });
+
+    it('確認で「キャンセル」を選ぶとブロックしない', async () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      pressBlock();
+      await waitFor(
+        () => expect(screen.getByTestId('destructive-confirm-dialog')).toBeTruthy(),
+        ASYNC_TIMEOUT,
+      );
+      fireEvent.press(screen.getByTestId('destructive-confirm-dialog-cancel'));
+
+      expect(screen.queryByTestId('destructive-confirm-dialog')).toBeNull();
+      expect(mockBlockReviewAuthorAsync).not.toHaveBeenCalled();
+    });
+
+    it('ブロック済みの投稿者のレビューは、別のスポットでも開き直しても表示しない', () => {
+      useBlockedAuthorStore.setState({
+        blockedAuthorIds: { [VIEWER.id]: [OTHERS_REVIEW.author.id] },
+      });
+
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      expect(screen.queryByText(OTHERS_REVIEW.comment)).toBeNull();
+      expect(screen.getByText('tourism.spotDetail.noReviews')).toBeTruthy();
+    });
+
+    it('別のアカウントがブロックした記録では隠さない', () => {
+      useBlockedAuthorStore.setState({
+        blockedAuthorIds: { 'other-user': [OTHERS_REVIEW.author.id] },
+      });
+
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      expect(screen.getByText(OTHERS_REVIEW.comment)).toBeTruthy();
     });
   });
 });

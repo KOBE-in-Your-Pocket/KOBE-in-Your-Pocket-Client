@@ -1,5 +1,5 @@
 import type { PublicUser } from '@/features/user';
-import { apiFetch } from '@/shared/lib/api';
+import { ApiError, apiFetch } from '@/shared/lib/api';
 import type { SupportedLanguage } from '@/shared/lib/i18n';
 
 import type { ReportReason } from '../../domain/report-reason';
@@ -50,11 +50,20 @@ function toReview(dto: ReviewResponse): Review {
  * レビューは言語横断で全件取得し、`?lang=` は付けない。現在の UI 言語だけで絞ると
  * spot-detail の ReviewLanguageFilter で他言語チップが常に空になるため、言語での絞り込みは
  * クライアント側（`review.language`）に委ねる（#489 / #607）。
+ *
+ * ログイン中はトークンを付けて送り、本人がブロック中の投稿者のレビューをサーバー側で除かせる（#663）。
+ * 閲覧自体は未ログインでもできるため、セッションが切れていて 401 になったときは
+ * トークン無しで取り直す（一覧が見られなくなるより、ブロックが効かないほうがまし）。
  */
 export async function fetchReviews(spotId: string): Promise<SpotReviews> {
-  const response = await apiFetch<ReviewListItemResponse[]>(
-    `/api/v1/tourism/spots/${encodeURIComponent(spotId)}/reviews`,
-  );
+  const path = `/api/v1/tourism/spots/${encodeURIComponent(spotId)}/reviews`;
+  let response: ReviewListItemResponse[];
+  try {
+    response = await apiFetch<ReviewListItemResponse[]>(path, { auth: true });
+  } catch (error) {
+    if (!(error instanceof ApiError && error.status === 401)) throw error;
+    response = await apiFetch<ReviewListItemResponse[]>(path);
+  }
 
   const reviews: Review[] = [];
   const hiddenReviewIds: string[] = [];
@@ -165,4 +174,16 @@ export async function reportReview(
       body: description === '' ? { reason: input.reason } : { reason: input.reason, description },
     },
   );
+}
+
+/**
+ * `PUT /api/v1/users/me/blocks/:userId`（認証必須 / #663）。レビューの投稿者をブロックする。
+ *
+ * ブロック済みでも 204 が返る（冪等）。以後、本人の一覧からはその投稿者のレビューが除かれる。
+ */
+export async function blockReviewAuthor(userId: string): Promise<void> {
+  await apiFetch<void>(`/api/v1/users/me/blocks/${encodeURIComponent(userId)}`, {
+    method: 'PUT',
+    auth: true,
+  });
 }
