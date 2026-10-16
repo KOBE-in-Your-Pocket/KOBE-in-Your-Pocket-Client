@@ -9,7 +9,7 @@ import { FALLBACK_LANGUAGE, SUPPORTED_LANGUAGES, type SupportedLanguage } from '
  * 本文を改定して再同意が必要になったらこの値を上げる。保存済みの同意がこの値と異なる場合、
  * アプリは起動時に再度同意を求める。
  */
-export const PRIVACY_POLICY_VERSION = '2026-09-16';
+export const PRIVACY_POLICY_VERSION = '2026-10-16';
 
 /**
  * 公開されたプライバシーポリシーのベース URL。
