@@ -4,7 +4,11 @@ import { View } from 'react-native';
 
 import type { ShelterType } from '../../domain/evacuation-shelter';
 
-import { SHELTER_TYPE_BADGE, styles } from '../styles/shelter-type-badge.styles';
+import {
+  SHELTER_TYPE_BADGE,
+  styles,
+  type ShelterTypeBadgeStyle,
+} from '../styles/shelter-type-badge.styles';
 
 import { ThemedText } from '@/shared/ui';
 
@@ -18,7 +22,12 @@ import { ThemedText } from '@/shared/ui';
  */
 export function ShelterTypeBadge({ type }: { type: ShelterType }) {
   const { t } = useTranslation();
-  const { color, background, icon } = SHELTER_TYPE_BADGE[type];
+  // バックエンドの値をそのまま通す（evacuation-shelter-mapper.ts）ため、未知の区分が来うる。
+  // 定義が無い区分では、誤った色・アイコンで誤認させないよう fallback 表示ではなくバッジ自体を出さない。
+  const badge: ShelterTypeBadgeStyle | undefined = SHELTER_TYPE_BADGE[type];
+  if (!badge) return null;
+
+  const { color, background, icon } = badge;
   const label = t(`evacuation.shelterDetail.typeBadge.${type}.label`);
   const description = t(`evacuation.shelterDetail.typeBadge.${type}.description`);
 
@@ -27,7 +36,11 @@ export function ShelterTypeBadge({ type }: { type: ShelterType }) {
       style={styles.container}
       accessible
       accessibilityRole="text"
-      accessibilityLabel={`${label}。${description}`}
+      // 区切り文字は言語ごとに異なるため、i18n テンプレート側で解決する（shelter-suitability と同方式）。
+      accessibilityLabel={t('evacuation.shelterDetail.typeBadge.accessibilityLabel', {
+        label,
+        description,
+      })}
     >
       <View style={[styles.badge, { backgroundColor: background, borderColor: color }]}>
         <SymbolView tintColor={color} name={icon} size={16} />

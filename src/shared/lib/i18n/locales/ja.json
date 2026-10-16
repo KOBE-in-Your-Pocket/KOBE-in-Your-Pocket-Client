@@ -193,11 +193,6 @@
         "school": "学校",
         "park": "公園",
         "gymnasium": "体育館"
-      },
-      "type": {
-        "emergency": "緊急",
-        "designated": "指定",
-        "both": "兼用"
       }
     },
     "disasterType": {
@@ -240,7 +235,8 @@
         "both": {
           "label": "緊急避難場所・指定避難所",
           "description": "すぐ逃げ込む場所と、滞在できる場所を兼ねています"
-        }
+        },
+        "accessibilityLabel": "{{label}}。{{description}}"
       }
     },
     "dataset": {

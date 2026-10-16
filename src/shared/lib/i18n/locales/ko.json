@@ -193,11 +193,6 @@
         "school": "학교",
         "park": "공원",
         "gymnasium": "체육관"
-      },
-      "type": {
-        "emergency": "긴급",
-        "designated": "지정",
-        "both": "겸용"
       }
     },
     "disasterType": {
@@ -240,7 +235,8 @@
         "both": {
           "label": "긴급 대피 장소·지정 대피소",
           "description": "즉시 대피하는 장소와 머무는 장소를 겸합니다"
-        }
+        },
+        "accessibilityLabel": "{{label}}. {{description}}"
       }
     },
     "dataset": {
