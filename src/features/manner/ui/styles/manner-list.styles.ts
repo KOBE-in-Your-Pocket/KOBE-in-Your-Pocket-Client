@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { PixelRatio, StyleSheet } from 'react-native';
 
 import { BottomTabInset, Fonts, Spacing } from '@/shared/config';
 
@@ -20,41 +20,43 @@ export const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
   },
   header: {
-    paddingHorizontal: Spacing.two,
     paddingBottom: Spacing.three,
   },
-  // 左にブランド副題＋タイトル、右に絞り込みボタンを並べる行。
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.three,
+  // 一覧画面・ホーム画面と同じ装飾タイトル行：筆記体・中央揃えのタイトルを上下の区切り線で挟む。
+  // 絞り込みボタンを右端に重ねるため relative にする。
+  titleRow: {
+    position: 'relative',
+    justifyContent: 'center',
+    gap: Spacing.two,
   },
-  headerTitles: {
-    // タイトルが長い言語でも絞り込みボタンを押し出さないよう、タイトル側を縮小可能にする。
-    flexShrink: 1,
+  // タイトルを上下で挟む区切り線（一覧画面・ホーム画面と同一スタイル）。
+  divider: {
+    height: PixelRatio.roundToNearestPixel(1),
+    alignSelf: 'stretch',
   },
-  // ブランド副題（神戸 · KOBE, JAPAN）。小さめ・字間広め・大文字。
-  region: {
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  // 装飾タイトル（筆記体）。ヘッダー刷新に合わせて左寄せにする。
+  // 一覧画面・ホーム画面と同じ装飾タイトル（筆記体・中央揃え・fontSize 30 / lineHeight 40）。
   title: {
     fontFamily: Fonts.cursive,
     fontWeight: 'normal',
     fontSize: 30,
     lineHeight: 40,
-    textAlign: 'left',
+    textAlign: 'center',
+  },
+  // 絞り込みボタンはタイトル行の右端に重ね、中央のタイトル＋区切り線はそのまま（画面中央）に保つ。
+  // top/bottom:0 ＋ justifyContent:center でタイトル行の高さに対して縦中央に置く。
+  filterButtonWrap: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
   },
   // 絞り込みモーダルを開くボタン（アイコン＋ラベルのピル）。
   filterButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one,
-    paddingVertical: Spacing.two,
+    paddingVertical: Spacing.one,
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.five,
   },

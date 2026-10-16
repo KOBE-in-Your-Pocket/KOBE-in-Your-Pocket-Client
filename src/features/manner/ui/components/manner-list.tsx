@@ -20,9 +20,6 @@ import { KindBadge } from './kind-badge';
 import { MannerFilterModal } from './manner-filter-modal';
 import { MannerPictogram } from './manner-pictogram';
 
-/** ヘッダーのブランド副題。地名ブランドのため UI 言語に関わらず固定表記にする。 */
-const MANNER_REGION_LABEL = '神戸 · KOBE, JAPAN';
-
 /**
  * マナー項目1件分のカード（2列グリッドの1セル）。
  *
@@ -62,33 +59,36 @@ function ListHeader({ onOpenFilter }: { onOpenFilter: () => void }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
-  // 左にブランド副題＋筆記体タイトル、右に絞り込みを開くボタンを置く。
+  // 一覧画面・ホーム画面と同じ装飾タイトル（中央寄せ・上下区切り線）に、絞り込みボタンを右端に重ねる。
   return (
     <View style={[styles.header, { paddingTop: insets.top + Spacing.four + Spacing.one }]}>
-      <View style={styles.headerRow}>
-        <View style={styles.headerTitles}>
-          <ThemedText themeColor="textSecondary" style={styles.region}>
-            {MANNER_REGION_LABEL}
-          </ThemedText>
-          <ThemedText type="title" style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
-            {t('manner.list.title')}
-          </ThemedText>
+      <View style={styles.titleRow}>
+        <View style={[styles.divider, { backgroundColor: theme.textSecondary }]} />
+        <ThemedText type="title" style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
+          {t('manner.list.title')}
+        </ThemedText>
+        <View style={[styles.divider, { backgroundColor: theme.textSecondary }]} />
+        <View style={styles.filterButtonWrap}>
+          <Pressable
+            style={[styles.filterButton, { backgroundColor: theme.backgroundElement }]}
+            onPress={onOpenFilter}
+            accessibilityRole="button"
+            accessibilityLabel={t('manner.filter.title')}
+          >
+            <SymbolView
+              tintColor={theme.text}
+              name={{
+                ios: 'line.3.horizontal.decrease',
+                android: 'filter_list',
+                web: 'filter_list',
+              }}
+              size={16}
+            />
+            <ThemedText type="smallBold" style={styles.filterButtonText}>
+              {t('manner.filter.title')}
+            </ThemedText>
+          </Pressable>
         </View>
-        <Pressable
-          style={[styles.filterButton, { backgroundColor: theme.backgroundElement }]}
-          onPress={onOpenFilter}
-          accessibilityRole="button"
-          accessibilityLabel={t('manner.filter.title')}
-        >
-          <SymbolView
-            tintColor={theme.text}
-            name={{ ios: 'line.3.horizontal.decrease', android: 'filter_list', web: 'filter_list' }}
-            size={16}
-          />
-          <ThemedText type="smallBold" style={styles.filterButtonText}>
-            {t('manner.filter.title')}
-          </ThemedText>
-        </Pressable>
       </View>
     </View>
   );
