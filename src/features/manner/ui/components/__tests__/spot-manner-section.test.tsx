@@ -93,34 +93,36 @@ describe('SpotMannerSection', () => {
     expect(toJSON()).toBeNull();
   });
 
-  it('該当マナーがあるときはセクションタイトルと各項目を表示する', () => {
+  it('該当マナーがあるときはセクションタイトルと各項目のピクトグラムを表示する', () => {
     mockUseSpotManners.mockReturnValue({ data: mockManners, isPending: false, isError: false });
 
     render(<SpotMannerSection spotId="nankinmachi" />);
 
     expect(mockUseSpotManners).toHaveBeenCalledWith('nankinmachi');
     expect(screen.getByText('manner.spotSection.title')).toBeTruthy();
-    expect(screen.getByText(mockManners[0].title)).toBeTruthy();
-    expect(screen.getByText(mockManners[0].description)).toBeTruthy();
-    expect(screen.getByText(mockManners[1].title)).toBeTruthy();
-    expect(screen.getByText(mockManners[1].description)).toBeTruthy();
+    expect(screen.getByText(`pictogram:${mockManners[0].id}:56`)).toBeTruthy();
+    expect(screen.getByText(`pictogram:${mockManners[1].id}:56`)).toBeTruthy();
   });
 
-  it('各項目に MannerPictogram を size=32 で表示する', () => {
+  it('グリッドではピクトグラムのみを表示し、タイトル・説明文・KindBadge は表示しない', () => {
     mockUseSpotManners.mockReturnValue({ data: mockManners, isPending: false, isError: false });
 
     render(<SpotMannerSection spotId="nankinmachi" />);
 
-    expect(screen.getByText(`pictogram:${mockManners[0].id}:32`)).toBeTruthy();
-    expect(screen.getByText(`pictogram:${mockManners[1].id}:32`)).toBeTruthy();
+    expect(screen.queryByText(mockManners[0].title)).toBeNull();
+    expect(screen.queryByText(mockManners[0].description)).toBeNull();
+    expect(screen.queryByText(mockManners[1].title)).toBeNull();
+    expect(screen.queryByText(mockManners[1].description)).toBeNull();
+    expect(screen.queryByText('kind:rule')).toBeNull();
+    expect(screen.queryByText('kind:manner')).toBeNull();
   });
 
-  it('各項目に種別に応じた KindBadge を表示する', () => {
+  it('各項目に MannerPictogram を size=56 で表示する', () => {
     mockUseSpotManners.mockReturnValue({ data: mockManners, isPending: false, isError: false });
 
     render(<SpotMannerSection spotId="nankinmachi" />);
 
-    expect(screen.getByText('kind:rule')).toBeTruthy();
-    expect(screen.getByText('kind:manner')).toBeTruthy();
+    expect(screen.getByText(`pictogram:${mockManners[0].id}:56`)).toBeTruthy();
+    expect(screen.getByText(`pictogram:${mockManners[1].id}:56`)).toBeTruthy();
   });
 });
