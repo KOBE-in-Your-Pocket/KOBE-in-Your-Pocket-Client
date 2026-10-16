@@ -69,8 +69,10 @@ export function useSpotReviews(
   currentUser: Review['author'] | null,
 ) {
   // レビューは言語横断で全件取得し、言語の絞り込みは UI（ReviewLanguageFilter）に委ねる（#489 / #607）。
+  // ログイン中はブロック中の投稿者がサーバー側で除かれ、閲覧者ごとに結果が変わる（#663）。
+  // サインイン・サインアウトで取り直すよう、閲覧者をキーの末尾に含める（spotId までの前方一致の無効化はそのまま効く）。
   const seedQuery = useQuery<SpotReviews>({
-    queryKey: [...SPOT_REVIEWS_QUERY_KEY, spotId],
+    queryKey: [...SPOT_REVIEWS_QUERY_KEY, spotId, currentUser?.id ?? null],
     enabled: Boolean(spotId),
     queryFn: () => fetchReviews(spotId as string),
   });

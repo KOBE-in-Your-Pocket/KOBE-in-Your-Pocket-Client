@@ -125,7 +125,12 @@
       "deleting": "삭제 중...",
       "deleteError": "리뷰를 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.",
       "retry": "다시 시도",
-      "report": "신고"
+      "report": "신고",
+      "block": "사용자 차단",
+      "blockConfirmTitle": "이 사용자를 차단하시겠습니까?",
+      "blockConfirmMessage": "앞으로 {{name}} 님의 리뷰가 표시되지 않습니다. 차단 사실은 상대방에게 알려지지 않습니다.",
+      "blockedNotice": "사용자를 차단했습니다. 이 사용자의 리뷰는 표시되지 않습니다.",
+      "blockError": "차단하지 못했습니다. 잠시 후 다시 시도해 주세요."
     },
     "reportModal": {
       "title": "리뷰 신고",

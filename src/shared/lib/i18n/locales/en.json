@@ -125,7 +125,12 @@
       "deleting": "Deleting...",
       "deleteError": "Could not delete your review. Please try again later.",
       "retry": "Retry",
-      "report": "Report"
+      "report": "Report",
+      "block": "Block user",
+      "blockConfirmTitle": "Block this user?",
+      "blockConfirmMessage": "You will no longer see reviews from {{name}}. They will not be notified.",
+      "blockedNotice": "User blocked. You will no longer see their reviews.",
+      "blockError": "Could not block this user. Please try again later."
     },
     "reportModal": {
       "title": "Report review",

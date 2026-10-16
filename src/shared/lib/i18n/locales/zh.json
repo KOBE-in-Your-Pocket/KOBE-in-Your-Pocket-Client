@@ -125,7 +125,12 @@
       "deleting": "删除中...",
       "deleteError": "无法删除评论。请稍后再试。",
       "retry": "重试",
-      "report": "举报"
+      "report": "举报",
+      "block": "屏蔽用户",
+      "blockConfirmTitle": "要屏蔽该用户吗？",
+      "blockConfirmMessage": "今后将不再显示 {{name}} 的评价。对方不会收到屏蔽通知。",
+      "blockedNotice": "已屏蔽该用户。今后不会再显示其评价。",
+      "blockError": "无法屏蔽该用户，请稍后再试。"
     },
     "reportModal": {
       "title": "举报评论",

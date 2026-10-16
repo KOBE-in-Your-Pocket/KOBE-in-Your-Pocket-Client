@@ -125,7 +125,12 @@
       "deleting": "削除中...",
       "deleteError": "レビューを削除できませんでした。時間をおいて再度お試しください。",
       "retry": "再試行",
-      "report": "通報"
+      "report": "通報",
+      "block": "ブロック",
+      "blockConfirmTitle": "このユーザーをブロックしますか？",
+      "blockConfirmMessage": "{{name}} さんのレビューは今後表示されなくなります。ブロックしたことは相手に通知されません。",
+      "blockedNotice": "ユーザーをブロックしました。このユーザーのレビューは表示されません。",
+      "blockError": "ブロックできませんでした。時間をおいて再度お試しください。"
     },
     "reportModal": {
       "title": "レビューを通報",

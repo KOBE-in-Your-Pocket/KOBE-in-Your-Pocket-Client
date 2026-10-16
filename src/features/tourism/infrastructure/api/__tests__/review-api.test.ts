@@ -1,8 +1,17 @@
-import { apiFetch } from '@/shared/lib/api';
+import { ApiError, apiFetch } from '@/shared/lib/api';
 
-import { deleteReview, fetchReviews, postReview, reportReview, updateReview } from '../review-api';
+import {
+  blockReviewAuthor,
+  deleteReview,
+  fetchReviews,
+  postReview,
+  reportReview,
+  updateReview,
+} from '../review-api';
 
+// ApiError は 401 の判定（instanceof）に使うため本物を残し、apiFetch だけ差し替える。
 jest.mock('@/shared/lib/api', () => ({
+  ...jest.requireActual('@/shared/lib/api'),
   apiFetch: jest.fn(),
 }));
 
@@ -38,7 +47,38 @@ describe('fetchReviews', () => {
 
     await fetchReviews('spot/with space');
 
-    expect(mockApiFetch).toHaveBeenCalledWith('/api/v1/tourism/spots/spot%2Fwith%20space/reviews');
+    expect(mockApiFetch).toHaveBeenCalledWith('/api/v1/tourism/spots/spot%2Fwith%20space/reviews', {
+      auth: true,
+    });
+  });
+
+  it('ログイン中のトークンを付けて取得する（ブロック中の投稿者をサーバー側で除かせる / #663）', async () => {
+    mockApiFetch.mockResolvedValue([]);
+
+    await fetchReviews('spot-a');
+
+    expect(mockApiFetch).toHaveBeenCalledTimes(1);
+    expect(mockApiFetch).toHaveBeenCalledWith('/api/v1/tourism/spots/spot-a/reviews', {
+      auth: true,
+    });
+  });
+
+  it('セッション切れで 401 になったらトークン無しで取り直す', async () => {
+    mockApiFetch
+      .mockRejectedValueOnce(new ApiError(401, 'Unauthorized', 'expired'))
+      .mockResolvedValueOnce([]);
+
+    const result = await fetchReviews('spot-a');
+
+    expect(result).toEqual({ reviews: [], hiddenReviewIds: [] });
+    expect(mockApiFetch).toHaveBeenNthCalledWith(2, '/api/v1/tourism/spots/spot-a/reviews');
+  });
+
+  it('401 以外のエラーはそのまま投げる', async () => {
+    mockApiFetch.mockRejectedValue(new ApiError(500, 'Internal Server Error', 'boom'));
+
+    await expect(fetchReviews('spot-a')).rejects.toBeInstanceOf(ApiError);
+    expect(mockApiFetch).toHaveBeenCalledTimes(1);
   });
 
   it('author が name のみのとき id / iconUrl をフォールバック（空文字）で補う', async () => {
@@ -323,5 +363,22 @@ describe('reportReview', () => {
     expect(mockApiFetch.mock.calls[0][0]).toBe(
       '/api/v1/tourism/spots/spot%2Fwith%20space/reviews/review%2F1/reports',
     );
+  });
+});
+
+describe('blockReviewAuthor', () => {
+  beforeEach(() => {
+    mockApiFetch.mockReset();
+  });
+
+  it('認証付きで PUT /api/v1/users/me/blocks/:userId を呼ぶ', async () => {
+    mockApiFetch.mockResolvedValue(undefined);
+
+    await blockReviewAuthor('user/2');
+
+    expect(mockApiFetch).toHaveBeenCalledWith('/api/v1/users/me/blocks/user%2F2', {
+      method: 'PUT',
+      auth: true,
+    });
   });
 });
