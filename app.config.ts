@@ -73,7 +73,7 @@ const config: ExpoConfig = {
   // 'KOBE-in-Your-Poket-Client' のままにする（変更すると EAS の参照が切れるため）。
   name: 'KOBE in Your Pocket',
   slug: 'KOBE-in-Your-Poket-Client',
-  version: '1.0.0',
+  version: '1.1.0',
   orientation: 'portrait',
   icon: './assets/images/app-icon.png',
   scheme: 'kobeinyourpoketclient',
