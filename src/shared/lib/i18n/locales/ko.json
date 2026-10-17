@@ -254,7 +254,9 @@
     },
     "filter": {
       "category": "카테고리",
-      "target": "대상"
+      "target": "대상",
+      "title": "필터",
+      "close": "닫기"
     },
     "kind": {
       "manner": "매너",
