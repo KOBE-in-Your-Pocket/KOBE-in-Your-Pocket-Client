@@ -193,11 +193,6 @@
         "school": "학교",
         "park": "공원",
         "gymnasium": "체육관"
-      },
-      "type": {
-        "emergency": "긴급",
-        "designated": "지정",
-        "both": "겸용"
       }
     },
     "disasterType": {
@@ -227,7 +222,22 @@
       "externalLink": "개설 상황 확인 (지자체 페이지)",
       "openDirectionsButton": "경로 열기",
       "linkErrorTitle": "오류",
-      "linkErrorMessage": "페이지를 열 수 없습니다."
+      "linkErrorMessage": "페이지를 열 수 없습니다.",
+      "typeBadge": {
+        "emergency": {
+          "label": "긴급 대피 장소",
+          "description": "위험이 닥쳤을 때 즉시 대피하는 장소입니다"
+        },
+        "designated": {
+          "label": "지정 대피소",
+          "description": "재해 후 한동안 머물 수 있는 장소입니다"
+        },
+        "both": {
+          "label": "긴급 대피 장소·지정 대피소",
+          "description": "즉시 대피하는 장소와 머무는 장소를 겸합니다"
+        },
+        "accessibilityLabel": "{{label}}. {{description}}"
+      }
     },
     "dataset": {
       "source": "출처: {{source}} (데이터 기준일: {{asOf}})",

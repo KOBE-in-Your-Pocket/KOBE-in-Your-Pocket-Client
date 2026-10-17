@@ -193,11 +193,6 @@
         "school": "学校",
         "park": "公园",
         "gymnasium": "体育馆"
-      },
-      "type": {
-        "emergency": "紧急",
-        "designated": "指定",
-        "both": "兼用"
       }
     },
     "disasterType": {
@@ -227,7 +222,22 @@
       "externalLink": "查看开放状态（政府页面）",
       "openDirectionsButton": "打开路线",
       "linkErrorTitle": "错误",
-      "linkErrorMessage": "无法打开页面。"
+      "linkErrorMessage": "无法打开页面。",
+      "typeBadge": {
+        "emergency": {
+          "label": "紧急避难场所",
+          "description": "危险来临时可立即逃入的场所"
+        },
+        "designated": {
+          "label": "指定避难所",
+          "description": "灾害后可暂时停留的场所"
+        },
+        "both": {
+          "label": "紧急避难场所·指定避难所",
+          "description": "兼具立即避难和停留两种功能"
+        },
+        "accessibilityLabel": "{{label}}。{{description}}"
+      }
     },
     "dataset": {
       "source": "出处：{{source}}（数据基准日：{{asOf}}）",
