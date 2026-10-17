@@ -3,7 +3,6 @@ import '@testing-library/jest-native/extend-expect';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { Text as MockText, View as MockView } from 'react-native';
 
-import { AuthApiError } from '../../../domain/auth-api-error';
 import type { AuthSession } from '../../../domain/auth-session';
 import { SignInModal } from '../sign-in-modal';
 
@@ -53,15 +52,6 @@ const createMutationMock = (): MutationMock => ({
 let mockAppleSignIn: MutationMock;
 let mockAppleSignInAvailable: boolean;
 let mockGoogleSignIn: MutationMock;
-let mockEmailSignIn: MutationMock;
-let mockEmailSignUp: MutationMock;
-
-// エラー種別の変換ロジック（resolveEmail*ErrorKind）は実物を使い、フックだけ差し替える。
-jest.mock('../../../application/use-email-auth', () => ({
-  ...jest.requireActual('../../../application/use-email-auth'),
-  useEmailSignIn: () => mockEmailSignIn,
-  useEmailSignUp: () => mockEmailSignUp,
-}));
 
 // 表示条件（iOS かつ isAvailableAsync）の判定はフック側のテストで確認する。
 jest.mock('../../../application/use-apple-sign-in', () => ({
@@ -81,17 +71,6 @@ const SESSION: AuthSession = {
   user: { id: 'user-1', name: 'メール 太郎', iconUrl: '' },
 };
 
-function fillSignInForm() {
-  fireEvent.changeText(screen.getByPlaceholderText('auth.emailPlaceholder'), 'taro@example.com');
-  fireEvent.changeText(screen.getByPlaceholderText('auth.passwordPlaceholder'), 'password123');
-}
-
-function switchToSignUpAndFill() {
-  fireEvent.press(screen.getByText('auth.signUpTab'));
-  fireEvent.changeText(screen.getByPlaceholderText('auth.namePlaceholder'), 'メール 太郎');
-  fillSignInForm();
-}
-
 describe('SignInModal', () => {
   const onClose = jest.fn();
 
@@ -100,84 +79,6 @@ describe('SignInModal', () => {
     mockAppleSignIn = createMutationMock();
     mockAppleSignInAvailable = true;
     mockGoogleSignIn = createMutationMock();
-    mockEmailSignIn = createMutationMock();
-    mockEmailSignUp = createMutationMock();
-  });
-
-  it('メールログイン成功でモーダルを閉じる', () => {
-    mockEmailSignIn.mutate.mockImplementation((_input, options) => {
-      options?.onSuccess?.(SESSION);
-    });
-
-    render(<SignInModal visible onClose={onClose} />);
-    fillSignInForm();
-    fireEvent.press(screen.getByText('auth.submitSignIn'));
-
-    expect(mockEmailSignIn.mutate).toHaveBeenCalledWith(
-      { email: 'taro@example.com', password: 'password123' },
-      expect.anything(),
-    );
-    expect(onClose).toHaveBeenCalled();
-  });
-
-  it('認証情報誤り（400）は invalidCredentials の文言を表示する', () => {
-    mockEmailSignIn.isError = true;
-    mockEmailSignIn.error = new AuthApiError(400, 'Invalid login credentials');
-
-    render(<SignInModal visible onClose={onClose} />);
-
-    expect(screen.getByText('auth.invalidCredentials')).toBeOnTheScreen();
-  });
-
-  it('メール未確認（email_not_confirmed）は専用の文言を表示する', () => {
-    mockEmailSignIn.isError = true;
-    mockEmailSignIn.error = new AuthApiError(
-      400,
-      '{"code":400,"error_code":"email_not_confirmed","msg":"Email not confirmed"}',
-    );
-
-    render(<SignInModal visible onClose={onClose} />);
-
-    expect(screen.getByText('auth.emailNotConfirmed')).toBeOnTheScreen();
-  });
-
-  it('新規登録がメール確認待ちの場合は案内を表示してモーダルを閉じない', () => {
-    mockEmailSignUp.mutate.mockImplementation((_input, options) => {
-      options?.onSuccess?.({ status: 'confirmationRequired' });
-    });
-
-    render(<SignInModal visible onClose={onClose} />);
-    switchToSignUpAndFill();
-    fireEvent.press(screen.getByText('auth.submitSignUp'));
-
-    expect(mockEmailSignUp.mutate).toHaveBeenCalledWith(
-      { email: 'taro@example.com', password: 'password123', name: 'メール 太郎' },
-      expect.anything(),
-    );
-    expect(screen.getByText('auth.confirmationEmailSent')).toBeOnTheScreen();
-    expect(onClose).not.toHaveBeenCalled();
-  });
-
-  it('新規登録でセッションが発行されたらモーダルを閉じる', () => {
-    mockEmailSignUp.mutate.mockImplementation((_input, options) => {
-      options?.onSuccess?.({ status: 'session', session: SESSION });
-    });
-
-    render(<SignInModal visible onClose={onClose} />);
-    switchToSignUpAndFill();
-    fireEvent.press(screen.getByText('auth.submitSignUp'));
-
-    expect(onClose).toHaveBeenCalled();
-  });
-
-  it('新規登録のレート制限（429）は emailRateLimited の文言を表示する', () => {
-    mockEmailSignUp.isError = true;
-    mockEmailSignUp.error = new AuthApiError(429, 'email rate limit exceeded');
-
-    render(<SignInModal visible onClose={onClose} />);
-    fireEvent.press(screen.getByText('auth.signUpTab'));
-
-    expect(screen.getByText('auth.emailRateLimited')).toBeOnTheScreen();
   });
 
   it('Google サインイン成功でモーダルを閉じ、キャンセル（null）では閉じない', () => {
@@ -194,22 +95,6 @@ describe('SignInModal', () => {
     });
     fireEvent.press(screen.getByText('Google Sign-In'));
     expect(onClose).toHaveBeenCalled();
-  });
-
-  it('Google サインイン開始時にメール認証のエラー状態をリセットする', () => {
-    render(<SignInModal visible onClose={onClose} />);
-    fireEvent.press(screen.getByText('Google Sign-In'));
-
-    expect(mockEmailSignIn.reset).toHaveBeenCalled();
-    expect(mockEmailSignUp.reset).toHaveBeenCalled();
-  });
-
-  it('メール認証開始時に Google のエラー状態をリセットする', () => {
-    render(<SignInModal visible onClose={onClose} />);
-    fillSignInForm();
-    fireEvent.press(screen.getByText('auth.submitSignIn'));
-
-    expect(mockGoogleSignIn.reset).toHaveBeenCalled();
   });
 
   it('Apple サインインを提供できない端末ではボタンを出さない', () => {
@@ -250,8 +135,6 @@ describe('SignInModal', () => {
     render(<SignInModal visible onClose={onClose} />);
     fireEvent.press(screen.getByText('Sign in with Apple'));
 
-    expect(mockEmailSignIn.reset).toHaveBeenCalled();
-    expect(mockEmailSignUp.reset).toHaveBeenCalled();
     expect(mockGoogleSignIn.reset).toHaveBeenCalled();
   });
 
@@ -264,29 +147,11 @@ describe('SignInModal', () => {
     expect(mockAppleSignIn.mutate).not.toHaveBeenCalled();
   });
 
-  it('入力が不足している間は送信できない', () => {
+  it('メールアドレス + パスワードの入力欄は表示しない', () => {
     render(<SignInModal visible onClose={onClose} />);
 
-    fireEvent.press(screen.getByText('auth.submitSignIn'));
-    expect(mockEmailSignIn.mutate).not.toHaveBeenCalled();
-
-    // 新規登録はパスワード 6 文字未満だと送信不可。
-    fireEvent.press(screen.getByText('auth.signUpTab'));
-    fireEvent.changeText(screen.getByPlaceholderText('auth.namePlaceholder'), 'メール 太郎');
-    fireEvent.changeText(screen.getByPlaceholderText('auth.emailPlaceholder'), 'taro@example.com');
-    fireEvent.changeText(screen.getByPlaceholderText('auth.passwordPlaceholder'), 'short');
-    fireEvent.press(screen.getByText('auth.submitSignUp'));
-    expect(mockEmailSignUp.mutate).not.toHaveBeenCalled();
-  });
-
-  it('pending 中は送信も入力もできない', () => {
-    mockEmailSignIn.isPending = true;
-
-    render(<SignInModal visible onClose={onClose} />);
-    fillSignInForm();
-    fireEvent.press(screen.getByText('auth.submitSignIn'));
-
-    expect(mockEmailSignIn.mutate).not.toHaveBeenCalled();
-    expect(screen.getByPlaceholderText('auth.emailPlaceholder')).toBeDisabled();
+    expect(screen.queryByPlaceholderText('auth.emailPlaceholder')).toBeNull();
+    expect(screen.queryByPlaceholderText('auth.passwordPlaceholder')).toBeNull();
+    expect(screen.queryByText('auth.signUpTab')).toBeNull();
   });
 });
