@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, View } from 'react-native';
 
 import { privacyPolicyUrl } from '../../domain/privacy-policy';
+import { termsOfUseUrl } from '../../domain/terms-of-use';
 import { SUPPORT_CONTACT_URL } from '../../domain/support-contact';
 import { getAppVersion } from '../../infrastructure/app-version';
 
@@ -35,6 +36,11 @@ export function AboutSection() {
         {t('settings.about')}
       </ThemedText>
       <View style={styles.list}>
+        <LegalRow
+          label={t('settings.termsOfUse')}
+          accessibilityRole="link"
+          onPress={() => openUrl(termsOfUseUrl(i18n.language))}
+        />
         <LegalRow
           label={t('settings.privacyPolicy')}
           accessibilityRole="link"

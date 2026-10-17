@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useBlockReviewAuthor } from '../../application/use-block-review-author';
 import { useDeleteReview } from '../../application/use-delete-review';
 import { type ReportOutcome, useReportReview } from '../../application/use-report-review';
 import { useSpotReviews } from '../../application/use-spot-reviews';
@@ -25,6 +26,7 @@ import type { Review } from '../../domain/review';
 import type { Spot } from '../../domain/spot';
 import type { ReviewReportInput } from '../../infrastructure/api/review-api';
 
+import { useBlockedAuthorIds } from '../../store/use-blocked-author-store';
 import { useReportedReviewIds } from '../../store/use-reported-review-store';
 import type { ReviewEdit } from '../../store/use-review-store';
 
@@ -70,19 +72,23 @@ function ReviewCard({
   review,
   isOwn,
   canReport,
+  canBlock,
   isAuthenticated,
   onUpdate,
   onDelete,
   onReport,
+  onBlock,
   onRequireSignIn,
 }: {
   review: Review;
   isOwn: boolean;
   canReport: boolean;
+  canBlock: boolean;
   isAuthenticated: boolean;
   onUpdate: (changes: ReviewEdit) => Promise<unknown>;
   onDelete: () => Promise<unknown>;
   onReport: (input: ReviewReportInput) => Promise<unknown>;
+  onBlock: () => void;
   onRequireSignIn: () => void;
 }) {
   const { t } = useTranslation();
@@ -100,6 +106,7 @@ function ReviewCard({
   const [deleteFailed, setDeleteFailed] = useState(false);
   const [deleteConfirmVisible, setDeleteConfirmVisible] = useState(false);
   const [reportVisible, setReportVisible] = useState(false);
+  const [blockConfirmVisible, setBlockConfirmVisible] = useState(false);
 
   const showMenu = (isOwn || canReport) && !isDeleting;
 
@@ -126,6 +133,16 @@ function ReviewCard({
     }
     // Modal を閉じてから開く。同時だと iOS で競合して出ないため 100ms 待つ。
     setTimeout(() => setReportVisible(true), 100);
+  }
+
+  function handleBlockPress() {
+    setMenuOpen(false);
+    if (!isAuthenticated) {
+      onRequireSignIn();
+      return;
+    }
+    // Modal を閉じてから確認を出す。同時だと iOS で競合して出ないため 100ms 待つ。
+    setTimeout(() => setBlockConfirmVisible(true), 100);
   }
 
   function openMenu() {
@@ -332,16 +349,30 @@ function ReviewCard({
                 </Pressable>
               </>
             ) : (
-              <Pressable style={dropdownStyles.item} onPress={handleReportPress}>
-                <SymbolView
-                  name={{ ios: 'flag', android: 'flag', web: 'flag' }}
-                  tintColor="#D45B45"
-                  size={16}
-                />
-                <ThemedText type="smallBold" style={{ color: '#D45B45' }}>
-                  {t('tourism.reviewCard.report')}
-                </ThemedText>
-              </Pressable>
+              <>
+                <Pressable style={dropdownStyles.item} onPress={handleReportPress}>
+                  <SymbolView
+                    name={{ ios: 'flag', android: 'flag', web: 'flag' }}
+                    tintColor="#D45B45"
+                    size={16}
+                  />
+                  <ThemedText type="smallBold" style={{ color: '#D45B45' }}>
+                    {t('tourism.reviewCard.report')}
+                  </ThemedText>
+                </Pressable>
+                {canBlock && (
+                  <Pressable style={dropdownStyles.item} onPress={handleBlockPress}>
+                    <SymbolView
+                      name={{ ios: 'nosign', android: 'block', web: 'block' }}
+                      tintColor="#D45B45"
+                      size={16}
+                    />
+                    <ThemedText type="smallBold" style={{ color: '#D45B45' }}>
+                      {t('tourism.reviewCard.block')}
+                    </ThemedText>
+                  </Pressable>
+                )}
+              </>
             )}
           </ThemedView>
         </Modal>
@@ -357,6 +388,18 @@ function ReviewCard({
           void handleDelete();
         }}
         onCancel={() => setDeleteConfirmVisible(false)}
+      />
+      <DestructiveConfirmDialog
+        visible={blockConfirmVisible}
+        title={t('tourism.reviewCard.blockConfirmTitle')}
+        message={t('tourism.reviewCard.blockConfirmMessage', { name: review.author.name })}
+        cancelLabel={t('tourism.reviewCard.cancel')}
+        confirmLabel={t('tourism.reviewCard.block')}
+        onConfirm={() => {
+          setBlockConfirmVisible(false);
+          onBlock();
+        }}
+        onCancel={() => setBlockConfirmVisible(false)}
       />
       <ReportReviewModal
         visible={reportVisible}
@@ -409,8 +452,11 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
   const deleteReview = useDeleteReview(spot.id);
   const reportReview = useReportReview(spot.id);
   const reportedReviewIds = useReportedReviewIds(currentUser?.id);
+  const blockReviewAuthor = useBlockReviewAuthor();
+  const blockedAuthorIds = useBlockedAuthorIds(currentUser?.id);
   const [signInVisible, setSignInVisible] = useState(false);
   const [reportNotice, setReportNotice] = useState<ReportOutcome | null>(null);
+  const [blockNotice, setBlockNotice] = useState<'blocked' | 'failed' | null>(null);
   // 背景の再取得ではくるくるを出さず、引っ張って更新したときだけ出す。
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -427,9 +473,23 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
     confirmOpenDirections(t, spot.coordinates, { origin: coords });
   }, [spot.coordinates, coords, t]);
 
+  // ブロックした投稿者のレビューはサーバー側でも除かれるが、再取得を待たずに消すため端末側でも除く（#663）。
   const filteredReviews = (reviews ?? []).filter(
-    (r) => (reviewLang === 'all' || r.language === reviewLang) && !reportedReviewIds.includes(r.id),
+    (r) =>
+      (reviewLang === 'all' || r.language === reviewLang) &&
+      !reportedReviewIds.includes(r.id) &&
+      !blockedAuthorIds.includes(r.author.id),
   );
+
+  async function handleBlock(authorId: string) {
+    setBlockNotice(null);
+    try {
+      await blockReviewAuthor.mutateAsync({ authorId });
+      setBlockNotice('blocked');
+    } catch {
+      setBlockNotice('failed');
+    }
+  }
 
   return (
     <>
@@ -547,6 +607,19 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
                 )}
               </ThemedText>
             )}
+            {blockNotice && (
+              <ThemedText
+                type="small"
+                themeColor="textSecondary"
+                style={blockNotice === 'failed' ? { color: '#D45B45' } : undefined}
+              >
+                {t(
+                  blockNotice === 'blocked'
+                    ? 'tourism.reviewCard.blockedNotice'
+                    : 'tourism.reviewCard.blockError',
+                )}
+              </ThemedText>
+            )}
             {isReviewsPending ? (
               <ActivityIndicator />
             ) : filteredReviews.length > 0 ? (
@@ -556,12 +629,15 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
                   IS_USER_CONTENT_ENABLED && isAdult && review.author.id === currentUser?.id;
                 // author.id が無いのは V17 以前の投稿だけで、本人の投稿ではあり得ないため通報対象にする。
                 const canReport = IS_USER_CONTENT_ENABLED && isAdult && !isOwn;
+                // ブロックは投稿者 ID 単位。author.id が無い V17 以前の投稿は相手を特定できないため出さない。
+                const canBlock = canReport && review.author.id !== '';
                 return (
                   <ReviewCard
                     key={review.id}
                     review={review}
                     isOwn={isOwn}
                     canReport={canReport}
+                    canBlock={canBlock}
                     isAuthenticated={currentUser != null}
                     onUpdate={(changes) =>
                       updateReview.mutateAsync({ reviewId: review.id, changes })
@@ -572,6 +648,7 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
                         await reportReview.mutateAsync({ reviewId: review.id, ...input }),
                       );
                     }}
+                    onBlock={() => void handleBlock(review.author.id)}
                     onRequireSignIn={() => setSignInVisible(true)}
                   />
                 );

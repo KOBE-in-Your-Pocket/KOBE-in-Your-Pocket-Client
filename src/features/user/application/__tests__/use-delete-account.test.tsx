@@ -4,6 +4,7 @@ import { renderHook, waitFor } from '@testing-library/react-native';
 
 import { SPOTS_QUERY_KEY } from '@/features/tourism/application/use-spots';
 import { SPOT_REVIEWS_QUERY_KEY } from '@/features/tourism/application/use-spot-reviews';
+import { useBlockedAuthorStore } from '@/features/tourism/store/use-blocked-author-store';
 import { useReviewStore } from '@/features/tourism/store/use-review-store';
 import { ApiError } from '@/shared/lib/api';
 
@@ -77,6 +78,18 @@ describe('performDeleteAccount', () => {
     expect(clearPersistedSession).toHaveBeenCalled();
     expect(useAuthStore.getState().currentUser).toBeNull();
     expect(useReviewStore.getState().submittedReviews).toEqual({});
+  });
+
+  it('退会したユーザーのブロック記録だけを端末から消す（#663）', async () => {
+    useBlockedAuthorStore.setState({
+      blockedAuthorIds: { 'user-1': ['troll'], 'other-user': ['spammer'] },
+    });
+
+    await run();
+
+    expect(useBlockedAuthorStore.getState().blockedAuthorIds).toEqual({
+      'other-user': ['spammer'],
+    });
   });
 
   it('404（すでに削除済み）は成功扱いにしてローカル状態を初期化する', async () => {

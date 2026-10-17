@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react-nativ
 import { Text as MockText, View as MockView } from 'react-native';
 
 import { PRIVACY_POLICY_VERSION } from '../../../domain/privacy-policy';
+import { TERMS_OF_USE_VERSION } from '../../../domain/terms-of-use';
 import { PrivacyConsentGate } from '../privacy-consent-gate';
 
 import { useAgeRestrictionStore } from '@/shared/store';
@@ -63,6 +64,7 @@ describe('PrivacyConsentGate', () => {
   it('同意済みなら子要素を描画する', async () => {
     mockGetItem.mockResolvedValue({
       version: PRIVACY_POLICY_VERSION,
+      termsVersion: TERMS_OF_USE_VERSION,
       agreedAt: '2026-09-07T00:00:00.000Z',
       isAdult: true,
     });
@@ -76,11 +78,47 @@ describe('PrivacyConsentGate', () => {
     expect(await screen.findByText('app-content')).toBeTruthy();
   });
 
+  it('利用規約の追加より前に保存された記録は再同意を求める（#665）', async () => {
+    // termsVersion を持たない記録は、利用規約に同意していない。
+    mockGetItem.mockResolvedValue({
+      version: PRIVACY_POLICY_VERSION,
+      agreedAt: '2026-09-07T00:00:00.000Z',
+      isAdult: true,
+    });
+
+    render(
+      <PrivacyConsentGate>
+        <Child />
+      </PrivacyConsentGate>,
+    );
+
+    expect(await screen.findByText(ADULT_BUTTON)).toBeTruthy();
+    expect(screen.queryByText('app-content')).toBeNull();
+  });
+
+  it('利用規約の版数が古い記録は再同意を求める（#665）', async () => {
+    mockGetItem.mockResolvedValue({
+      version: PRIVACY_POLICY_VERSION,
+      termsVersion: '2000-01-01',
+      agreedAt: '2026-09-07T00:00:00.000Z',
+      isAdult: true,
+    });
+
+    render(
+      <PrivacyConsentGate>
+        <Child />
+      </PrivacyConsentGate>,
+    );
+
+    expect(await screen.findByText(ADULT_BUTTON)).toBeTruthy();
+  });
+
   it('年齢確認より前に保存された記録は再同意を求める', async () => {
     // isAdult を持たない記録をそのまま通すと、年齢を尋ねる機会が無いまま
     // 個人情報に関わる機能が開いてしまう。
     mockGetItem.mockResolvedValue({
       version: PRIVACY_POLICY_VERSION,
+      termsVersion: TERMS_OF_USE_VERSION,
       agreedAt: '2026-09-07T00:00:00.000Z',
     });
 
@@ -118,6 +156,7 @@ describe('PrivacyConsentGate', () => {
     await waitFor(() => expect(screen.getByText('app-content')).toBeTruthy());
     expect(mockSetItem).toHaveBeenCalledWith('legal.privacyPolicyConsent', {
       version: PRIVACY_POLICY_VERSION,
+      termsVersion: TERMS_OF_USE_VERSION,
       agreedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
       isAdult: true,
     });
@@ -136,6 +175,7 @@ describe('PrivacyConsentGate', () => {
     await waitFor(() => expect(screen.getByText('app-content')).toBeTruthy());
     expect(mockSetItem).toHaveBeenCalledWith('legal.privacyPolicyConsent', {
       version: PRIVACY_POLICY_VERSION,
+      termsVersion: TERMS_OF_USE_VERSION,
       agreedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
       isAdult: false,
     });
@@ -145,6 +185,7 @@ describe('PrivacyConsentGate', () => {
   it('成人として同意済みの記録を読んだら制限を解除する', async () => {
     mockGetItem.mockResolvedValue({
       version: PRIVACY_POLICY_VERSION,
+      termsVersion: TERMS_OF_USE_VERSION,
       agreedAt: '2026-09-07T00:00:00.000Z',
       isAdult: true,
     });
@@ -187,6 +228,23 @@ describe('PrivacyConsentGate', () => {
     await waitFor(() =>
       expect(mockOpenBrowserAsync).toHaveBeenCalledWith(
         'https://kobe-in-your-pocket.github.io/privacy/ja/',
+        expect.anything(),
+      ),
+    );
+  });
+
+  it('利用規約のリンク押下で表示言語の利用規約 URL をアプリ内ブラウザで開く（#665）', async () => {
+    render(
+      <PrivacyConsentGate>
+        <Child />
+      </PrivacyConsentGate>,
+    );
+
+    fireEvent.press(await screen.findByText('legal.consent.readTerms'));
+
+    await waitFor(() =>
+      expect(mockOpenBrowserAsync).toHaveBeenCalledWith(
+        'https://kobe-in-your-pocket.github.io/terms/ja/',
         expect.anything(),
       ),
     );

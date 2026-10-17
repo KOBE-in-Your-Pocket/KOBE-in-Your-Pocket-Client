@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 
 import type { ConsentStore, PolicyConsent } from '../../domain/privacy-policy';
+import { TERMS_OF_USE_VERSION } from '../../domain/terms-of-use';
 import { PRIVACY_POLICY_VERSION } from '../../domain/privacy-policy';
 import { usePrivacyConsent } from '../use-privacy-consent';
 
@@ -15,6 +16,7 @@ describe('usePrivacyConsent', () => {
     const store = createStore({
       loadConsent: jest.fn().mockResolvedValue({
         version: PRIVACY_POLICY_VERSION,
+        termsVersion: TERMS_OF_USE_VERSION,
         agreedAt: '2026-09-07T00:00:00.000Z',
         isAdult: true,
       }),
@@ -29,6 +31,7 @@ describe('usePrivacyConsent', () => {
     const store = createStore({
       loadConsent: jest.fn().mockResolvedValue({
         version: PRIVACY_POLICY_VERSION,
+        termsVersion: TERMS_OF_USE_VERSION,
         agreedAt: '2026-09-07T00:00:00.000Z',
         isAdult: true,
       }),
@@ -44,6 +47,7 @@ describe('usePrivacyConsent', () => {
     const store = createStore({
       loadConsent: jest.fn().mockResolvedValue({
         version: PRIVACY_POLICY_VERSION,
+        termsVersion: TERMS_OF_USE_VERSION,
         agreedAt: '2026-09-07T00:00:00.000Z',
         isAdult: false,
       }),
@@ -66,6 +70,7 @@ describe('usePrivacyConsent', () => {
     const store = createStore({
       loadConsent: jest.fn().mockResolvedValue({
         version: '2000-01-01',
+        termsVersion: TERMS_OF_USE_VERSION,
         agreedAt: '2000-01-01T00:00:00.000Z',
         isAdult: true,
       }),
@@ -81,6 +86,7 @@ describe('usePrivacyConsent', () => {
     const store = createStore({
       loadConsent: jest.fn().mockResolvedValue({
         version: '2000-01-01',
+        termsVersion: TERMS_OF_USE_VERSION,
         agreedAt: '2000-01-01T00:00:00.000Z',
         isAdult: true,
       }),
@@ -114,6 +120,7 @@ describe('usePrivacyConsent', () => {
 
     expect(store.saveConsent).toHaveBeenCalledWith({
       version: PRIVACY_POLICY_VERSION,
+      termsVersion: TERMS_OF_USE_VERSION,
       agreedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
       isAdult: true,
     });
@@ -132,6 +139,7 @@ describe('usePrivacyConsent', () => {
 
     expect(store.saveConsent).toHaveBeenCalledWith({
       version: PRIVACY_POLICY_VERSION,
+      termsVersion: TERMS_OF_USE_VERSION,
       agreedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
       isAdult: false,
     });

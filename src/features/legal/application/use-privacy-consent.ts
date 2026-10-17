@@ -6,6 +6,7 @@ import {
   type PolicyConsent,
   PRIVACY_POLICY_VERSION,
 } from '../domain/privacy-policy';
+import { TERMS_OF_USE_VERSION } from '../domain/terms-of-use';
 
 import { defaultConsentStore } from './consent-deps';
 
@@ -32,7 +33,7 @@ export type PrivacyConsent = {
 };
 
 /**
- * プライバシーポリシーへの同意状態を管理するフック。
+ * プライバシーポリシーと利用規約（#665）への同意状態を管理するフック。
  *
  * 起動時に保存済みの同意を読み出し、版数が現在のものと一致する場合のみ `granted` にする。
  * 保存に失敗したまま `granted` にすると次回起動時に再び同意を求めることになり、
@@ -72,6 +73,7 @@ export function usePrivacyConsent(store: ConsentStore = defaultConsentStore): Pr
     async (acceptedAsAdult: boolean) => {
       await store.saveConsent({
         version: PRIVACY_POLICY_VERSION,
+        termsVersion: TERMS_OF_USE_VERSION,
         agreedAt: new Date().toISOString(),
         isAdult: acceptedAsAdult,
       });
