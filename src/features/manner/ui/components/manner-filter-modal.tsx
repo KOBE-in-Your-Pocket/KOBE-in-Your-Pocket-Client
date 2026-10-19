@@ -60,7 +60,9 @@ function FilterSection<T extends string>({
             onPress={() => onSelect(option.value)}
             accessibilityRole="radio"
             accessibilityState={{ selected: isSelected }}
-            accessibilityLabel={option.label}
+            // 両軸とも先頭に「全て」があり本番4言語で同一文言のため、行単体だと
+            // スクリーンリーダーで区別できない。セクション名を前置して一意にする。
+            accessibilityLabel={`${label} ${option.label}`}
           >
             <ThemedText
               style={[styles.rowLabel, isSelected ? { color: FILTER_SELECTED_COLOR } : undefined]}

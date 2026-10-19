@@ -7,9 +7,26 @@ import { MannerFilterModal } from '../manner-filter-modal';
 
 import type { ReactNode } from 'react';
 
-jest.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
-}));
+// 本番と同様に、カテゴリー軸と対象軸の「全て」を同一文言（全て）にする。
+// 恒等モックだと 2 つの「全て」が別キー扱いになり、アクセシビリティラベルの
+// 重複（VoiceOver / TalkBack で区別できない問題）を検出できず隠れてしまうため。
+jest.mock('react-i18next', () => {
+  const translations: Record<string, string> = {
+    'manner.filter.category': 'カテゴリー',
+    'manner.filter.target': '対象',
+    'manner.filter.title': '絞り込み',
+    'manner.filter.close': '閉じる',
+    'manner.kindFilter.all': '全て',
+    'manner.kindFilter.rule': 'ルール',
+    'manner.kindFilter.manner': 'マナー',
+    'manner.scopeFilter.all': '全て',
+    'manner.scopeFilter.local': '各所',
+    'manner.scopeFilter.japan': '全国',
+  };
+  return {
+    useTranslation: () => ({ t: (key: string) => translations[key] ?? key }),
+  };
+});
 
 jest.mock('expo-symbols', () => ({
   SymbolView: () => null,
@@ -46,21 +63,20 @@ describe('MannerFilterModal', () => {
   it('カテゴリーと対象のセクションと全選択肢を表示する', () => {
     render(<MannerFilterModal visible onClose={jest.fn()} />);
 
-    expect(screen.getByText('manner.filter.category')).toBeTruthy();
-    expect(screen.getByText('manner.filter.target')).toBeTruthy();
+    expect(screen.getByText('カテゴリー')).toBeTruthy();
+    expect(screen.getByText('対象')).toBeTruthy();
 
-    for (const key of ['all', 'rule', 'manner'] as const) {
-      expect(screen.getByText(`manner.kindFilter.${key}`)).toBeTruthy();
-    }
-    for (const key of ['all', 'local', 'japan'] as const) {
-      expect(screen.getByText(`manner.scopeFilter.${key}`)).toBeTruthy();
+    // 「全て」は両軸に出るため 2 件。
+    expect(screen.getAllByText('全て')).toHaveLength(2);
+    for (const label of ['ルール', 'マナー', '各所', '全国']) {
+      expect(screen.getByText(label)).toBeTruthy();
     }
   });
 
   it('カテゴリーの選択がストアに反映される', () => {
     render(<MannerFilterModal visible onClose={jest.fn()} />);
 
-    fireEvent.press(screen.getByLabelText('manner.kindFilter.rule'));
+    fireEvent.press(screen.getByLabelText('カテゴリー ルール'));
 
     expect(useKindFilterStore.getState().selectedKind).toBe('rule');
   });
@@ -68,7 +84,7 @@ describe('MannerFilterModal', () => {
   it('対象の選択がストアに反映される', () => {
     render(<MannerFilterModal visible onClose={jest.fn()} />);
 
-    fireEvent.press(screen.getByLabelText('manner.scopeFilter.japan'));
+    fireEvent.press(screen.getByLabelText('対象 全国'));
 
     expect(useScopeFilterStore.getState().selectedScope).toBe('japan');
   });
@@ -78,16 +94,26 @@ describe('MannerFilterModal', () => {
 
     render(<MannerFilterModal visible onClose={jest.fn()} />);
 
-    fireEvent.press(screen.getByLabelText('manner.kindFilter.all'));
+    fireEvent.press(screen.getByLabelText('カテゴリー 全て'));
 
     expect(useKindFilterStore.getState().selectedKind).toBe('all');
+  });
+
+  it('両軸の「全て」はセクション名付きで一意に識別できる（同一文言でも区別可能）', () => {
+    render(<MannerFilterModal visible onClose={jest.fn()} />);
+
+    // 文言はどちらも「全て」だが、アクセシビリティラベルはセクション名付きで区別できる。
+    const categoryAll = screen.getByLabelText('カテゴリー 全て');
+    const scopeAll = screen.getByLabelText('対象 全て');
+
+    expect(categoryAll).not.toBe(scopeAll);
   });
 
   it('閉じるボタンで onClose が呼ばれる', () => {
     const onClose = jest.fn();
     render(<MannerFilterModal visible onClose={onClose} />);
 
-    fireEvent.press(screen.getByLabelText('manner.filter.close'));
+    fireEvent.press(screen.getByLabelText('閉じる'));
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });
