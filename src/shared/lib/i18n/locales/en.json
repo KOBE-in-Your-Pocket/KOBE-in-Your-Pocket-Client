@@ -193,11 +193,6 @@
         "school": "School",
         "park": "Park",
         "gymnasium": "Gymnasium"
-      },
-      "type": {
-        "emergency": "Emergency",
-        "designated": "Designated",
-        "both": "Both"
       }
     },
     "disasterType": {
@@ -227,7 +222,22 @@
       "externalLink": "Check status (city page)",
       "openDirectionsButton": "Open directions",
       "linkErrorTitle": "Error",
-      "linkErrorMessage": "Could not open the page."
+      "linkErrorMessage": "Could not open the page.",
+      "typeBadge": {
+        "emergency": {
+          "label": "Emergency evacuation site",
+          "description": "A place to escape to right away when danger is near"
+        },
+        "designated": {
+          "label": "Designated shelter",
+          "description": "A place to stay for a while after a disaster"
+        },
+        "both": {
+          "label": "Emergency site & designated shelter",
+          "description": "Serves both as an escape site and a place to stay"
+        },
+        "accessibilityLabel": "{{label}}. {{description}}"
+      }
     },
     "dataset": {
       "source": "Source: {{source}} (as of {{asOf}})",

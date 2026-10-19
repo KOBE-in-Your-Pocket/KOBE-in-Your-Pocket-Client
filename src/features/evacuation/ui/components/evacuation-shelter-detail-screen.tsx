@@ -10,6 +10,7 @@ import { useEvacuationShelterDetail } from '../../application/hooks/use-evacuati
 
 import { ShelterDatasetNotice } from './shelter-dataset-notice';
 import { ShelterSuitabilityList } from './shelter-suitability';
+import { ShelterTypeBadge } from './shelter-type-badge';
 
 import { EXTERNAL_LINK_COLOR, styles } from '../styles/evacuation-shelter-detail.styles';
 
@@ -81,6 +82,9 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
 
         <ThemedText type="subtitle">{shelter.name}</ThemedText>
 
+        {/* 区分（緊急 / 指定 / 兼用）を色・アイコン付きのステータスバッジで名称直下に出し、一目で判別できるようにする。 */}
+        <ShelterTypeBadge type={shelter.type} />
+
         <View style={styles.infoRow}>
           <SymbolView
             tintColor={theme.textSecondary}
@@ -89,17 +93,6 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
           />
           <ThemedText type="small" themeColor="textSecondary" style={styles.infoText}>
             {shelter.address}
-          </ThemedText>
-        </View>
-
-        <View style={styles.infoRow}>
-          <SymbolView
-            tintColor={theme.textSecondary}
-            name={{ ios: 'shield.fill', android: 'verified_user', web: 'verified_user' }}
-            size={16}
-          />
-          <ThemedText type="small" themeColor="textSecondary" style={styles.infoText}>
-            {t(`evacuation.list.type.${shelter.type}`)}
           </ThemedText>
         </View>
 
