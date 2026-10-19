@@ -9,6 +9,15 @@ export const ROUTE_STROKE_COLOR = '#208AEF';
 /** 避難所マーカーの色（安全色系の緑。観光ピンの赤と明確に区別する）。アイコンの tint にも使う。 */
 export const EVACUATION_MARKER_GREEN = '#0F8A4F';
 
+/** マーカーを地図から浮かせる共通のドロップシャドウ（現在地ドット・避難ピンで共有）。 */
+const MARKER_SHADOW = {
+  shadowColor: '#000000',
+  shadowOffset: { width: 0, height: 1 },
+  shadowOpacity: 0.3,
+  shadowRadius: 2,
+  elevation: 4,
+} as const;
+
 export const styles = StyleSheet.create({
   map: {
     flex: 1,
@@ -20,11 +29,7 @@ export const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
-    elevation: 4,
+    ...MARKER_SHADOW,
   },
   currentLocationInner: {
     width: 14,
@@ -47,11 +52,7 @@ export const styles = StyleSheet.create({
     borderColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
-    elevation: 4,
+    ...MARKER_SHADOW,
   },
   // 頭の中の白い円。中に緑のピクトグラムを置く。
   evacuationPinCore: {

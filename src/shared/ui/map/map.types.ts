@@ -10,7 +10,7 @@ export type MapCoordinate = {
 /**
  * マーカーの見た目のバリアント。アプリのモード（{@link AppMode}）に対応する。
  * - `tourism`: 標準ピン（観光スポット）。
- * - `evacuation`: 避難所用の緑バッジ + 十字アイコン（観光ピンと視覚的に区別）。
+ * - `evacuation`: 緑のしずく型ピン＋「走る人（避難）」ピクトグラム（観光の赤ピンと視覚的に区別）。
  */
 export type MapMarkerVariant = AppMode;
 
