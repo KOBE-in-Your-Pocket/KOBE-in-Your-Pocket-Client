@@ -6,8 +6,8 @@ const CURRENT_LOCATION_BLUE = '#208AEF';
 /** 経路ライン（Polyline）の色。 */
 export const ROUTE_STROKE_COLOR = '#208AEF';
 
-/** 避難所マーカーの色（安全色系の緑。観光ピンの赤と明確に区別する）。 */
-const EVACUATION_MARKER_GREEN = '#0F8A4F';
+/** 避難所マーカーの色（安全色系の緑。観光ピンの赤と明確に区別する）。アイコンの tint にも使う。 */
+export const EVACUATION_MARKER_GREEN = '#0F8A4F';
 
 export const styles = StyleSheet.create({
   map: {
@@ -32,13 +32,18 @@ export const styles = StyleSheet.create({
     borderRadius: 7,
     backgroundColor: CURRENT_LOCATION_BLUE,
   },
-  // 避難所マーカー: 緑の丸バッジ（白フチ）に白い十字を重ねた安全標識風の見た目。
-  evacuationMarker: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+  // 避難所マーカー: 緑のしずく型ピン（丸い頭＋下向きの先端）。
+  // 頭の中に白い円を敷き、緑の「走る人（避難）」ピクトグラムを重ねる。観光の標準赤ピンと明確に区別する。
+  // コンテナ下端＝先端になるよう頭の下に三角を置き、Marker 側で anchor={{x:0.5,y:1}} を指定して座標を指す。
+  evacuationPin: {
+    alignItems: 'center',
+  },
+  evacuationPinHead: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: EVACUATION_MARKER_GREEN,
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
@@ -48,18 +53,25 @@ export const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 4,
   },
-  evacuationCrossVertical: {
-    position: 'absolute',
-    width: 4,
-    height: 14,
-    borderRadius: 2,
+  // 頭の中の白い円。中に緑のピクトグラムを置く。
+  evacuationPinCore: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  evacuationCrossHorizontal: {
-    position: 'absolute',
-    width: 14,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#FFFFFF',
+  // ピン先端の下向き三角（border トリックで作成）。頭に少し食い込ませてしずく型に見せる。
+  evacuationPinTip: {
+    width: 0,
+    height: 0,
+    marginTop: -7,
+    borderLeftWidth: 8,
+    borderRightWidth: 8,
+    borderTopWidth: 14,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: EVACUATION_MARKER_GREEN,
   },
 });

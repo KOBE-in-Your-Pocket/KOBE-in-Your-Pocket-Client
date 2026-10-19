@@ -1,10 +1,58 @@
+import { SymbolView } from 'expo-symbols';
+import { useEffect, useState } from 'react';
 import { Platform, View } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 
 import { KOBE_INITIAL_REGION } from './kobe-initial-region';
-import { ROUTE_STROKE_COLOR, styles } from './styles/map.styles';
+import { EVACUATION_MARKER_GREEN, ROUTE_STROKE_COLOR, styles } from './styles/map.styles';
 
-import type { MapProps } from './map.types';
+import type { MapMarker, MapProps } from './map.types';
+
+/**
+ * 避難所ピン。緑のしずく型ピンの中に「走る人（避難）」ピクトグラムを置き、観光の赤ピンと区別する。
+ *
+ * カスタムビューに含むネイティブの {@link SymbolView} は初回スナップショットに写らず空になりがちなので、
+ * マウント直後だけ `tracksViewChanges` を有効にして描画を確定させ、その後は無効化して描画負荷を抑える。
+ */
+function EvacuationMarker({
+  marker,
+  onPress,
+}: {
+  marker: MapMarker;
+  onPress?: (marker: MapMarker) => void;
+}) {
+  const [tracksViewChanges, setTracksViewChanges] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setTracksViewChanges(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <Marker
+      coordinate={marker.coordinate}
+      title={marker.title}
+      description={marker.description}
+      onPress={() => onPress?.(marker)}
+      // 先端（コンテナ下端）が座標を指すよう下中央をアンカーにする。
+      anchor={{ x: 0.5, y: 1 }}
+      tracksViewChanges={tracksViewChanges}
+    >
+      <View style={styles.evacuationPin}>
+        <View style={styles.evacuationPinHead}>
+          <View style={styles.evacuationPinCore}>
+            <SymbolView
+              name={{ ios: 'figure.run', android: 'directions_run', web: 'directions_run' }}
+              tintColor={EVACUATION_MARKER_GREEN}
+              size={18}
+            />
+          </View>
+        </View>
+        <View style={styles.evacuationPinTip} />
+      </View>
+    </Marker>
+  );
+}
 
 /**
  * 地図コンポーネントの雛形。
@@ -29,21 +77,7 @@ export function Map({
       ) : null}
       {markers?.map((marker) =>
         marker.variant === 'evacuation' ? (
-          <Marker
-            key={marker.id}
-            coordinate={marker.coordinate}
-            title={marker.title}
-            description={marker.description}
-            onPress={() => onMarkerPress?.(marker)}
-            anchor={{ x: 0.5, y: 0.5 }}
-            tracksViewChanges={false}
-          >
-            {/* 避難所ピン: 緑バッジ + 白い十字（観光の標準赤ピンと区別） */}
-            <View style={styles.evacuationMarker}>
-              <View style={styles.evacuationCrossVertical} />
-              <View style={styles.evacuationCrossHorizontal} />
-            </View>
-          </Marker>
+          <EvacuationMarker key={marker.id} marker={marker} onPress={onMarkerPress} />
         ) : (
           <Marker
             key={marker.id}
