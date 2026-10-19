@@ -55,6 +55,17 @@ describe('AboutSection', () => {
     );
   });
 
+  it('利用規約を表示言語の URL で開く（#665）', () => {
+    render(<AboutSection />);
+
+    fireEvent.press(screen.getByLabelText('settings.termsOfUse'));
+
+    expect(openBrowserAsync).toHaveBeenCalledWith(
+      'https://kobe-in-your-pocket.github.io/terms/ja/',
+      expect.anything(),
+    );
+  });
+
   it('クレジット画面へ遷移できる', () => {
     render(<AboutSection />);
 

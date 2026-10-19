@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { SPOTS_QUERY_KEY } from '@/features/tourism/application/use-spots';
 import { SPOT_REVIEWS_QUERY_KEY } from '@/features/tourism/application/use-spot-reviews';
+import { useBlockedAuthorStore } from '@/features/tourism/store/use-blocked-author-store';
 import { useReportedReviewStore } from '@/features/tourism/store/use-reported-review-store';
 import { useReviewStore } from '@/features/tourism/store/use-review-store';
 import { ApiError } from '@/shared/lib/api';
@@ -57,6 +58,7 @@ export async function performDeleteAccount(
     useAuthStore.getState().logout();
     useReviewStore.getState().clearSubmittedReviews();
     if (deletedUserId) useReportedReviewStore.getState().clearForUser(deletedUserId);
+    if (deletedUserId) useBlockedAuthorStore.getState().clearForUser(deletedUserId);
   }
 }
 

@@ -23,7 +23,15 @@ export async function loadConsent(): Promise<PolicyConsent | null> {
     return null;
   }
 
-  return { version: stored.version, agreedAt: stored.agreedAt, isAdult: stored.isAdult };
+  // 利用規約（#665）より前の記録は termsVersion を持たない。null にして再同意を求める。
+  const termsVersion = typeof stored.termsVersion === 'string' ? stored.termsVersion : null;
+
+  return {
+    version: stored.version,
+    termsVersion,
+    agreedAt: stored.agreedAt,
+    isAdult: stored.isAdult,
+  };
 }
 
 /** 同意記録を保存する。 */
