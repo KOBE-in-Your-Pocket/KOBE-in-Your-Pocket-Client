@@ -264,7 +264,9 @@
     },
     "filter": {
       "category": "类别",
-      "target": "对象"
+      "target": "对象",
+      "title": "筛选",
+      "close": "关闭"
     },
     "kind": {
       "manner": "礼仪",

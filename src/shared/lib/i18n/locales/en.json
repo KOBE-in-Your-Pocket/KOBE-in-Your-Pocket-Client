@@ -264,7 +264,9 @@
     },
     "filter": {
       "category": "Category",
-      "target": "Target"
+      "target": "Target",
+      "title": "Filter",
+      "close": "Close"
     },
     "kind": {
       "manner": "Manner",
