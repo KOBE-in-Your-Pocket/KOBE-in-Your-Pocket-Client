@@ -310,6 +310,14 @@
       "googleMaps": "Google 지도"
     }
   },
+  "phoneCall": {
+    "confirmTitle": "전화 걸기",
+    "confirmMessage": "{{phoneNumber}}(으)로 전화를 거시겠습니까?",
+    "cancel": "취소",
+    "confirm": "전화 걸기",
+    "errorTitle": "오류",
+    "errorMessage": "전화 앱을 열 수 없습니다."
+  },
   "location": {
     "permissionDeniedNotice": "위치 정보가 허용되지 않아 현재 위치를 표시할 수 없습니다.",
     "servicesDisabledTitle": "위치 서비스가 꺼졌습니다",

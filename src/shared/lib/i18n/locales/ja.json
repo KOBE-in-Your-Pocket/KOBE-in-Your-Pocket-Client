@@ -310,6 +310,14 @@
       "googleMaps": "Google マップ"
     }
   },
+  "phoneCall": {
+    "confirmTitle": "電話をかける",
+    "confirmMessage": "{{phoneNumber}} に発信しますか？",
+    "cancel": "キャンセル",
+    "confirm": "発信する",
+    "errorTitle": "エラー",
+    "errorMessage": "電話アプリを開けませんでした。"
+  },
   "location": {
     "permissionDeniedNotice": "位置情報が許可されていないため、現在地を表示できません。",
     "servicesDisabledTitle": "位置情報がオフになりました",

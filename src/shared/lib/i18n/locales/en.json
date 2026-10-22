@@ -310,6 +310,14 @@
       "googleMaps": "Google Maps"
     }
   },
+  "phoneCall": {
+    "confirmTitle": "Make a Call",
+    "confirmMessage": "Call {{phoneNumber}}?",
+    "cancel": "Cancel",
+    "confirm": "Call",
+    "errorTitle": "Error",
+    "errorMessage": "Could not open the phone app."
+  },
   "location": {
     "permissionDeniedNotice": "Location access is off, so your current location can't be shown.",
     "servicesDisabledTitle": "Location Services Turned Off",
