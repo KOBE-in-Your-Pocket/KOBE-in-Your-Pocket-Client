@@ -1,6 +1,8 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import {
+  Alert,
   Linking,
+  type AlertButton,
   Text as MockText,
   View as MockView,
   type StyleProp,
@@ -43,9 +45,6 @@ jest.mock('@/shared/lib/directions', () => ({
 
 jest.mock('@/shared/config', () => ({
   Spacing: { half: 2, one: 4, two: 8, three: 16, four: 24, five: 32, six: 64 },
-  // 実物の発信確認ダイアログが読み込む ThemedText 用。
-  Fonts: {},
-  SMALL_TEXT_LINE_HEIGHT: 20,
   BottomTabInset: 0,
 }));
 
@@ -54,7 +53,7 @@ jest.mock('@/shared/lib/theme', () => ({
 }));
 
 jest.mock('@/shared/ui', () => ({
-  // 発信確認ダイアログは実物を使い、タップ → ダイアログ → 発信の流れを通す。
+  // 発信確認ダイアログは実物（jest 既定の iOS 版 = OS 標準の Alert）を使い、タップ → 確認 → 発信の流れを通す。
   PhoneCallConfirmDialog: jest.requireActual<
     typeof import('@/shared/ui/components/phone-call-confirm-dialog')
   >('@/shared/ui/components/phone-call-confirm-dialog').PhoneCallConfirmDialog,
@@ -158,32 +157,47 @@ describe('EvacuationShelterCard', () => {
       expect(screen.queryByLabelText('evacuation.shelterCard.callPhone')).toBeNull();
     });
 
-    it('電話番号をタップすると確認ダイアログを出し、発信を選ぶと tel: URL で電話アプリを起動する', async () => {
-      const openURLSpy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
-      renderCard({ shelter: { ...shelter, phoneNumber: '078-411-0556' } });
+    describe('電話番号タップ', () => {
+      let alertSpy: jest.SpyInstance;
+      let openURLSpy: jest.SpyInstance;
 
-      expect(screen.queryByLabelText('phoneCall.confirm')).toBeNull();
-      fireEvent.press(screen.getByLabelText('evacuation.shelterCard.callPhone'));
-      expect(openURLSpy).not.toHaveBeenCalled();
-
-      await act(async () => {
-        fireEvent.press(screen.getByLabelText('phoneCall.confirm'));
+      beforeEach(() => {
+        alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+        openURLSpy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
       });
 
-      expect(openURLSpy).toHaveBeenCalledWith('tel:0784110556');
-      openURLSpy.mockRestore();
-    });
+      afterEach(() => {
+        alertSpy.mockRestore();
+        openURLSpy.mockRestore();
+      });
 
-    it('確認ダイアログでキャンセルを選ぶと発信せずにダイアログを閉じる', () => {
-      const openURLSpy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
-      renderCard({ shelter: { ...shelter, phoneNumber: '078-411-0556' } });
+      /** 電話番号行を押し、確認ダイアログから指定ラベルのボタンを取り出す。 */
+      function pressPhoneAndFindButton(text: string): AlertButton | undefined {
+        renderCard({ shelter: { ...shelter, phoneNumber: '078-411-0556' } });
+        fireEvent.press(screen.getByLabelText('evacuation.shelterCard.callPhone'));
+        return (alertSpy.mock.calls[0]?.[2] as AlertButton[] | undefined)?.find(
+          (button) => button.text === text,
+        );
+      }
 
-      fireEvent.press(screen.getByLabelText('evacuation.shelterCard.callPhone'));
-      fireEvent.press(screen.getByLabelText('phoneCall.cancel'));
+      it('タップすると確認ダイアログを出し、発信を選ぶと tel: URL で電話アプリを起動する', async () => {
+        const confirm = pressPhoneAndFindButton('phoneCall.confirm');
 
-      expect(openURLSpy).not.toHaveBeenCalled();
-      expect(screen.queryByLabelText('phoneCall.confirm')).toBeNull();
-      openURLSpy.mockRestore();
+        expect(alertSpy.mock.calls[0]?.[0]).toBe('phoneCall.confirmMessage');
+        expect(openURLSpy).not.toHaveBeenCalled();
+
+        await act(async () => {
+          confirm?.onPress?.();
+        });
+
+        expect(openURLSpy).toHaveBeenCalledWith('tel:0784110556');
+      });
+
+      it('確認ダイアログでキャンセルを選ぶと発信しない', () => {
+        pressPhoneAndFindButton('phoneCall.cancel')?.onPress?.();
+
+        expect(openURLSpy).not.toHaveBeenCalled();
+      });
     });
   });
 
