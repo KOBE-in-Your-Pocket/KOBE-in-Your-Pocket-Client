@@ -267,7 +267,7 @@ describe('避難所詳細の電話番号タップ', () => {
     pressPhoneAndFindButton('phoneCall.confirm');
 
     expect(alertSpy).toHaveBeenCalledTimes(1);
-    expect(alertSpy.mock.calls[0]?.[0]).toBe('phoneCall.confirmTitle');
+    expect(alertSpy.mock.calls[0]?.[0]).toBe('phoneCall.confirmMessage');
     expect(openURLSpy).not.toHaveBeenCalled();
   });
 
