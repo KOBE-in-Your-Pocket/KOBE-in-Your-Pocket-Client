@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { router } from 'expo-router';
 import {
   Pressable as MockPressable,
   StyleSheet,
@@ -107,7 +108,7 @@ jest.mock('@/shared/lib/directions', () => ({
 }));
 
 jest.mock('expo-router', () => ({
-  router: { back: jest.fn() },
+  router: { back: jest.fn(), push: jest.fn(), navigate: jest.fn() },
 }));
 
 jest.mock('../review-form', () => ({
@@ -366,6 +367,27 @@ describe('SpotDetailContent', () => {
       const icon = StyleSheet.flatten(screen.getByTestId('spot-address-icon').props.style);
       expect(icon.height).toBe(SMALL_TEXT_LINE_HEIGHT);
       expect(icon.justifyContent).toBe('center');
+    });
+  });
+
+  describe('住所タップで地図に遷移する（#677）', () => {
+    it('住所行をタップすると spotId/requestedAt 付きで /map へ遷移する', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      fireEvent.press(screen.getByTestId('spot-address-row'));
+
+      expect(router.navigate).toHaveBeenCalledWith({
+        pathname: '/map',
+        params: { spotId: mockSpot.id, requestedAt: expect.any(String) },
+      });
+    });
+
+    it('住所行はボタンとしてアクセシブルで、タップ可能であることが分かる', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      const row = screen.getByTestId('spot-address-row');
+      expect(row.props.accessibilityRole).toBe('button');
+      expect(row.props.accessibilityLabel).toContain(mockSpot.address);
     });
   });
 

@@ -103,6 +103,7 @@
       "reviews": "评论",
       "noReviews": "暂无评论。",
       "addressLabel": "地址",
+      "addressMapHint": "点击在地图上查看",
       "locationLabel": "位置信息",
       "notFound": "未找到景点。",
       "loadError": "无法加载景点详情。",
