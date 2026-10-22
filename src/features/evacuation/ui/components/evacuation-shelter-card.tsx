@@ -1,12 +1,12 @@
 import { SymbolView } from 'expo-symbols';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, View } from 'react-native';
 
 import { confirmOpenDirections } from '@/shared/lib/directions';
 import { formatDistanceKm, getDistanceKm, type GeoCoordinates } from '@/shared/lib/geo';
-import { confirmPhoneCall } from '@/shared/lib/phone-call';
 import { useTheme } from '@/shared/lib/theme';
-import { ThemedText, ThemedView } from '@/shared/ui';
+import { PhoneCallConfirmDialog, ThemedText, ThemedView } from '@/shared/ui';
 
 import { ShelterSuitabilityChips } from './shelter-suitability';
 
@@ -39,9 +39,11 @@ export function EvacuationShelterCard({
   };
 
   const { phoneNumber } = shelter;
+  // 発信確認ダイアログの発信先。null のときはダイアログを閉じている。
+  const [callTarget, setCallTarget] = useState<string | null>(null);
   const handleCall = () => {
     if (!phoneNumber) return;
-    confirmPhoneCall(t, phoneNumber);
+    setCallTarget(phoneNumber);
   };
 
   return (
@@ -159,6 +161,8 @@ export function EvacuationShelterCard({
           </Pressable>
         </View>
       </View>
+
+      <PhoneCallConfirmDialog phoneNumber={callTarget} onClose={() => setCallTarget(null)} />
     </ThemedView>
   );
 }

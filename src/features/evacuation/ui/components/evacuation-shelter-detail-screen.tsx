@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { openBrowserAsync } from 'expo-web-browser';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,9 +19,8 @@ import type { EvacuationShelter } from '../../domain/evacuation-shelter';
 import { Spacing } from '@/shared/config';
 import { confirmOpenDirections } from '@/shared/lib/directions';
 import { useCurrentLocation } from '@/shared/lib/geo';
-import { confirmPhoneCall } from '@/shared/lib/phone-call';
 import { useTheme } from '@/shared/lib/theme';
-import { ThemedText, ThemedView } from '@/shared/ui';
+import { PhoneCallConfirmDialog, ThemedText, ThemedView } from '@/shared/ui';
 
 function BackButton({ label }: { label: string }) {
   const insets = useSafeAreaInsets();
@@ -75,10 +74,12 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
   }, [t, shelter.coordinates, coords]);
 
   const { phoneNumber } = shelter;
+  // 発信確認ダイアログの発信先。null のときはダイアログを閉じている。
+  const [callTarget, setCallTarget] = useState<string | null>(null);
   const handleCall = useCallback(() => {
     if (!phoneNumber) return;
-    confirmPhoneCall(t, phoneNumber);
-  }, [phoneNumber, t]);
+    setCallTarget(phoneNumber);
+  }, [phoneNumber]);
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -181,6 +182,8 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
 
         <ShelterDatasetNotice />
       </View>
+
+      <PhoneCallConfirmDialog phoneNumber={callTarget} onClose={() => setCallTarget(null)} />
     </ScrollView>
   );
 }

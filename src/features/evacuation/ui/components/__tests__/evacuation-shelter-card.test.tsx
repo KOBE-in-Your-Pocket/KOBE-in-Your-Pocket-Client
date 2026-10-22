@@ -1,5 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import {
+  Linking,
   Text as MockText,
   View as MockView,
   type StyleProp,
@@ -29,7 +30,6 @@ const currentLocation: GeoCoordinates = { latitude: 34.694722, longitude: 135.19
 
 // jest.mock ファクトリから参照するため mock プレフィックスを付ける（out-of-scope 変数制約）。
 const mockConfirmOpenDirections = jest.fn();
-const mockConfirmPhoneCall = jest.fn();
 
 // 距離計算は shared のユニットテストに委ね、ここでは表示分岐の検証に集中するため決め打ちにする。
 jest.mock('@/shared/lib/geo', () => ({
@@ -41,12 +41,11 @@ jest.mock('@/shared/lib/directions', () => ({
   confirmOpenDirections: (...args: unknown[]) => mockConfirmOpenDirections(...args),
 }));
 
-jest.mock('@/shared/lib/phone-call', () => ({
-  confirmPhoneCall: (...args: unknown[]) => mockConfirmPhoneCall(...args),
-}));
-
 jest.mock('@/shared/config', () => ({
   Spacing: { half: 2, one: 4, two: 8, three: 16, four: 24, five: 32, six: 64 },
+  // 実物の発信確認ダイアログが読み込む ThemedText 用。
+  Fonts: {},
+  SMALL_TEXT_LINE_HEIGHT: 20,
   BottomTabInset: 0,
 }));
 
@@ -55,6 +54,10 @@ jest.mock('@/shared/lib/theme', () => ({
 }));
 
 jest.mock('@/shared/ui', () => ({
+  // 発信確認ダイアログは実物を使い、タップ → ダイアログ → 発信の流れを通す。
+  PhoneCallConfirmDialog: jest.requireActual<
+    typeof import('@/shared/ui/components/phone-call-confirm-dialog')
+  >('@/shared/ui/components/phone-call-confirm-dialog').PhoneCallConfirmDialog,
   ThemedText: ({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) => (
     <MockText style={style}>{children}</MockText>
   ),
@@ -82,7 +85,6 @@ function renderCard(overrides: Partial<React.ComponentProps<typeof EvacuationShe
 describe('EvacuationShelterCard', () => {
   beforeEach(() => {
     mockConfirmOpenDirections.mockClear();
-    mockConfirmPhoneCall.mockClear();
   });
 
   describe('ピン選択時のカード表示', () => {
@@ -156,13 +158,32 @@ describe('EvacuationShelterCard', () => {
       expect(screen.queryByLabelText('evacuation.shelterCard.callPhone')).toBeNull();
     });
 
-    it('電話番号をタップすると その番号で confirmPhoneCall を呼ぶ', () => {
+    it('電話番号をタップすると確認ダイアログを出し、発信を選ぶと tel: URL で電話アプリを起動する', async () => {
+      const openURLSpy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+      renderCard({ shelter: { ...shelter, phoneNumber: '078-411-0556' } });
+
+      expect(screen.queryByLabelText('phoneCall.confirm')).toBeNull();
+      fireEvent.press(screen.getByLabelText('evacuation.shelterCard.callPhone'));
+      expect(openURLSpy).not.toHaveBeenCalled();
+
+      await act(async () => {
+        fireEvent.press(screen.getByLabelText('phoneCall.confirm'));
+      });
+
+      expect(openURLSpy).toHaveBeenCalledWith('tel:0784110556');
+      openURLSpy.mockRestore();
+    });
+
+    it('確認ダイアログでキャンセルを選ぶと発信せずにダイアログを閉じる', () => {
+      const openURLSpy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
       renderCard({ shelter: { ...shelter, phoneNumber: '078-411-0556' } });
 
       fireEvent.press(screen.getByLabelText('evacuation.shelterCard.callPhone'));
+      fireEvent.press(screen.getByLabelText('phoneCall.cancel'));
 
-      expect(mockConfirmPhoneCall).toHaveBeenCalledTimes(1);
-      expect(mockConfirmPhoneCall).toHaveBeenCalledWith(expect.any(Function), '078-411-0556');
+      expect(openURLSpy).not.toHaveBeenCalled();
+      expect(screen.queryByLabelText('phoneCall.confirm')).toBeNull();
+      openURLSpy.mockRestore();
     });
   });
 
