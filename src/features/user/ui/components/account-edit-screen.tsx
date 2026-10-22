@@ -9,9 +9,15 @@ import { MaxContentWidth, Spacing } from '@/shared/config';
 import { useTheme } from '@/shared/lib/theme';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
-import { pickProfileIcon } from '../../application/pick-profile-icon';
+import { cropProfileIcon } from '../../application/crop-profile-icon';
+import {
+  discardPickedProfileIcon,
+  pickProfileIcon,
+  type PickedProfileIconImage,
+} from '../../application/pick-profile-icon';
 import { useCurrentUser } from '../../application/use-current-user';
 import { useUpdateProfile } from '../../application/use-update-profile';
+import { computeIconCropRect, INITIAL_ICON_CROP_TRANSFORM } from '../../domain/icon-crop';
 import { isValidDisplayName, MAX_DISPLAY_NAME_LENGTH } from '../../domain/profile-edits';
 import { UserAvatar } from './user-avatar';
 
@@ -128,7 +134,7 @@ function AccountEditForm({ currentUser }: { currentUser: PublicUser }) {
     try {
       const result = await pickProfileIcon();
       if (result.status === 'picked') {
-        setNewIconUri(result.uri);
+        setNewIconUri(await cropCentered(result.image));
       }
     } catch {
       // 以前に選んだ画像が残っていると、エラー表示のまま保存したときに
@@ -263,3 +269,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
+
+/**
+ * 調整画面（#720）ができるまでの間、初期状態（中央の正方形）で切り抜く。
+ * 移動量が 0 なので枠の一辺は結果に影響せず、仮に 1 を渡している。
+ * 切り抜きに失敗したら、残った元画像を消してから例外を投げ直す。
+ */
+async function cropCentered(image: PickedProfileIconImage): Promise<string> {
+  try {
+    return await cropProfileIcon(image, computeIconCropRect(INITIAL_ICON_CROP_TRANSFORM, image, 1));
+  } catch (error) {
+    discardPickedProfileIcon(image);
+    throw error;
+  }
+}
