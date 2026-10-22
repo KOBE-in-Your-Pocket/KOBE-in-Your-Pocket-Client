@@ -12,6 +12,8 @@ import { ShelterDatasetNotice } from './shelter-dataset-notice';
 import { ShelterSuitabilityList } from './shelter-suitability';
 import { ShelterTypeBadge } from './shelter-type-badge';
 
+import { useShelterPhoneCall } from '../hooks/use-shelter-phone-call';
+
 import { EXTERNAL_LINK_COLOR, styles } from '../styles/evacuation-shelter-detail.styles';
 
 import type { EvacuationShelter } from '../../domain/evacuation-shelter';
@@ -20,7 +22,7 @@ import { Spacing } from '@/shared/config';
 import { confirmOpenDirections } from '@/shared/lib/directions';
 import { useCurrentLocation } from '@/shared/lib/geo';
 import { useTheme } from '@/shared/lib/theme';
-import { ThemedText, ThemedView } from '@/shared/ui';
+import { PhoneCallConfirmDialog, ThemedText, ThemedView } from '@/shared/ui';
 
 function BackButton({ label }: { label: string }) {
   const insets = useSafeAreaInsets();
@@ -73,6 +75,9 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
     confirmOpenDirections(t, shelter.coordinates, { origin: coords });
   }, [t, shelter.coordinates, coords]);
 
+  const { phoneNumber } = shelter;
+  const { callTarget, requestCall, closeCall } = useShelterPhoneCall(shelter);
+
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
       <View style={styles.body}>
@@ -109,17 +114,22 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
           </View>
         ) : null}
 
-        {shelter.phoneNumber ? (
-          <View style={styles.infoRow}>
+        {phoneNumber ? (
+          <Pressable
+            style={styles.infoRow}
+            onPress={requestCall}
+            accessibilityRole="button"
+            accessibilityLabel={t('evacuation.shelterCard.callPhone', { phoneNumber })}
+          >
             <SymbolView
               tintColor={theme.textSecondary}
               name={{ ios: 'phone.fill', android: 'call', web: 'call' }}
               size={16}
             />
             <ThemedText type="small" themeColor="textSecondary" style={styles.infoText}>
-              {t('evacuation.shelterCard.phoneLabel')}: {shelter.phoneNumber}
+              {t('evacuation.shelterCard.phoneLabel')}: {phoneNumber}
             </ThemedText>
-          </View>
+          </Pressable>
         ) : null}
 
         <ShelterSuitabilityList suitability={shelter.suitability} />
@@ -169,6 +179,8 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
 
         <ShelterDatasetNotice />
       </View>
+
+      <PhoneCallConfirmDialog phoneNumber={callTarget} onClose={closeCall} />
     </ScrollView>
   );
 }

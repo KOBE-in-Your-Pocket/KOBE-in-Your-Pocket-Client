@@ -1,5 +1,8 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import {
+  Alert,
+  Linking,
+  type AlertButton,
   Text as MockText,
   View as MockView,
   type StyleProp,
@@ -50,6 +53,10 @@ jest.mock('@/shared/lib/theme', () => ({
 }));
 
 jest.mock('@/shared/ui', () => ({
+  // 発信確認ダイアログは実物（jest 既定の iOS 版 = OS 標準の Alert）を使い、タップ → 確認 → 発信の流れを通す。
+  PhoneCallConfirmDialog: jest.requireActual<
+    typeof import('@/shared/ui/components/phone-call-confirm-dialog')
+  >('@/shared/ui/components/phone-call-confirm-dialog').PhoneCallConfirmDialog,
   ThemedText: ({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) => (
     <MockText style={style}>{children}</MockText>
   ),
@@ -147,6 +154,65 @@ describe('EvacuationShelterCard', () => {
       renderCard({ shelter: { ...shelter, phoneNumber: undefined } });
 
       expect(screen.queryByText(/evacuation\.shelterCard\.phoneLabel/)).toBeNull();
+      expect(screen.queryByLabelText('evacuation.shelterCard.callPhone')).toBeNull();
+    });
+
+    describe('電話番号タップ', () => {
+      let alertSpy: jest.SpyInstance;
+      let openURLSpy: jest.SpyInstance;
+
+      beforeEach(() => {
+        alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+        openURLSpy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+      });
+
+      afterEach(() => {
+        alertSpy.mockRestore();
+        openURLSpy.mockRestore();
+      });
+
+      /** 電話番号行を押し、確認ダイアログから指定ラベルのボタンを取り出す。 */
+      function pressPhoneAndFindButton(text: string): AlertButton | undefined {
+        renderCard({ shelter: { ...shelter, phoneNumber: '078-411-0556' } });
+        fireEvent.press(screen.getByLabelText('evacuation.shelterCard.callPhone'));
+        return (alertSpy.mock.calls[0]?.[2] as AlertButton[] | undefined)?.find(
+          (button) => button.text === text,
+        );
+      }
+
+      it('タップすると確認ダイアログを出し、発信を選ぶと tel: URL で電話アプリを起動する', async () => {
+        const confirm = pressPhoneAndFindButton('phoneCall.confirm');
+
+        expect(alertSpy.mock.calls[0]?.[0]).toBe('phoneCall.confirmMessage');
+        expect(openURLSpy).not.toHaveBeenCalled();
+
+        await act(async () => {
+          confirm?.onPress?.();
+        });
+
+        expect(openURLSpy).toHaveBeenCalledWith('tel:0784110556');
+      });
+
+      it('数字を含まない番号ではダイアログを出さずにキャンセルし、原因をログに残す', () => {
+        const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        renderCard({ shelter: { ...shelter, phoneNumber: '未設定' } });
+
+        fireEvent.press(screen.getByLabelText('evacuation.shelterCard.callPhone'));
+
+        expect(alertSpy).not.toHaveBeenCalled();
+        expect(openURLSpy).not.toHaveBeenCalled();
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          expect.stringContaining('[evacuation]'),
+          expect.objectContaining({ shelterId: shelter.id, issue: 'noDigits' }),
+        );
+        consoleWarnSpy.mockRestore();
+      });
+
+      it('確認ダイアログでキャンセルを選ぶと発信しない', () => {
+        pressPhoneAndFindButton('phoneCall.cancel')?.onPress?.();
+
+        expect(openURLSpy).not.toHaveBeenCalled();
+      });
     });
   });
 

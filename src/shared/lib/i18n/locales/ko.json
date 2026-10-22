@@ -215,7 +215,8 @@
       "detail": "상세 보기",
       "navigate": "길 안내",
       "close": "닫기",
-      "phoneLabel": "전화번호"
+      "phoneLabel": "전화번호",
+      "callPhone": "{{phoneNumber}}(으)로 전화 걸기"
     },
     "shelterDetail": {
       "back": "뒤로",
@@ -310,6 +311,13 @@
       "appleMaps": "Apple 지도",
       "googleMaps": "Google 지도"
     }
+  },
+  "phoneCall": {
+    "confirmMessage": "{{phoneNumber}}(으)로 전화를 거시겠습니까?",
+    "cancel": "취소",
+    "confirm": "전화 걸기",
+    "errorTitle": "오류",
+    "errorMessage": "전화 앱을 열 수 없습니다."
   },
   "location": {
     "permissionDeniedNotice": "위치 정보가 허용되지 않아 현재 위치를 표시할 수 없습니다.",

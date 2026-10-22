@@ -215,7 +215,8 @@
       "detail": "查看详情",
       "navigate": "路线导航",
       "close": "关闭",
-      "phoneLabel": "电话"
+      "phoneLabel": "电话",
+      "callPhone": "拨打 {{phoneNumber}}"
     },
     "shelterDetail": {
       "back": "返回",
@@ -310,6 +311,13 @@
       "appleMaps": "Apple 地图",
       "googleMaps": "Google 地图"
     }
+  },
+  "phoneCall": {
+    "confirmMessage": "要拨打 {{phoneNumber}} 吗？",
+    "cancel": "取消",
+    "confirm": "拨打",
+    "errorTitle": "错误",
+    "errorMessage": "无法打开电话应用。"
   },
   "location": {
     "permissionDeniedNotice": "未允许使用位置信息，无法显示当前位置。",
