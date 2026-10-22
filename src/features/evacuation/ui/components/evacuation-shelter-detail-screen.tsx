@@ -75,6 +75,14 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
     confirmOpenDirections(t, shelter.coordinates, { origin: coords });
   }, [t, shelter.coordinates, coords]);
 
+  // この画面はタブ外のスタックにあるため push だと (tabs) が積み上がる。navigate で既存の (tabs) に戻す。
+  const handleAddressPress = useCallback(() => {
+    router.navigate({
+      pathname: '/map',
+      params: { shelterId: shelter.id, requestedAt: String(Date.now()) },
+    });
+  }, [shelter.id]);
+
   const { phoneNumber } = shelter;
   const { callTarget, requestCall, closeCall } = useShelterPhoneCall(shelter);
 
@@ -90,7 +98,14 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
         {/* 区分（緊急 / 指定 / 兼用）を色・アイコン付きのステータスバッジで名称直下に出し、一目で判別できるようにする。 */}
         <ShelterTypeBadge type={shelter.type} />
 
-        <View style={styles.infoRow}>
+        <Pressable
+          style={styles.infoRow}
+          testID="shelter-address-row"
+          onPress={handleAddressPress}
+          accessibilityRole="button"
+          accessibilityLabel={shelter.address}
+          accessibilityHint={t('evacuation.shelterDetail.addressMapHint')}
+        >
           <SymbolView
             tintColor={theme.textSecondary}
             name={{ ios: 'mappin.and.ellipse', android: 'location_on', web: 'location_on' }}
@@ -99,7 +114,12 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
           <ThemedText type="small" themeColor="textSecondary" style={styles.infoText}>
             {shelter.address}
           </ThemedText>
-        </View>
+          <SymbolView
+            tintColor={theme.textSecondary}
+            name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+            size={14}
+          />
+        </Pressable>
 
         {shelter.capacity !== undefined ? (
           <View style={styles.infoRow}>

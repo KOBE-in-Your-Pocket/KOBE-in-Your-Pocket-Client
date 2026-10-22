@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
+import { router } from 'expo-router';
 import {
   Alert,
   Linking,
@@ -84,7 +85,12 @@ jest.mock('react-i18next', () => ({
 }));
 
 jest.mock('expo-router', () => ({
-  router: { back: jest.fn(), canGoBack: jest.fn(() => true), replace: jest.fn() },
+  router: {
+    back: jest.fn(),
+    canGoBack: jest.fn(() => true),
+    replace: jest.fn(),
+    navigate: jest.fn(),
+  },
 }));
 
 jest.mock('react-native-safe-area-context', () => ({
@@ -450,5 +456,41 @@ describe('避難所詳細の災害ごとの利用可否', () => {
     render(<EvacuationShelterDetailScreen shelterId="shelter-1" />);
 
     expect(screen.queryByText('evacuation.suitability.title')).toBeNull();
+  });
+});
+
+describe('住所タップで地図に遷移する（#678）', () => {
+  beforeEach(() => {
+    mockUseEvacuationShelterDetail.mockReturnValue({
+      data: shelter,
+      isPending: false,
+      isError: false,
+    });
+    mockUseCurrentLocation.mockReturnValue({
+      coords: null,
+      permissionDenied: false,
+      servicesDisabled: false,
+      loading: false,
+      error: null,
+    });
+  });
+
+  it('住所行をタップすると shelterId/requestedAt 付きで /map へ遷移する', () => {
+    render(<EvacuationShelterDetailScreen shelterId="shelter-1" />);
+
+    fireEvent.press(screen.getByTestId('shelter-address-row'));
+
+    expect(router.navigate).toHaveBeenCalledWith({
+      pathname: '/map',
+      params: { shelterId: shelter.id, requestedAt: expect.any(String) },
+    });
+  });
+
+  it('住所行はボタンとしてアクセシブルで、タップ可能であることが分かる', () => {
+    render(<EvacuationShelterDetailScreen shelterId="shelter-1" />);
+
+    const row = screen.getByTestId('shelter-address-row');
+    expect(row.props.accessibilityRole).toBe('button');
+    expect(row.props.accessibilityLabel).toBe(shelter.address);
   });
 });
