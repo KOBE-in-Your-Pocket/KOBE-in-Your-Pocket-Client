@@ -58,6 +58,12 @@ describe('getMaxIconZoom', () => {
   it('とても小さい画像でも 1 未満にはしない', () => {
     expect(getMaxIconZoom({ width: 50, height: 50 })).toBe(1);
   });
+
+  it('寸法が使えないときは 1', () => {
+    expect(getMaxIconZoom({ width: NaN, height: 400 })).toBe(1);
+    expect(getMaxIconZoom({ width: 400, height: 0 })).toBe(1);
+    expect(getMaxIconZoom({ width: Infinity, height: 400 })).toBe(1);
+  });
 });
 
 describe('clampIconZoom', () => {
@@ -72,6 +78,10 @@ describe('clampIconZoom', () => {
 
   it('NaN は 1 にする', () => {
     expect(clampIconZoom(NaN, SQUARE)).toBe(1);
+  });
+
+  it('画像の寸法が使えないときは 1 にする', () => {
+    expect(clampIconZoom(2.5, { width: NaN, height: 400 })).toBe(1);
   });
 });
 
@@ -112,6 +122,13 @@ describe('clampIconCropTransform', () => {
       INITIAL_ICON_CROP_TRANSFORM,
     );
     expect(clampIconCropTransform(moved, SQUARE, 0)).toEqual(INITIAL_ICON_CROP_TRANSFORM);
+  });
+
+  it('初期状態を返すときは共有の定数そのものではなくコピーを返す', () => {
+    const result = clampIconCropTransform(INITIAL_ICON_CROP_TRANSFORM, SQUARE, 0);
+    expect(result).not.toBe(INITIAL_ICON_CROP_TRANSFORM);
+    result.translateX = 99;
+    expect(INITIAL_ICON_CROP_TRANSFORM.translateX).toBe(0);
   });
 });
 

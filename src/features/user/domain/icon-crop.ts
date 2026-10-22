@@ -69,9 +69,13 @@ export function isUsableIconImageSize(image: IconImageSize): boolean {
 /**
  * 拡大の上限。{@link MAX_ICON_ZOOM} を基本に、切り抜き範囲の一辺が
  * {@link MIN_ICON_CROP_EDGE_PX} を下回らない倍率までに抑える（ただし 1 未満にはしない）。
+ * 寸法が使えない場合は 1（拡大しない）。
  */
 export function getMaxIconZoom(image: IconImageSize): number {
   'worklet';
+  if (!isUsableIconImageSize(image)) {
+    return 1;
+  }
   const shortEdge = Math.min(image.width, image.height);
   return Math.max(1, Math.min(MAX_ICON_ZOOM, shortEdge / MIN_ICON_CROP_EDGE_PX));
 }
@@ -96,7 +100,8 @@ export function clampIconCropTransform(
 ): IconCropTransform {
   'worklet';
   if (!isUsableIconImageSize(image) || !(frameSize > 0)) {
-    return INITIAL_ICON_CROP_TRANSFORM;
+    // 呼び出し側が書き換えても共有の定数が壊れないよう、コピーを返す。
+    return { ...INITIAL_ICON_CROP_TRANSFORM };
   }
 
   const scale = clampIconZoom(transform.scale, image);
