@@ -33,7 +33,7 @@ function expectInside(rect: IconCropRect | null, image: IconImageSize) {
 }
 
 describe('isUsableIconImageSize', () => {
-  it('幅・高さが正の数なら使える', () => {
+  it('幅・高さが正の整数なら使える', () => {
     expect(isUsableIconImageSize(PORTRAIT)).toBe(true);
   });
 
@@ -43,6 +43,11 @@ describe('isUsableIconImageSize', () => {
     expect(isUsableIconImageSize({ width: -1, height: 1200 })).toBe(false);
     expect(isUsableIconImageSize({ width: NaN, height: 1200 })).toBe(false);
     expect(isUsableIconImageSize({ width: Infinity, height: 1200 })).toBe(false);
+  });
+
+  it('小数の寸法は使えない', () => {
+    expect(isUsableIconImageSize({ width: 0.5, height: 0.7 })).toBe(false);
+    expect(isUsableIconImageSize({ width: 1000.5, height: 1000 })).toBe(false);
   });
 });
 
@@ -122,6 +127,8 @@ describe('clampIconCropTransform', () => {
       INITIAL_ICON_CROP_TRANSFORM,
     );
     expect(clampIconCropTransform(moved, SQUARE, 0)).toEqual(INITIAL_ICON_CROP_TRANSFORM);
+    expect(clampIconCropTransform(moved, SQUARE, Infinity)).toEqual(INITIAL_ICON_CROP_TRANSFORM);
+    expect(clampIconCropTransform(moved, SQUARE, NaN)).toEqual(INITIAL_ICON_CROP_TRANSFORM);
   });
 
   it('初期状態を返すときは共有の定数そのものではなくコピーを返す', () => {
@@ -194,6 +201,11 @@ describe('computeIconCropRect', () => {
       computeIconCropRect(INITIAL_ICON_CROP_TRANSFORM, { width: 0, height: 1200 }, FRAME),
     ).toBeNull();
     expect(computeIconCropRect(INITIAL_ICON_CROP_TRANSFORM, PORTRAIT, 0)).toBeNull();
+    expect(computeIconCropRect(INITIAL_ICON_CROP_TRANSFORM, PORTRAIT, Infinity)).toBeNull();
+    expect(computeIconCropRect(INITIAL_ICON_CROP_TRANSFORM, PORTRAIT, NaN)).toBeNull();
+    expect(
+      computeIconCropRect(INITIAL_ICON_CROP_TRANSFORM, { width: 1000.5, height: 1000 }, FRAME),
+    ).toBeNull();
   });
 
   it('端数が出る寸法・倍率でも 1px もはみ出さない', () => {

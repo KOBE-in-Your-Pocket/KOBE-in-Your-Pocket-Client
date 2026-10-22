@@ -55,15 +55,24 @@ function clampRange(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
-/** 切り抜きの計算に使える寸法か。ImagePicker は寸法を取得できないと 0 を返す。 */
+/**
+ * 切り抜きの計算に使える寸法か（正の整数）。ImagePicker は寸法を取得できないと 0 を返す。
+ * 小数の寸法を通すと切り抜き範囲も小数になるため、整数でなければ使えないものとして扱う。
+ */
 export function isUsableIconImageSize(image: IconImageSize): boolean {
   'worklet';
   return (
-    Number.isFinite(image.width) &&
-    Number.isFinite(image.height) &&
+    Number.isInteger(image.width) &&
+    Number.isInteger(image.height) &&
     image.width > 0 &&
     image.height > 0
   );
+}
+
+/** 切り抜き枠の一辺として使えるか（有限の正の数）。 */
+function isUsableIconFrameSize(frameSize: number): boolean {
+  'worklet';
+  return Number.isFinite(frameSize) && frameSize > 0;
 }
 
 /**
@@ -99,7 +108,7 @@ export function clampIconCropTransform(
   frameSize: number,
 ): IconCropTransform {
   'worklet';
-  if (!isUsableIconImageSize(image) || !(frameSize > 0)) {
+  if (!isUsableIconImageSize(image) || !isUsableIconFrameSize(frameSize)) {
     // 呼び出し側が書き換えても共有の定数が壊れないよう、コピーを返す。
     return { ...INITIAL_ICON_CROP_TRANSFORM };
   }
@@ -128,7 +137,7 @@ export function computeIconCropRect(
   frameSize: number,
 ): IconCropRect | null {
   'worklet';
-  if (!isUsableIconImageSize(image) || !(frameSize > 0)) {
+  if (!isUsableIconImageSize(image) || !isUsableIconFrameSize(frameSize)) {
     return null;
   }
 
