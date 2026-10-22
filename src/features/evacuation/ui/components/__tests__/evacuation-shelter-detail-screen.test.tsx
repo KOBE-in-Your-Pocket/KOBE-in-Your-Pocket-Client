@@ -68,6 +68,10 @@ jest.mock('@/shared/config', () => ({
 }));
 
 jest.mock('@/shared/ui', () => ({
+  // 発信確認ダイアログは実物（jest 既定の iOS 版 = OS 標準の Alert）を使う。
+  PhoneCallConfirmDialog: jest.requireActual<
+    typeof import('@/shared/ui/components/phone-call-confirm-dialog')
+  >('@/shared/ui/components/phone-call-confirm-dialog').PhoneCallConfirmDialog,
   ThemedText: ({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) => (
     <MockText style={style}>{children}</MockText>
   ),
@@ -230,6 +234,90 @@ describe('避難所詳細からの外部マップ起動フォールバック分�
   });
 });
 
+// 発信確認ダイアログは実物を使い、電話番号行 → 確認 Alert → Linking.openURL の実経路を通す。
+describe('避難所詳細の電話番号タップ', () => {
+  const CALL_LABEL = 'evacuation.shelterCard.callPhone';
+
+  // 経路案内側の describe が afterAll でスパイを restore するため、ここでは独自に張り直す。
+  let alertSpy: jest.SpyInstance;
+  let openURLSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    openURLSpy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    mockUseEvacuationShelterDetail.mockReturnValue({
+      data: { ...shelter, phoneNumber: '078-411-0556' },
+      isPending: false,
+      isError: false,
+    });
+    mockUseCurrentLocation.mockReturnValue({
+      coords: null,
+      permissionDenied: false,
+      servicesDisabled: false,
+      loading: false,
+      error: null,
+    });
+  });
+
+  afterEach(() => {
+    alertSpy.mockRestore();
+    openURLSpy.mockRestore();
+  });
+
+  /** 電話番号行を押し、確認ダイアログから指定ラベルのボタンを取り出す。 */
+  function pressPhoneAndFindButton(text: string): AlertButton | undefined {
+    render(<EvacuationShelterDetailScreen shelterId="shelter-1" />);
+    fireEvent.press(screen.getByLabelText(CALL_LABEL));
+    return (alertSpy.mock.calls[0]?.[2] as AlertButton[] | undefined)?.find(
+      (button) => button.text === text,
+    );
+  }
+
+  it('タップでは確認ダイアログを出すだけで、承認するまで発信しない', () => {
+    pressPhoneAndFindButton('phoneCall.confirm');
+
+    expect(alertSpy).toHaveBeenCalledTimes(1);
+    expect(alertSpy.mock.calls[0]?.[0]).toBe('phoneCall.confirmMessage');
+    expect(openURLSpy).not.toHaveBeenCalled();
+  });
+
+  it('確認ダイアログで発信を選ぶと tel: URL で電話アプリを起動する', async () => {
+    const confirm = pressPhoneAndFindButton('phoneCall.confirm');
+
+    await act(async () => {
+      confirm?.onPress?.();
+    });
+
+    expect(openURLSpy).toHaveBeenCalledWith('tel:0784110556');
+  });
+
+  it('数字を含まない番号ではダイアログを出さずにキャンセルし、原因をログに残す', () => {
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockUseEvacuationShelterDetail.mockReturnValue({
+      data: { ...shelter, phoneNumber: '未設定' },
+      isPending: false,
+      isError: false,
+    });
+    render(<EvacuationShelterDetailScreen shelterId="shelter-1" />);
+
+    fireEvent.press(screen.getByLabelText(CALL_LABEL));
+
+    expect(alertSpy).not.toHaveBeenCalled();
+    expect(openURLSpy).not.toHaveBeenCalled();
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[evacuation]'),
+      expect.objectContaining({ shelterId: shelter.id, issue: 'noDigits' }),
+    );
+    consoleWarnSpy.mockRestore();
+  });
+
+  it('確認ダイアログをキャンセルすると発信しない', () => {
+    pressPhoneAndFindButton('phoneCall.cancel')?.onPress?.();
+
+    expect(openURLSpy).not.toHaveBeenCalled();
+  });
+});
+
 describe('避難所詳細の写真表示', () => {
   it('写真（Image）を表示しない', () => {
     mockUseCurrentLocation.mockReturnValue({
@@ -296,6 +384,7 @@ describe('避難所詳細の値の無い項目の表示分岐', () => {
     render(<EvacuationShelterDetailScreen shelterId="shelter-1" />);
 
     expect(screen.queryByText(/evacuation\.shelterCard\.phoneLabel/)).toBeNull();
+    expect(screen.queryByLabelText('evacuation.shelterCard.callPhone')).toBeNull();
   });
 
   it('capacity・externalUrl が無い避難所ではその項目を表示しない', () => {

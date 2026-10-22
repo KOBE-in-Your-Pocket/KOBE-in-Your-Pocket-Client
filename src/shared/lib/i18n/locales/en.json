@@ -215,7 +215,8 @@
       "detail": "Shelter Detail",
       "navigate": "Directions",
       "close": "Close",
-      "phoneLabel": "Phone"
+      "phoneLabel": "Phone",
+      "callPhone": "Call {{phoneNumber}}"
     },
     "shelterDetail": {
       "back": "Back",
@@ -311,6 +312,13 @@
       "appleMaps": "Apple Maps",
       "googleMaps": "Google Maps"
     }
+  },
+  "phoneCall": {
+    "confirmMessage": "Call {{phoneNumber}}?",
+    "cancel": "Cancel",
+    "confirm": "Call",
+    "errorTitle": "Error",
+    "errorMessage": "Could not open the phone app."
   },
   "location": {
     "permissionDeniedNotice": "Location access is off, so your current location can't be shown.",

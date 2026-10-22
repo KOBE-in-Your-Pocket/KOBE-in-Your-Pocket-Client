@@ -5,9 +5,11 @@ import { Pressable, View } from 'react-native';
 import { confirmOpenDirections } from '@/shared/lib/directions';
 import { formatDistanceKm, getDistanceKm, type GeoCoordinates } from '@/shared/lib/geo';
 import { useTheme } from '@/shared/lib/theme';
-import { ThemedText, ThemedView } from '@/shared/ui';
+import { PhoneCallConfirmDialog, ThemedText, ThemedView } from '@/shared/ui';
 
 import { ShelterSuitabilityChips } from './shelter-suitability';
+
+import { useShelterPhoneCall } from '../hooks/use-shelter-phone-call';
 
 import { styles } from '../styles/evacuation-shelter-card.styles';
 
@@ -36,6 +38,9 @@ export function EvacuationShelterCard({
   const handleNavigate = () => {
     confirmOpenDirections(t, shelter.coordinates, { origin: currentLocation });
   };
+
+  const { phoneNumber } = shelter;
+  const { callTarget, requestCall, closeCall } = useShelterPhoneCall(shelter);
 
   return (
     <ThemedView style={styles.card}>
@@ -101,17 +106,23 @@ export function EvacuationShelterCard({
             </View>
           ) : null}
 
-          {shelter.phoneNumber ? (
-            <View style={styles.metaItem}>
+          {phoneNumber ? (
+            <Pressable
+              onPress={requestCall}
+              hitSlop={8}
+              style={styles.metaItem}
+              accessibilityRole="button"
+              accessibilityLabel={t('evacuation.shelterCard.callPhone', { phoneNumber })}
+            >
               <SymbolView
                 tintColor={theme.textSecondary}
                 name={{ ios: 'phone.fill', android: 'call', web: 'call' }}
                 size={14}
               />
               <ThemedText type="small" themeColor="textSecondary">
-                {t('evacuation.shelterCard.phoneLabel')}: {shelter.phoneNumber}
+                {t('evacuation.shelterCard.phoneLabel')}: {phoneNumber}
               </ThemedText>
-            </View>
+            </Pressable>
           ) : null}
         </View>
 
@@ -146,6 +157,8 @@ export function EvacuationShelterCard({
           </Pressable>
         </View>
       </View>
+
+      <PhoneCallConfirmDialog phoneNumber={callTarget} onClose={closeCall} />
     </ThemedView>
   );
 }

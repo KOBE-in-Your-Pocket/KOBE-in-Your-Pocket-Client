@@ -13,6 +13,10 @@ export {
   LocationServicesModal,
   type LocationServicesModalProps,
 } from './components/location';
+export {
+  PhoneCallConfirmDialog,
+  type PhoneCallConfirmDialogProps,
+} from './components/phone-call-confirm-dialog';
 export { WebBadge } from './components/web-badge';
 export { Map, KOBE_INITIAL_REGION, type MapProps, type MapCoordinate, type MapMarker } from './map';
 export { ThemedText, type ThemedTextProps } from './themed/themed-text';
