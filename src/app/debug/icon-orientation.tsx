@@ -29,8 +29,10 @@ type Inspection = {
 export default function IconOrientationDebugScreen() {
   const [inspection, setInspection] = useState<Inspection | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [picking, setPicking] = useState(false);
 
   async function handlePick() {
+    setPicking(true);
     setError(null);
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -45,6 +47,8 @@ export default function IconOrientationDebugScreen() {
     } catch (e) {
       setInspection(null);
       setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setPicking(false);
     }
   }
 
@@ -62,7 +66,12 @@ export default function IconOrientationDebugScreen() {
             縦向きで撮った写真など、回転情報付きの画像を選んでください。
           </ThemedText>
 
-          <Pressable accessibilityRole="button" onPress={handlePick} style={styles.button}>
+          <Pressable
+            accessibilityRole="button"
+            disabled={picking}
+            onPress={handlePick}
+            style={styles.button}
+          >
             <ThemedText type="linkPrimary">写真を選ぶ</ThemedText>
           </Pressable>
 
@@ -104,12 +113,16 @@ export default function IconOrientationDebugScreen() {
 async function inspect(asset: ImagePicker.ImagePickerAsset): Promise<Inspection> {
   const loaded = await ImageManipulator.manipulate(asset.uri).renderAsync();
 
+  // ピッカーは寸法を取得できないと 0 を返す。そのまま切り抜くと幅 0 の矩形になって
+  // 失敗するため、読み込み後の寸法で代用する（表では寸法一致が NG になる）。
+  const hasPickerSize = asset.width > 0 && asset.height > 0;
+  const base = hasPickerSize ? asset : loaded;
   const cropContext = ImageManipulator.manipulate(asset.uri);
   cropContext.crop({
     originX: 0,
     originY: 0,
-    width: Math.floor(asset.width / 2),
-    height: Math.floor(asset.height / 2),
+    width: Math.floor(base.width / 2),
+    height: Math.floor(base.height / 2),
   });
   const cropped = await cropContext.renderAsync();
   const saved = await cropped.saveAsync({ format: SaveFormat.JPEG, compress: 0.8 });
