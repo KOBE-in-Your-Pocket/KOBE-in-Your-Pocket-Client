@@ -39,6 +39,7 @@ describe('useShelterPhoneCall', () => {
     [undefined, 'missing'],
     ['   ', 'missing'],
     ['未設定', 'noDigits'],
+    ['078-331-8181/078-331-8182', 'unsupportedFormat'],
   ] as const)(
     '発信できない番号（%p）ならダイアログを出さずにキャンセルし、原因（%s）をログに残す',
     (phoneNumber, issue) => {
