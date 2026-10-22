@@ -1,8 +1,7 @@
-import { act, fireEvent, render, screen } from '@testing-library/react-native';
-import { Alert, Linking, StyleSheet } from 'react-native';
+import { act, render } from '@testing-library/react-native';
+import { Alert, Linking, type AlertButton } from 'react-native';
 
 import { PhoneCallConfirmDialog } from '../phone-call-confirm-dialog';
-import { CALL_BUTTON_COLOR } from '../styles/phone-call-confirm-dialog.styles';
 
 const PHONE_NUMBER = '078-331-8181';
 
@@ -13,60 +12,73 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-const openURLSpy = jest.spyOn(Linking, 'openURL');
+describe('PhoneCallConfirmDialog（iOS / Web）', () => {
+  let alertSpy: jest.SpyInstance;
+  let openURLSpy: jest.SpyInstance;
 
-function renderDialog(phoneNumber: string | null = PHONE_NUMBER) {
-  const onClose = jest.fn();
-  render(<PhoneCallConfirmDialog phoneNumber={phoneNumber} onClose={onClose} />);
-  return { onClose };
-}
-
-describe('PhoneCallConfirmDialog', () => {
   beforeEach(() => {
-    alertSpy.mockClear();
-    openURLSpy.mockReset().mockResolvedValue(true);
+    alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    openURLSpy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
   });
 
-  it('番号を含む確認文だけを表示し、この時点では発信しない', () => {
+  afterEach(() => {
+    alertSpy.mockRestore();
+    openURLSpy.mockRestore();
+  });
+
+  function renderDialog(phoneNumber: string | null = PHONE_NUMBER) {
+    const onClose = jest.fn();
+    const utils = render(<PhoneCallConfirmDialog phoneNumber={phoneNumber} onClose={onClose} />);
+    return { onClose, ...utils };
+  }
+
+  function findButton(text: string): AlertButton | undefined {
+    return (alertSpy.mock.calls[0]?.[2] as AlertButton[]).find((button) => button.text === text);
+  }
+
+  it('phoneNumber が null のときは Alert を出さない', () => {
+    renderDialog(null);
+
+    expect(alertSpy).not.toHaveBeenCalled();
+  });
+
+  it('番号を含む確認文だけの Alert を出し、「発信する」を推奨ボタン（青）にする', () => {
     renderDialog();
 
-    expect(screen.getByText(`phoneCall.confirmMessage:${PHONE_NUMBER}`)).toBeTruthy();
+    expect(alertSpy).toHaveBeenCalledTimes(1);
+    expect(alertSpy).toHaveBeenCalledWith(
+      `phoneCall.confirmMessage:${PHONE_NUMBER}`,
+      undefined,
+      expect.any(Array),
+    );
+    expect(findButton('phoneCall.cancel')).toEqual(expect.objectContaining({ style: 'cancel' }));
+    expect(findButton('phoneCall.confirm')).toEqual(expect.objectContaining({ isPreferred: true }));
     expect(openURLSpy).not.toHaveBeenCalled();
   });
 
-  it('phoneNumber が null のときは表示しない', () => {
-    renderDialog(null);
+  it('null → 番号に切り替わったときに Alert を出す', () => {
+    const { rerender, onClose } = renderDialog(null);
 
-    expect(screen.queryByText(/phoneCall\.confirmMessage/)).toBeNull();
-    expect(screen.queryByLabelText('phoneCall.confirm')).toBeNull();
+    rerender(<PhoneCallConfirmDialog phoneNumber={PHONE_NUMBER} onClose={onClose} />);
+
+    expect(alertSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('「発信する」ボタンだけを青で表示する', () => {
-    renderDialog();
-
-    const callStyle = StyleSheet.flatten(screen.getByLabelText('phoneCall.confirm').props.style);
-    const cancelStyle = StyleSheet.flatten(screen.getByLabelText('phoneCall.cancel').props.style);
-
-    expect(callStyle.backgroundColor).toBe(CALL_BUTTON_COLOR);
-    expect(cancelStyle.backgroundColor).not.toBe(CALL_BUTTON_COLOR);
-  });
-
-  it('「発信する」を選ぶとダイアログを閉じ、tel: URL で電話アプリを起動する', async () => {
+  it('「発信する」を選ぶと閉じて tel: URL で電話アプリを起動する', async () => {
     const { onClose } = renderDialog();
 
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('phoneCall.confirm'));
+      findButton('phoneCall.confirm')?.onPress?.();
     });
 
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(openURLSpy).toHaveBeenCalledWith('tel:0783318181');
   });
 
-  it('「キャンセル」を選ぶとダイアログを閉じるだけで発信しない', () => {
+  it('「キャンセル」を選ぶと閉じるだけで発信しない', () => {
     const { onClose } = renderDialog();
 
-    fireEvent.press(screen.getByLabelText('phoneCall.cancel'));
+    findButton('phoneCall.cancel')?.onPress?.();
 
     expect(onClose).toHaveBeenCalledTimes(1);
     expect(openURLSpy).not.toHaveBeenCalled();
@@ -77,9 +89,9 @@ describe('PhoneCallConfirmDialog', () => {
     renderDialog();
 
     await act(async () => {
-      fireEvent.press(screen.getByLabelText('phoneCall.confirm'));
+      findButton('phoneCall.confirm')?.onPress?.();
     });
 
-    expect(alertSpy).toHaveBeenCalledWith('phoneCall.errorTitle', 'phoneCall.errorMessage');
+    expect(alertSpy).toHaveBeenLastCalledWith('phoneCall.errorTitle', 'phoneCall.errorMessage');
   });
 });
