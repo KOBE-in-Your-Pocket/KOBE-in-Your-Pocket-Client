@@ -214,7 +214,8 @@
       "detail": "Shelter Detail",
       "navigate": "Directions",
       "close": "Close",
-      "phoneLabel": "Phone"
+      "phoneLabel": "Phone",
+      "callPhone": "Call {{phoneNumber}}"
     },
     "shelterDetail": {
       "back": "Back",

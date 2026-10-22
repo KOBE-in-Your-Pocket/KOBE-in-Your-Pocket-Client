@@ -214,7 +214,8 @@
       "detail": "查看详情",
       "navigate": "路线导航",
       "close": "关闭",
-      "phoneLabel": "电话"
+      "phoneLabel": "电话",
+      "callPhone": "拨打 {{phoneNumber}}"
     },
     "shelterDetail": {
       "back": "返回",

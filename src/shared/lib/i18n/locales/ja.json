@@ -214,7 +214,8 @@
       "detail": "詳細を見る",
       "navigate": "経路案内",
       "close": "閉じる",
-      "phoneLabel": "電話番号"
+      "phoneLabel": "電話番号",
+      "callPhone": "{{phoneNumber}} に電話をかける"
     },
     "shelterDetail": {
       "back": "戻る",

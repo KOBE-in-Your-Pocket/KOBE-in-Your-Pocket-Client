@@ -4,6 +4,7 @@ import { Pressable, View } from 'react-native';
 
 import { confirmOpenDirections } from '@/shared/lib/directions';
 import { formatDistanceKm, getDistanceKm, type GeoCoordinates } from '@/shared/lib/geo';
+import { confirmPhoneCall } from '@/shared/lib/phone-call';
 import { useTheme } from '@/shared/lib/theme';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
@@ -35,6 +36,12 @@ export function EvacuationShelterCard({
 
   const handleNavigate = () => {
     confirmOpenDirections(t, shelter.coordinates, { origin: currentLocation });
+  };
+
+  const { phoneNumber } = shelter;
+  const handleCall = () => {
+    if (!phoneNumber) return;
+    confirmPhoneCall(t, phoneNumber);
   };
 
   return (
@@ -101,17 +108,23 @@ export function EvacuationShelterCard({
             </View>
           ) : null}
 
-          {shelter.phoneNumber ? (
-            <View style={styles.metaItem}>
+          {phoneNumber ? (
+            <Pressable
+              onPress={handleCall}
+              hitSlop={8}
+              style={styles.metaItem}
+              accessibilityRole="button"
+              accessibilityLabel={t('evacuation.shelterCard.callPhone', { phoneNumber })}
+            >
               <SymbolView
                 tintColor={theme.textSecondary}
                 name={{ ios: 'phone.fill', android: 'call', web: 'call' }}
                 size={14}
               />
               <ThemedText type="small" themeColor="textSecondary">
-                {t('evacuation.shelterCard.phoneLabel')}: {shelter.phoneNumber}
+                {t('evacuation.shelterCard.phoneLabel')}: {phoneNumber}
               </ThemedText>
-            </View>
+            </Pressable>
           ) : null}
         </View>
 

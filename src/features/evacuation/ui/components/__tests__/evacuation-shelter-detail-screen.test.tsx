@@ -224,6 +224,72 @@ describe('避難所詳細からの外部マップ起動フォールバック分�
   });
 });
 
+// @/shared/lib/phone-call もモックせず、電話番号行 → confirmPhoneCall → Linking.openURL の実経路を通す。
+describe('避難所詳細の電話番号タップ', () => {
+  const CALL_LABEL = 'evacuation.shelterCard.callPhone';
+
+  // 経路案内側の describe が afterAll でスパイを restore するため、ここでは独自に張り直す。
+  let alertSpy: jest.SpyInstance;
+  let openURLSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    openURLSpy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+    mockUseEvacuationShelterDetail.mockReturnValue({
+      data: { ...shelter, phoneNumber: '078-411-0556' },
+      isPending: false,
+      isError: false,
+    });
+    mockUseCurrentLocation.mockReturnValue({
+      coords: null,
+      permissionDenied: false,
+      servicesDisabled: false,
+      loading: false,
+      error: null,
+    });
+  });
+
+  afterEach(() => {
+    alertSpy.mockRestore();
+    openURLSpy.mockRestore();
+  });
+
+  /** 電話番号行を押し、確認ダイアログから指定ラベルのボタンを取り出す。 */
+  function pressPhoneAndFindButton(text: string): AlertButton | undefined {
+    render(<EvacuationShelterDetailScreen shelterId="shelter-1" />);
+    fireEvent.press(screen.getByLabelText(CALL_LABEL));
+
+    const buttons = (alertSpy.mock.calls[0]?.[2] ?? []) as AlertButton[];
+    return buttons.find((button) => button.text === text);
+  }
+
+  it('タップでは確認ダイアログを出すだけで、承認するまで発信しない', () => {
+    pressPhoneAndFindButton('phoneCall.confirm');
+
+    expect(alertSpy).toHaveBeenCalledTimes(1);
+    expect(alertSpy.mock.calls[0]?.[0]).toBe('phoneCall.confirmTitle');
+    expect(openURLSpy).not.toHaveBeenCalled();
+  });
+
+  it('確認ダイアログで発信を選ぶと tel: URL で電話アプリを起動する', async () => {
+    const confirm = pressPhoneAndFindButton('phoneCall.confirm');
+
+    await act(async () => {
+      await confirm?.onPress?.();
+    });
+
+    expect(openURLSpy).toHaveBeenCalledWith('tel:0784110556');
+  });
+
+  it('確認ダイアログをキャンセルすると発信しない', () => {
+    const cancel = pressPhoneAndFindButton('phoneCall.cancel');
+
+    cancel?.onPress?.();
+
+    expect(openURLSpy).not.toHaveBeenCalled();
+  });
+});
+
 describe('避難所詳細の写真表示', () => {
   it('写真（Image）を表示しない', () => {
     mockUseCurrentLocation.mockReturnValue({
@@ -290,6 +356,7 @@ describe('避難所詳細の値の無い項目の表示分岐', () => {
     render(<EvacuationShelterDetailScreen shelterId="shelter-1" />);
 
     expect(screen.queryByText(/evacuation\.shelterCard\.phoneLabel/)).toBeNull();
+    expect(screen.queryByLabelText('evacuation.shelterCard.callPhone')).toBeNull();
   });
 
   it('capacity・externalUrl が無い避難所ではその項目を表示しない', () => {

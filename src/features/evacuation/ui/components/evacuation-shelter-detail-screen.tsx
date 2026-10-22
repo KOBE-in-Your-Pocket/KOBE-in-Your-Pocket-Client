@@ -19,6 +19,7 @@ import type { EvacuationShelter } from '../../domain/evacuation-shelter';
 import { Spacing } from '@/shared/config';
 import { confirmOpenDirections } from '@/shared/lib/directions';
 import { useCurrentLocation } from '@/shared/lib/geo';
+import { confirmPhoneCall } from '@/shared/lib/phone-call';
 import { useTheme } from '@/shared/lib/theme';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
@@ -73,6 +74,12 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
     confirmOpenDirections(t, shelter.coordinates, { origin: coords });
   }, [t, shelter.coordinates, coords]);
 
+  const { phoneNumber } = shelter;
+  const handleCall = useCallback(() => {
+    if (!phoneNumber) return;
+    confirmPhoneCall(t, phoneNumber);
+  }, [phoneNumber, t]);
+
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
       <View style={styles.body}>
@@ -109,17 +116,22 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
           </View>
         ) : null}
 
-        {shelter.phoneNumber ? (
-          <View style={styles.infoRow}>
+        {phoneNumber ? (
+          <Pressable
+            style={styles.infoRow}
+            onPress={handleCall}
+            accessibilityRole="button"
+            accessibilityLabel={t('evacuation.shelterCard.callPhone', { phoneNumber })}
+          >
             <SymbolView
               tintColor={theme.textSecondary}
               name={{ ios: 'phone.fill', android: 'call', web: 'call' }}
               size={16}
             />
             <ThemedText type="small" themeColor="textSecondary" style={styles.infoText}>
-              {t('evacuation.shelterCard.phoneLabel')}: {shelter.phoneNumber}
+              {t('evacuation.shelterCard.phoneLabel')}: {phoneNumber}
             </ThemedText>
-          </View>
+          </Pressable>
         ) : null}
 
         <ShelterSuitabilityList suitability={shelter.suitability} />

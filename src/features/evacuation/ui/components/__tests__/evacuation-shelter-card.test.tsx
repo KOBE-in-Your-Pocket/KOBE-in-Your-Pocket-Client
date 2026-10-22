@@ -29,6 +29,7 @@ const currentLocation: GeoCoordinates = { latitude: 34.694722, longitude: 135.19
 
 // jest.mock ファクトリから参照するため mock プレフィックスを付ける（out-of-scope 変数制約）。
 const mockConfirmOpenDirections = jest.fn();
+const mockConfirmPhoneCall = jest.fn();
 
 // 距離計算は shared のユニットテストに委ね、ここでは表示分岐の検証に集中するため決め打ちにする。
 jest.mock('@/shared/lib/geo', () => ({
@@ -38,6 +39,10 @@ jest.mock('@/shared/lib/geo', () => ({
 
 jest.mock('@/shared/lib/directions', () => ({
   confirmOpenDirections: (...args: unknown[]) => mockConfirmOpenDirections(...args),
+}));
+
+jest.mock('@/shared/lib/phone-call', () => ({
+  confirmPhoneCall: (...args: unknown[]) => mockConfirmPhoneCall(...args),
 }));
 
 jest.mock('@/shared/config', () => ({
@@ -77,6 +82,7 @@ function renderCard(overrides: Partial<React.ComponentProps<typeof EvacuationShe
 describe('EvacuationShelterCard', () => {
   beforeEach(() => {
     mockConfirmOpenDirections.mockClear();
+    mockConfirmPhoneCall.mockClear();
   });
 
   describe('ピン選択時のカード表示', () => {
@@ -147,6 +153,16 @@ describe('EvacuationShelterCard', () => {
       renderCard({ shelter: { ...shelter, phoneNumber: undefined } });
 
       expect(screen.queryByText(/evacuation\.shelterCard\.phoneLabel/)).toBeNull();
+      expect(screen.queryByLabelText('evacuation.shelterCard.callPhone')).toBeNull();
+    });
+
+    it('電話番号をタップすると その番号で confirmPhoneCall を呼ぶ', () => {
+      renderCard({ shelter: { ...shelter, phoneNumber: '078-411-0556' } });
+
+      fireEvent.press(screen.getByLabelText('evacuation.shelterCard.callPhone'));
+
+      expect(mockConfirmPhoneCall).toHaveBeenCalledTimes(1);
+      expect(mockConfirmPhoneCall).toHaveBeenCalledWith(expect.any(Function), '078-411-0556');
     });
   });
 
