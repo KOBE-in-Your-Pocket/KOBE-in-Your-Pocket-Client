@@ -214,7 +214,8 @@
       "detail": "상세 보기",
       "navigate": "길 안내",
       "close": "닫기",
-      "phoneLabel": "전화번호"
+      "phoneLabel": "전화번호",
+      "callPhone": "{{phoneNumber}}(으)로 전화 걸기"
     },
     "shelterDetail": {
       "back": "뒤로",
