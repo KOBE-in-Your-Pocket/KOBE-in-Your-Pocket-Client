@@ -219,6 +219,7 @@
     },
     "shelterDetail": {
       "back": "戻る",
+      "addressMapHint": "タップして地図で見る",
       "loadError": "避難所の詳細を読み込めませんでした。",
       "externalLink": "開設状況を確認（自治体ページ）",
       "openDirectionsButton": "経路を開く",

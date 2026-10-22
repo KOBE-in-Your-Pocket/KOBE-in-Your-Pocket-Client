@@ -219,6 +219,7 @@
     },
     "shelterDetail": {
       "back": "返回",
+      "addressMapHint": "点击在地图上查看",
       "loadError": "无法加载避难所详情。",
       "externalLink": "查看开放状态（政府页面）",
       "openDirectionsButton": "打开路线",

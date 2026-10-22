@@ -219,6 +219,7 @@
     },
     "shelterDetail": {
       "back": "뒤로",
+      "addressMapHint": "탭하여 지도에서 보기",
       "loadError": "대피소 상세 정보를 불러올 수 없습니다.",
       "externalLink": "개설 상황 확인 (지자체 페이지)",
       "openDirectionsButton": "경로 열기",

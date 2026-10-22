@@ -219,6 +219,7 @@
     },
     "shelterDetail": {
       "back": "Back",
+      "addressMapHint": "Tap to view on the map",
       "loadError": "Could not load shelter details.",
       "externalLink": "Check status (city page)",
       "openDirectionsButton": "Open directions",
