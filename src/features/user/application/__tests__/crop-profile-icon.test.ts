@@ -62,6 +62,17 @@ describe('cropProfileIcon', () => {
     expect(resize).toHaveBeenCalledWith({ width: 512 });
   });
 
+  it('切り抜き範囲が正方形でなければ、加工も削除もせずに例外を投げる', async () => {
+    mockManipulateContext();
+
+    await expect(
+      cropProfileIcon(IMAGE, { originX: 0, originY: 0, width: 900, height: 1200 }),
+    ).rejects.toThrow('正方形ではありません');
+
+    expect(mockManipulate).not.toHaveBeenCalled();
+    expect(mockDiscard).not.toHaveBeenCalled();
+  });
+
   it('保存できたら元画像の一時ファイルを削除する', async () => {
     const { saveAsync } = mockManipulateContext();
 

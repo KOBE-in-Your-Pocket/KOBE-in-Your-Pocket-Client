@@ -16,6 +16,8 @@ const ICON_JPEG_COMPRESS = 0.8;
  * 寸法を取得できず範囲を求められなかった場合（null）は切り抜かず、幅だけ指定して
  * 縦横比を保ったまま縮小する（表示側は丸枠に cover で収める）。
  *
+ * `crop` は正方形でなければならない（縦横比が変わってアイコンが歪むため、違えば例外を投げる）。
+ *
  * 保存できたら元画像の一時ファイルを削除する。失敗したときは元画像を残すので、
  * 呼び出し側でやり直すか、{@link discardPickedProfileIcon} で削除する。
  */
@@ -23,6 +25,10 @@ export async function cropProfileIcon(
   image: PickedProfileIconImage,
   crop: IconCropRect | null,
 ): Promise<string> {
+  if (crop && crop.width !== crop.height) {
+    throw new Error(`アイコンの切り抜き範囲が正方形ではありません: ${crop.width}x${crop.height}`);
+  }
+
   const context = ImageManipulator.manipulate(image.uri);
   if (crop) {
     context.crop(crop);
