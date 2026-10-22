@@ -108,7 +108,7 @@ jest.mock('@/shared/lib/directions', () => ({
 }));
 
 jest.mock('expo-router', () => ({
-  router: { back: jest.fn(), push: jest.fn() },
+  router: { back: jest.fn(), push: jest.fn(), navigate: jest.fn() },
 }));
 
 jest.mock('../review-form', () => ({
@@ -376,7 +376,7 @@ describe('SpotDetailContent', () => {
 
       fireEvent.press(screen.getByTestId('spot-address-row'));
 
-      expect(router.push).toHaveBeenCalledWith({
+      expect(router.navigate).toHaveBeenCalledWith({
         pathname: '/map',
         params: { spotId: mockSpot.id, requestedAt: expect.any(String) },
       });

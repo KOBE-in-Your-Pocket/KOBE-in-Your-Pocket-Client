@@ -473,9 +473,9 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
     confirmOpenDirections(t, spot.coordinates, { origin: coords });
   }, [spot.coordinates, coords, t]);
 
-  // 一覧の「経路」ボタンと同じ遷移パターンで、地図上の該当スポットを選択表示する。
+  // この画面はタブ外のスタックにあるため push だと (tabs) が積み上がる。navigate で既存の (tabs) に戻す。
   const handleAddressPress = useCallback(() => {
-    router.push({
+    router.navigate({
       pathname: '/map',
       params: { spotId: spot.id, requestedAt: String(Date.now()) },
     });
