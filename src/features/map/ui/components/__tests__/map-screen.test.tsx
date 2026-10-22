@@ -158,6 +158,16 @@ describe('MapScreen のマーカー出し分け', () => {
     expect(screen.getByTestId('spot-card').props.children).toBe('spot-1');
   });
 
+  it('避難モードのまま観光スポットへ遷移してきたら、観光モードに切り替えて SpotCard を表示する（#677）', () => {
+    useMapModeStore.setState({ mapMode: 'evacuation' });
+    mockUseLocalSearchParams.mockReturnValue({ spotId: 'spot-1', requestedAt: '1' });
+
+    render(<MapScreen />);
+
+    expect(screen.getByTestId('spot-card').props.children).toBe('spot-1');
+    expect(useMapModeStore.getState().mapMode).toBe('tourism');
+  });
+
   it('tourism モードでは観光スポットのピンを表示する', () => {
     render(<MapScreen />);
 

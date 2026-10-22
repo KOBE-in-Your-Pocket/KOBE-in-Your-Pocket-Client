@@ -473,6 +473,14 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
     confirmOpenDirections(t, spot.coordinates, { origin: coords });
   }, [spot.coordinates, coords, t]);
 
+  // 一覧の「経路」ボタンと同じ遷移パターンで、地図上の該当スポットを選択表示する。
+  const handleAddressPress = useCallback(() => {
+    router.push({
+      pathname: '/map',
+      params: { spotId: spot.id, requestedAt: String(Date.now()) },
+    });
+  }, [spot.id]);
+
   // ブロックした投稿者のレビューはサーバー側でも除かれるが、再取得を待たずに消すため端末側でも除く（#663）。
   const filteredReviews = (reviews ?? []).filter(
     (r) =>
@@ -544,7 +552,14 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
           </View>
 
           {spot.address.trim() !== '' && (
-            <View style={styles.addressRow} testID="spot-address-row">
+            <Pressable
+              style={styles.addressRow}
+              testID="spot-address-row"
+              onPress={handleAddressPress}
+              accessibilityRole="button"
+              accessibilityLabel={`${t('tourism.spotDetail.addressLabel')}: ${spot.address}`}
+              accessibilityHint={t('tourism.spotDetail.addressMapHint')}
+            >
               <View style={styles.addressIcon} testID="spot-address-icon">
                 <SymbolView
                   tintColor={theme.textSecondary}
@@ -555,7 +570,14 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
               <ThemedText type="small" themeColor="textSecondary" style={styles.addressText}>
                 {t('tourism.spotDetail.addressLabel')}: {spot.address}
               </ThemedText>
-            </View>
+              <View style={styles.addressIcon}>
+                <SymbolView
+                  tintColor={theme.textSecondary}
+                  name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+                  size={14}
+                />
+              </View>
+            </Pressable>
           )}
 
           <ThemedText themeColor="textSecondary" style={styles.description}>

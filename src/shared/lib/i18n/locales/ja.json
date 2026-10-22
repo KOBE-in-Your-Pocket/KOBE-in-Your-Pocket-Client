@@ -103,6 +103,7 @@
       "reviews": "レビュー",
       "noReviews": "まだレビューはありません。",
       "addressLabel": "住所",
+      "addressMapHint": "タップして地図で見る",
       "locationLabel": "位置情報",
       "notFound": "スポットが見つかりませんでした。",
       "loadError": "スポットの詳細を読み込めませんでした。",

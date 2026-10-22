@@ -26,6 +26,7 @@ export function MapScreen() {
   const { t } = useTranslation();
   const { coords, servicesDisabled, permissionDenied } = useCurrentLocation();
   const mapMode = useMapModeStore((state) => state.mapMode);
+  const setMapMode = useMapModeStore((state) => state.setMapMode);
   const { data: spots } = useSpots();
   const { data: shelters } = useEvacuationShelters();
   const { spotId, requestedAt } = useLocalSearchParams<{ spotId?: string; requestedAt?: string }>();
@@ -85,13 +86,16 @@ export function MapScreen() {
   // （カードを閉じたあとにもう一度「経路」を押す等）が適用済み扱いになりカードが出ない。
   // そのため遷移ごとに変わる requestedAt と組み合わせ、押下のたびに一度だけ適用する。
   // spots が後から読み込まれた場合も、該当スポットが見つかった時点で一度だけ適用される。
-  // spotId は観光導線からのみ渡るため、観光モードのときだけ適用する。
+  // 地図モードが避難のまま残っていてもカードが出るよう、見つかったら観光モードへ切り替える。
   const spotRequest = spotId ? `${spotId}:${requestedAt ?? ''}` : undefined;
-  if (mapMode === 'tourism' && spotRequest && spotRequest !== appliedSpotRequest) {
+  if (spotRequest && spotRequest !== appliedSpotRequest) {
     const spot = spots?.find((candidate) => candidate.id === spotId);
     if (spot) {
       setAppliedSpotRequest(spotRequest);
       setSelectedSpot(spot);
+      if (mapMode !== 'tourism') {
+        setMapMode('tourism');
+      }
     }
   }
 

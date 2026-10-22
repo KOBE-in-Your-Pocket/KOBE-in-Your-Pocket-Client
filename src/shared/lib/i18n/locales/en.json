@@ -103,6 +103,7 @@
       "reviews": "Reviews",
       "noReviews": "No reviews yet.",
       "addressLabel": "Address",
+      "addressMapHint": "Tap to view on the map",
       "locationLabel": "Location",
       "notFound": "Spot not found.",
       "loadError": "Could not load spot details.",
