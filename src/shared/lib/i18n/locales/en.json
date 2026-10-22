@@ -311,7 +311,6 @@
     }
   },
   "phoneCall": {
-    "confirmTitle": "Make a Call",
     "confirmMessage": "Call {{phoneNumber}}?",
     "cancel": "Cancel",
     "confirm": "Call",

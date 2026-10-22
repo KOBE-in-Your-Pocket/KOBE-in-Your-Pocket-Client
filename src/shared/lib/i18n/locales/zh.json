@@ -311,7 +311,6 @@
     }
   },
   "phoneCall": {
-    "confirmTitle": "拨打电话",
     "confirmMessage": "要拨打 {{phoneNumber}} 吗？",
     "cancel": "取消",
     "confirm": "拨打",

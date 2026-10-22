@@ -311,7 +311,6 @@
     }
   },
   "phoneCall": {
-    "confirmTitle": "電話をかける",
     "confirmMessage": "{{phoneNumber}} に発信しますか？",
     "cancel": "キャンセル",
     "confirm": "発信する",

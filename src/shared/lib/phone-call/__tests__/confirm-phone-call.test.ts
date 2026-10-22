@@ -42,8 +42,8 @@ describe('confirmPhoneCall', () => {
     confirmPhoneCall(t, PHONE_NUMBER);
 
     expect(alertSpy).toHaveBeenCalledTimes(1);
-    expect(alertSpy.mock.calls[0]?.[0]).toBe('phoneCall.confirmTitle');
-    expect(alertSpy.mock.calls[0]?.[1]).toBe('phoneCall.confirmMessage');
+    expect(alertSpy.mock.calls[0]?.[0]).toBe('phoneCall.confirmMessage');
+    expect(alertSpy.mock.calls[0]?.[1]).toBeUndefined();
     expect(openURLSpy).not.toHaveBeenCalled();
   });
 

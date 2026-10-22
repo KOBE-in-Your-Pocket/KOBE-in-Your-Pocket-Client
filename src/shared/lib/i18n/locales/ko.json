@@ -311,7 +311,6 @@
     }
   },
   "phoneCall": {
-    "confirmTitle": "전화 걸기",
     "confirmMessage": "{{phoneNumber}}(으)로 전화를 거시겠습니까?",
     "cancel": "취소",
     "confirm": "전화 걸기",

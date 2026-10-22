@@ -5,7 +5,8 @@ import { openPhoneCall } from './open-phone-call';
 
 /** 電話発信前の確認ダイアログを表示し、承認時に OS の電話アプリで発信する。 */
 export function confirmPhoneCall(t: TFunction, phoneNumber: string): void {
-  Alert.alert(t('phoneCall.confirmTitle'), t('phoneCall.confirmMessage', { phoneNumber }), [
+  // タイトルは置かず「{番号} に発信しますか？」の一文だけを見出しとして表示する。
+  Alert.alert(t('phoneCall.confirmMessage', { phoneNumber }), undefined, [
     { text: t('phoneCall.cancel'), style: 'cancel' },
     {
       text: t('phoneCall.confirm'),
