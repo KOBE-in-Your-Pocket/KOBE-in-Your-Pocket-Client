@@ -3,21 +3,18 @@ import { StyleSheet } from 'react-native';
 /**
  * Android の `Alert`（AppCompat の AlertDialog）を実測して寄せた配色（Pixel 8 / API 34）。
  * 経路案内の確認ダイアログ（`confirmOpenDirections`）と見た目を揃えるため。
- * `call` だけは OS 標準に無い色で、「発信する」を青く目立たせる。
  */
 export const ANDROID_ALERT_COLORS = {
   light: {
     background: '#FFFFFF',
     text: '#212121',
-    /** AppCompat 既定のアクセントカラー（キャンセル等のボタン文字色）。 */
+    /** AppCompat 既定のアクセントカラー（キャンセル・発信の両ボタンの文字色）。 */
     button: '#008577',
-    call: '#007AFF',
   },
   dark: {
     background: '#424242',
     text: '#FFFFFF',
     button: '#80CBC4',
-    call: '#64B5F6',
   },
 } as const;
 

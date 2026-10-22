@@ -9,9 +9,9 @@ import type { PhoneCallConfirmDialogProps } from './phone-call-confirm-dialog.ty
 /**
  * 電話発信前の確認ダイアログ（Android）。「発信する」で OS の電話アプリを起動する。
  *
- * React Native の `Alert` は Android でボタンごとの色を指定できないため、
- * 経路案内の確認（`confirmOpenDirections`）と同じ見た目の AlertDialog を `Modal` で再現し、
- * 「発信する」だけを青く表示する。
+ * React Native の `Alert` は Android でタイトルだけを渡しても本文欄の空白が大きく残るため、
+ * 経路案内の確認（`confirmOpenDirections`）と同じ見た目の AlertDialog を `Modal` で再現する。
+ * ボタンは OS 標準どおり、キャンセル・発信ともアクセントカラーで表示する。
  */
 export function PhoneCallConfirmDialog({ phoneNumber, onClose }: PhoneCallConfirmDialogProps) {
   const { t } = useTranslation();
@@ -51,7 +51,7 @@ export function PhoneCallConfirmDialog({ phoneNumber, onClose }: PhoneCallConfir
               accessibilityRole="button"
               accessibilityLabel={t('phoneCall.confirm')}
             >
-              <Text style={[styles.buttonText, { color: colors.call }]}>
+              <Text style={[styles.buttonText, { color: colors.button }]}>
                 {t('phoneCall.confirm')}
               </Text>
             </Pressable>

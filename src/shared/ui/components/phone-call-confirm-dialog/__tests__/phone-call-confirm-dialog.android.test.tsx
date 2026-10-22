@@ -47,10 +47,10 @@ describe('PhoneCallConfirmDialog（Android）', () => {
     expect(screen.queryByLabelText('phoneCall.confirm')).toBeNull();
   });
 
-  it('「発信する」だけを青で、キャンセルは OS 標準のボタン色で表示する', () => {
+  it('キャンセル・発信とも OS 標準のボタン色（アクセントカラー）で表示する', () => {
     renderDialog();
 
-    expect(buttonTextColor('phoneCall.confirm')).toBe(ANDROID_ALERT_COLORS.light.call);
+    expect(buttonTextColor('phoneCall.confirm')).toBe(ANDROID_ALERT_COLORS.light.button);
     expect(buttonTextColor('phoneCall.cancel')).toBe(ANDROID_ALERT_COLORS.light.button);
   });
 
