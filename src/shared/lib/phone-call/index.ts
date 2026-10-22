@@ -1,1 +1,6 @@
-export { buildTelUrl, openPhoneCall } from './open-phone-call';
+export {
+  buildTelUrl,
+  getPhoneNumberIssue,
+  openPhoneCall,
+  type PhoneNumberIssue,
+} from './open-phone-call';

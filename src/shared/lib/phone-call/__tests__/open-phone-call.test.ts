@@ -1,6 +1,20 @@
 import { Linking } from 'react-native';
 
-import { buildTelUrl, openPhoneCall } from '../open-phone-call';
+import { buildTelUrl, getPhoneNumberIssue, openPhoneCall } from '../open-phone-call';
+
+describe('getPhoneNumberIssue', () => {
+  it('数字を含む番号なら null（発信できる）', () => {
+    expect(getPhoneNumberIssue('078-331-8181')).toBeNull();
+  });
+
+  it.each([undefined, null, '', '   '])('未登録（%p）なら missing', (phoneNumber) => {
+    expect(getPhoneNumberIssue(phoneNumber)).toBe('missing');
+  });
+
+  it.each(['未設定', '-', '（なし）'])('数字を含まない（%p）なら noDigits', (phoneNumber) => {
+    expect(getPhoneNumberIssue(phoneNumber)).toBe('noDigits');
+  });
+});
 
 describe('buildTelUrl', () => {
   it('ハイフン区切りの番号を数字だけの tel: URL にする', () => {
@@ -23,6 +37,15 @@ describe('openPhoneCall', () => {
     await openPhoneCall('078-331-8181');
 
     expect(openURLSpy).toHaveBeenCalledWith('tel:0783318181');
+    openURLSpy.mockRestore();
+  });
+
+  it('発信できない番号では電話アプリを開かず、理由付きのエラーで reject する', async () => {
+    const openURLSpy = jest.spyOn(Linking, 'openURL').mockResolvedValue(true);
+
+    await expect(openPhoneCall('未設定')).rejects.toThrow('noDigits');
+
+    expect(openURLSpy).not.toHaveBeenCalled();
     openURLSpy.mockRestore();
   });
 });

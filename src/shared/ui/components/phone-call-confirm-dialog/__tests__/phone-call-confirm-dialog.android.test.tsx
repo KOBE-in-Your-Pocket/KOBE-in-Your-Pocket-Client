@@ -74,8 +74,10 @@ describe('PhoneCallConfirmDialog（Android）', () => {
     expect(openURLSpy).not.toHaveBeenCalled();
   });
 
-  it('電話アプリを開けなかったらエラーダイアログを表示する', async () => {
-    openURLSpy.mockRejectedValueOnce(new Error('unsupported'));
+  it('電話アプリを開けなかったら原因をログに残し、エラーダイアログを表示する', async () => {
+    const error = new Error('unsupported');
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    openURLSpy.mockRejectedValueOnce(error);
     renderDialog();
 
     await act(async () => {
@@ -83,5 +85,10 @@ describe('PhoneCallConfirmDialog（Android）', () => {
     });
 
     expect(alertSpy).toHaveBeenCalledWith('phoneCall.errorTitle', 'phoneCall.errorMessage');
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      '[phone-call] 電話アプリを開けませんでした:',
+      error,
+    );
+    consoleErrorSpy.mockRestore();
   });
 });
