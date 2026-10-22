@@ -17,6 +17,7 @@ export default function DebugLayout() {
       <Stack.Screen name="index" options={{ title: 'Debug' }} />
       <Stack.Screen name="map" options={{ title: 'Map' }} />
       <Stack.Screen name="use-current-location" options={{ title: 'useCurrentLocation' }} />
+      <Stack.Screen name="icon-orientation" options={{ title: 'Icon orientation' }} />
     </Stack>
   );
 }
