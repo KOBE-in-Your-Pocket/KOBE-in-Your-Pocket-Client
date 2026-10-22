@@ -26,6 +26,7 @@ export function MapScreen() {
   const { t } = useTranslation();
   const { coords, servicesDisabled, permissionDenied } = useCurrentLocation();
   const mapMode = useMapModeStore((state) => state.mapMode);
+  const setMapMode = useMapModeStore((state) => state.setMapMode);
   const { data: spots } = useSpots();
   const { data: shelters } = useEvacuationShelters();
   const { spotId, requestedAt } = useLocalSearchParams<{ spotId?: string; requestedAt?: string }>();
@@ -85,7 +86,7 @@ export function MapScreen() {
   // （カードを閉じたあとにもう一度「経路」を押す等）が適用済み扱いになりカードが出ない。
   // そのため遷移ごとに変わる requestedAt と組み合わせ、押下のたびに一度だけ適用する。
   // spots が後から読み込まれた場合も、該当スポットが見つかった時点で一度だけ適用される。
-  // spotId は観光導線からのみ渡るため、観光モードのときだけ適用する。
+  // spotId は観光導線からのみ渡るため、観光モードのときだけ適用する（避難モードのままなら下の effect が切り替える）。
   const spotRequest = spotId ? `${spotId}:${requestedAt ?? ''}` : undefined;
   if (mapMode === 'tourism' && spotRequest && spotRequest !== appliedSpotRequest) {
     const spot = spots?.find((candidate) => candidate.id === spotId);
@@ -94,6 +95,14 @@ export function MapScreen() {
       setSelectedSpot(spot);
     }
   }
+
+  // 避難モードのまま残っていても選択できるよう観光モードへ切り替える。他コンポーネントも見るストアの
+  // 更新なので render 中ではなく effect で行う（render 中だと React が警告を出す）。
+  useEffect(() => {
+    if (mapMode !== 'tourism' && spotRequest && spotRequest !== appliedSpotRequest) {
+      setMapMode('tourism');
+    }
+  }, [mapMode, spotRequest, appliedSpotRequest, setMapMode]);
 
   // モード切替時は前モードの選択を解除する（保持すると戻ったとき未操作のカードが再表示されるため）。
   if (mapMode !== 'tourism' && selectedSpot !== null) {
