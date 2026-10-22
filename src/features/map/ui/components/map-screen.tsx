@@ -29,10 +29,17 @@ export function MapScreen() {
   const setMapMode = useMapModeStore((state) => state.setMapMode);
   const { data: spots } = useSpots();
   const { data: shelters } = useEvacuationShelters();
-  const { spotId, requestedAt } = useLocalSearchParams<{ spotId?: string; requestedAt?: string }>();
+  const { spotId, shelterId, requestedAt } = useLocalSearchParams<{
+    spotId?: string;
+    shelterId?: string;
+    requestedAt?: string;
+  }>();
   const [selectedSpot, setSelectedSpot] = useState<Spot | null>(null);
   const [selectedShelter, setSelectedShelter] = useState<EvacuationShelter | null>(null);
   const [appliedSpotRequest, setAppliedSpotRequest] = useState<string | undefined>(undefined);
+  const [appliedShelterRequest, setAppliedShelterRequest] = useState<string | undefined>(undefined);
+  // 住所タップ経由で選択された避難所の id。圏外でも選択を維持するため #594 の自動解除から除外する。
+  const [pinnedShelterId, setPinnedShelterId] = useState<string | undefined>(undefined);
   const [showServicesModal, setShowServicesModal] = useState(false);
 
   // 一度でも現在地が取れたあとに、位置情報が使えなくなった瞬間だけモーダルを開く。
@@ -65,7 +72,12 @@ export function MapScreen() {
   // mapMode は zustand ストアなので、モード切替で即座に markers が再計算・再描画される。
   const markers = useMemo<MapMarker[]>(() => {
     if (mapMode === 'evacuation') {
-      return visibleShelters.map((shelter) => ({
+      // 住所タップで選択された避難所が圏外（visibleShelters に無い）でも、必ずピンを出す。
+      const pinnedOutOfRange =
+        selectedShelter && !visibleShelters.some((shelter) => shelter.id === selectedShelter.id)
+          ? [selectedShelter]
+          : [];
+      return [...visibleShelters, ...pinnedOutOfRange].map((shelter) => ({
         id: shelter.id,
         coordinate: shelter.coordinates,
         title: shelter.name,
@@ -78,7 +90,7 @@ export function MapScreen() {
       coordinate: spot.coordinates,
       title: spot.name,
     }));
-  }, [mapMode, spots, visibleShelters]);
+  }, [mapMode, spots, visibleShelters, selectedShelter]);
 
   // 観光地リストの「経路」ボタンから spotId 付きで遷移してきたら、その地点を選択状態にする。
   // render 中に前回適用した遷移と比較して反映する（effect 内 setState を避ける公式パターン）。
@@ -104,19 +116,40 @@ export function MapScreen() {
     }
   }, [mapMode, spotRequest, appliedSpotRequest, setMapMode]);
 
+  // spotId と対称のパターンで shelterId を適用する（#678）。pinnedShelterId に記録し、圏外でも自動解除されないようにする。
+  const shelterRequest = shelterId ? `${shelterId}:${requestedAt ?? ''}` : undefined;
+  if (mapMode === 'evacuation' && shelterRequest && shelterRequest !== appliedShelterRequest) {
+    const shelter = shelters?.find((candidate) => candidate.id === shelterId);
+    if (shelter) {
+      setAppliedShelterRequest(shelterRequest);
+      setSelectedShelter(shelter);
+      setPinnedShelterId(shelter.id);
+    }
+  }
+
+  // 観光モードのまま残っていても選択できるよう避難モードへ切り替える（spotId と同じ理由で effect 内で行う）。
+  useEffect(() => {
+    if (mapMode !== 'evacuation' && shelterRequest && shelterRequest !== appliedShelterRequest) {
+      setMapMode('evacuation');
+    }
+  }, [mapMode, shelterRequest, appliedShelterRequest, setMapMode]);
+
   // モード切替時は前モードの選択を解除する（保持すると戻ったとき未操作のカードが再表示されるため）。
   if (mapMode !== 'tourism' && selectedSpot !== null) {
     setSelectedSpot(null);
   }
   if (mapMode !== 'evacuation' && selectedShelter !== null) {
     setSelectedShelter(null);
+    setPinnedShelterId(undefined);
   }
 
   // 現在地更新などで選択中の避難所が 1km 圏外（表示対象外）になったら選択を解除する。
   // 地図にピンが無い避難所をカード・経路が指し続ける不整合を防ぐ（#594）。
+  // ただし住所タップ経由で選択された避難所（pinnedShelterId）は圏外でも維持する。
   if (
     mapMode === 'evacuation' &&
     selectedShelter !== null &&
+    selectedShelter.id !== pinnedShelterId &&
     !visibleShelters.some((shelter) => shelter.id === selectedShelter.id)
   ) {
     setSelectedShelter(null);
@@ -139,13 +172,19 @@ export function MapScreen() {
     (marker: MapMarker) => {
       if (mapMode === 'evacuation') {
         const shelter = shelters?.find((candidate) => candidate.id === marker.id);
-        if (shelter) setSelectedShelter(shelter);
+        if (shelter) {
+          setSelectedShelter(shelter);
+          // ピン留め中の避難所自身の再タップでは解除しない（解除すると #594 の圏外判定で即座に消えてしまう）。
+          if (marker.id !== pinnedShelterId) {
+            setPinnedShelterId(undefined);
+          }
+        }
         return;
       }
       const spot = spots?.find((candidate) => candidate.id === marker.id);
       if (spot) setSelectedSpot(spot);
     },
-    [mapMode, spots, shelters],
+    [mapMode, spots, shelters, pinnedShelterId],
   );
 
   const handleClearRoute = useCallback(() => {
@@ -154,6 +193,7 @@ export function MapScreen() {
 
   const handleClearShelter = useCallback(() => {
     setSelectedShelter(null);
+    setPinnedShelterId(undefined);
   }, []);
 
   const handleOpenDetail = useCallback(() => {

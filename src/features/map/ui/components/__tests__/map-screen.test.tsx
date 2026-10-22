@@ -79,13 +79,20 @@ jest.mock('@/features/evacuation', () => ({
   EvacuationShelterCard: ({
     shelter,
     onDetail,
+    onClose,
   }: {
     shelter: { id: string };
     onDetail: () => void;
+    onClose: () => void;
   }) => (
-    <MockText testID="shelter-card" onPress={onDetail}>
-      {shelter.id}
-    </MockText>
+    <MockView>
+      <MockText testID="shelter-card" onPress={onDetail}>
+        {shelter.id}
+      </MockText>
+      <MockText testID="shelter-card-close" onPress={onClose}>
+        close
+      </MockText>
+    </MockView>
   ),
 }));
 
@@ -306,6 +313,64 @@ describe('MapScreen のマーカー出し分け', () => {
     // ピンが消え、カード（と経路の起点）も残らない。
     expect(screen.queryByTestId('marker-shelter-1')).toBeNull();
     expect(screen.queryByTestId('shelter-card')).toBeNull();
+  });
+
+  it('避難所詳細の住所タップから同じ避難所へ再遷移すると、閉じた EvacuationShelterCard が再表示される（#678）', () => {
+    useMapModeStore.setState({ mapMode: 'evacuation' });
+    mockUseLocalSearchParams.mockReturnValue({ shelterId: 'shelter-1', requestedAt: '1' });
+    const { rerender } = render(<MapScreen />);
+    expect(screen.getByTestId('shelter-card').props.children).toBe('shelter-1');
+
+    // ×ボタンでカードを閉じる。同じ遷移のパラメータのままでは再表示されない。
+    fireEvent.press(screen.getByTestId('shelter-card-close'));
+    expect(screen.queryByTestId('shelter-card')).toBeNull();
+    rerender(<MapScreen />);
+    expect(screen.queryByTestId('shelter-card')).toBeNull();
+
+    // 地図タブはマウントされたまま、もう一度住所をタップして同じ避難所で遷移してくる。
+    mockUseLocalSearchParams.mockReturnValue({ shelterId: 'shelter-1', requestedAt: '2' });
+    rerender(<MapScreen />);
+    expect(screen.getByTestId('shelter-card').props.children).toBe('shelter-1');
+  });
+
+  it('観光モードのまま避難所へ遷移してきたら、避難モードに切り替えて EvacuationShelterCard を表示する（#678）', () => {
+    mockUseLocalSearchParams.mockReturnValue({ shelterId: 'shelter-1', requestedAt: '1' });
+
+    render(<MapScreen />);
+
+    expect(screen.getByTestId('shelter-card').props.children).toBe('shelter-1');
+    expect(useMapModeStore.getState().mapMode).toBe('evacuation');
+  });
+
+  it('1km圏外の避難所でも、住所タップ経由の選択ならピン・カード表示を維持する（#678）', () => {
+    // shelter-1 を 1km 圏外（フィルタ対象外）扱いにする。
+    mockFilterShelters.mockImplementation((shelters: MockShelter[]) =>
+      shelters.filter((shelter) => shelter.id !== 'shelter-1'),
+    );
+    mockUseLocalSearchParams.mockReturnValue({ shelterId: 'shelter-1', requestedAt: '1' });
+
+    render(<MapScreen />);
+
+    expect(useMapModeStore.getState().mapMode).toBe('evacuation');
+    expect(screen.getByTestId('shelter-card').props.children).toBe('shelter-1');
+    expect(screen.getByTestId('marker-shelter-1')).toBeTruthy();
+  });
+
+  it('圏外ピン留め中の避難所自身のマーカーを再タップしても、カード・ピンが消えない（#678）', () => {
+    // shelter-1 を 1km 圏外（フィルタ対象外）扱いにする。
+    mockFilterShelters.mockImplementation((shelters: MockShelter[]) =>
+      shelters.filter((shelter) => shelter.id !== 'shelter-1'),
+    );
+    mockUseLocalSearchParams.mockReturnValue({ shelterId: 'shelter-1', requestedAt: '1' });
+
+    render(<MapScreen />);
+    expect(screen.getByTestId('shelter-card')).toBeTruthy();
+
+    // 圏外ピン（= selectedShelter 自身）を再タップしても選択状態は維持される。
+    fireEvent.press(screen.getByTestId('marker-shelter-1'));
+
+    expect(screen.getByTestId('shelter-card').props.children).toBe('shelter-1');
+    expect(screen.getByTestId('marker-shelter-1')).toBeTruthy();
   });
 
   describe('現在地未取得時のフォールバック（#604）', () => {

@@ -215,10 +215,12 @@
       "detail": "詳細を見る",
       "navigate": "経路案内",
       "close": "閉じる",
-      "phoneLabel": "電話番号"
+      "phoneLabel": "電話番号",
+      "callPhone": "{{phoneNumber}} に電話をかける"
     },
     "shelterDetail": {
       "back": "戻る",
+      "addressMapHint": "タップして地図で見る",
       "loadError": "避難所の詳細を読み込めませんでした。",
       "externalLink": "開設状況を確認（自治体ページ）",
       "openDirectionsButton": "経路を開く",
@@ -310,6 +312,13 @@
       "appleMaps": "Apple マップ",
       "googleMaps": "Google マップ"
     }
+  },
+  "phoneCall": {
+    "confirmMessage": "{{phoneNumber}} に発信しますか？",
+    "cancel": "キャンセル",
+    "confirm": "発信する",
+    "errorTitle": "エラー",
+    "errorMessage": "電話アプリを開けませんでした。"
   },
   "location": {
     "permissionDeniedNotice": "位置情報が許可されていないため、現在地を表示できません。",
