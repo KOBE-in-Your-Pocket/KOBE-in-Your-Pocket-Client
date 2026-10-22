@@ -193,6 +193,21 @@ describe('EvacuationShelterCard', () => {
         expect(openURLSpy).toHaveBeenCalledWith('tel:0784110556');
       });
 
+      it('数字を含まない番号ではダイアログを出さずにキャンセルし、原因をログに残す', () => {
+        const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        renderCard({ shelter: { ...shelter, phoneNumber: '未設定' } });
+
+        fireEvent.press(screen.getByLabelText('evacuation.shelterCard.callPhone'));
+
+        expect(alertSpy).not.toHaveBeenCalled();
+        expect(openURLSpy).not.toHaveBeenCalled();
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          expect.stringContaining('[evacuation]'),
+          expect.objectContaining({ shelterId: shelter.id, issue: 'noDigits' }),
+        );
+        consoleWarnSpy.mockRestore();
+      });
+
       it('確認ダイアログでキャンセルを選ぶと発信しない', () => {
         pressPhoneAndFindButton('phoneCall.cancel')?.onPress?.();
 

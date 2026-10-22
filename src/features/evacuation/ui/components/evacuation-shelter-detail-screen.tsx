@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { openBrowserAsync } from 'expo-web-browser';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Alert, Pressable, ScrollView, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,6 +11,8 @@ import { useEvacuationShelterDetail } from '../../application/hooks/use-evacuati
 import { ShelterDatasetNotice } from './shelter-dataset-notice';
 import { ShelterSuitabilityList } from './shelter-suitability';
 import { ShelterTypeBadge } from './shelter-type-badge';
+
+import { useShelterPhoneCall } from '../hooks/use-shelter-phone-call';
 
 import { EXTERNAL_LINK_COLOR, styles } from '../styles/evacuation-shelter-detail.styles';
 
@@ -74,12 +76,7 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
   }, [t, shelter.coordinates, coords]);
 
   const { phoneNumber } = shelter;
-  // 発信確認ダイアログの発信先。null のときはダイアログを閉じている。
-  const [callTarget, setCallTarget] = useState<string | null>(null);
-  const handleCall = useCallback(() => {
-    if (!phoneNumber) return;
-    setCallTarget(phoneNumber);
-  }, [phoneNumber]);
+  const { callTarget, requestCall, closeCall } = useShelterPhoneCall(shelter);
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -120,7 +117,7 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
         {phoneNumber ? (
           <Pressable
             style={styles.infoRow}
-            onPress={handleCall}
+            onPress={requestCall}
             accessibilityRole="button"
             accessibilityLabel={t('evacuation.shelterCard.callPhone', { phoneNumber })}
           >
@@ -183,7 +180,7 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
         <ShelterDatasetNotice />
       </View>
 
-      <PhoneCallConfirmDialog phoneNumber={callTarget} onClose={() => setCallTarget(null)} />
+      <PhoneCallConfirmDialog phoneNumber={callTarget} onClose={closeCall} />
     </ScrollView>
   );
 }

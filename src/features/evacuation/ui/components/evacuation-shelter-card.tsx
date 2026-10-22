@@ -1,5 +1,4 @@
 import { SymbolView } from 'expo-symbols';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, View } from 'react-native';
 
@@ -9,6 +8,8 @@ import { useTheme } from '@/shared/lib/theme';
 import { PhoneCallConfirmDialog, ThemedText, ThemedView } from '@/shared/ui';
 
 import { ShelterSuitabilityChips } from './shelter-suitability';
+
+import { useShelterPhoneCall } from '../hooks/use-shelter-phone-call';
 
 import { styles } from '../styles/evacuation-shelter-card.styles';
 
@@ -39,12 +40,7 @@ export function EvacuationShelterCard({
   };
 
   const { phoneNumber } = shelter;
-  // 発信確認ダイアログの発信先。null のときはダイアログを閉じている。
-  const [callTarget, setCallTarget] = useState<string | null>(null);
-  const handleCall = () => {
-    if (!phoneNumber) return;
-    setCallTarget(phoneNumber);
-  };
+  const { callTarget, requestCall, closeCall } = useShelterPhoneCall(shelter);
 
   return (
     <ThemedView style={styles.card}>
@@ -112,7 +108,7 @@ export function EvacuationShelterCard({
 
           {phoneNumber ? (
             <Pressable
-              onPress={handleCall}
+              onPress={requestCall}
               hitSlop={8}
               style={styles.metaItem}
               accessibilityRole="button"
@@ -162,7 +158,7 @@ export function EvacuationShelterCard({
         </View>
       </View>
 
-      <PhoneCallConfirmDialog phoneNumber={callTarget} onClose={() => setCallTarget(null)} />
+      <PhoneCallConfirmDialog phoneNumber={callTarget} onClose={closeCall} />
     </ThemedView>
   );
 }

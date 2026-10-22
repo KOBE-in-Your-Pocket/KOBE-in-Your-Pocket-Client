@@ -285,6 +285,26 @@ describe('避難所詳細の電話番号タップ', () => {
     expect(openURLSpy).toHaveBeenCalledWith('tel:0784110556');
   });
 
+  it('数字を含まない番号ではダイアログを出さずにキャンセルし、原因をログに残す', () => {
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    mockUseEvacuationShelterDetail.mockReturnValue({
+      data: { ...shelter, phoneNumber: '未設定' },
+      isPending: false,
+      isError: false,
+    });
+    render(<EvacuationShelterDetailScreen shelterId="shelter-1" />);
+
+    fireEvent.press(screen.getByLabelText(CALL_LABEL));
+
+    expect(alertSpy).not.toHaveBeenCalled();
+    expect(openURLSpy).not.toHaveBeenCalled();
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[evacuation]'),
+      expect.objectContaining({ shelterId: shelter.id, issue: 'noDigits' }),
+    );
+    consoleWarnSpy.mockRestore();
+  });
+
   it('確認ダイアログをキャンセルすると発信しない', () => {
     pressPhoneAndFindButton('phoneCall.cancel')?.onPress?.();
 
