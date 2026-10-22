@@ -6,7 +6,7 @@ import { Spacing } from '@/shared/config';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
 type DebugEntry = {
-  href: '/debug/map' | '/debug/use-current-location';
+  href: '/debug/map' | '/debug/use-current-location' | '/debug/icon-orientation';
   title: string;
   description: string;
 };
@@ -21,6 +21,11 @@ const entries: DebugEntry[] = [
     href: '/debug/use-current-location',
     title: 'useCurrentLocation',
     description: 'expo-location 権限 & 現在地取得フックの動作確認',
+  },
+  {
+    href: '/debug/icon-orientation',
+    title: 'Icon orientation',
+    description: '回転情報付き写真のピッカー寸法と ImageManipulator の向きの確認',
   },
 ];
 
