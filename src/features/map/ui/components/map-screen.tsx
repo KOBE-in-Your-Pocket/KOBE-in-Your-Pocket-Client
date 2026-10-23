@@ -7,6 +7,7 @@ import {
   filterSheltersWithinRadius,
   ShelterRadiusModal,
   useEvacuationShelters,
+  useShelterRadiusStore,
 } from '@/features/evacuation';
 import type { EvacuationShelter } from '@/features/evacuation';
 import type { Spot } from '@/features/tourism';
@@ -29,6 +30,7 @@ export function MapScreen() {
   const { coords, servicesDisabled, permissionDenied } = useCurrentLocation();
   const mapMode = useMapModeStore((state) => state.mapMode);
   const setMapMode = useMapModeStore((state) => state.setMapMode);
+  const selectedRadiusKm = useShelterRadiusStore((state) => state.selectedRadiusKm);
   const { data: spots } = useSpots();
   const { data: shelters } = useEvacuationShelters();
   const { spotId, shelterId, requestedAt } = useLocalSearchParams<{
@@ -72,11 +74,12 @@ export function MapScreen() {
     setIsRadiusModalOpen(false);
   }, []);
 
-  // 現在地から半径 1km 以内の避難所だけを地図に出す（#594）。マーカーと選択解除判定で共有する。
-  const visibleShelters = useMemo(
-    () => filterSheltersWithinRadius(shelters ?? [], coords),
-    [shelters, coords],
-  );
+  // 現在地から選択中の半径以内の避難所だけを地図に出す（#594、#676）。マーカーと選択解除判定で共有する。
+  // 「無制限」（selectedRadiusKm === null）のときは絞り込まず全件を対象にする。
+  const visibleShelters = useMemo(() => {
+    if (selectedRadiusKm === null) return shelters ?? [];
+    return filterSheltersWithinRadius(shelters ?? [], coords, selectedRadiusKm);
+  }, [shelters, coords, selectedRadiusKm]);
 
   // 地図モードに応じて表示するピンを出し分ける。
   // tourism: 観光名所（useSpots）／evacuation: 避難所（useEvacuationShelters）。
