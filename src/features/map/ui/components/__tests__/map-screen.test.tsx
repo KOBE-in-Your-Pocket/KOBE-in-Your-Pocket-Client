@@ -94,6 +94,13 @@ jest.mock('@/features/evacuation', () => ({
       </MockText>
     </MockView>
   ),
+  // 開閉だけ検証できればよいため、visible/onClose を testID 経由で可視化するスタブにする。
+  ShelterRadiusModal: ({ visible, onClose }: { visible: boolean; onClose: () => void }) =>
+    visible ? (
+      <MockText testID="shelter-radius-modal" onPress={onClose}>
+        radius-modal
+      </MockText>
+    ) : null,
 }));
 
 jest.mock('@/shared/lib/geo', () => ({
@@ -120,6 +127,14 @@ jest.mock('expo-router', () => ({
 
 // MapModeToggle は出し分けの対象外なのでスタブ化する。
 jest.mock('../map-mode-toggle', () => ({ MapModeToggle: () => null }));
+// ハンバーガーメニューは onPress 配線の検証用に、testID 付きのスタブにする。
+jest.mock('../map-settings-button', () => ({
+  MapSettingsButton: ({ onPress }: { onPress: () => void }) => (
+    <MockText testID="map-settings-button" onPress={onPress}>
+      settings
+    </MockText>
+  ),
+}));
 // SpotCard は選択状態の可視化に使うため、表示中は spot の id を出すスタブにする。
 jest.mock('../spot-card', () => ({
   SpotCard: ({ spot, onClose }: { spot: { id: string }; onClose: () => void }) => (
@@ -408,6 +423,50 @@ describe('MapScreen のマーカー出し分け', () => {
 
       expect(screen.getByTestId('marker-shelter-1')).toBeTruthy();
       expect(screen.queryByTestId('marker-shelter-2')).toBeNull();
+    });
+  });
+
+  describe('避難所の表示半径設定（#672）', () => {
+    it('tourism モードではハンバーガーメニューを表示しない', () => {
+      render(<MapScreen />);
+
+      expect(screen.queryByTestId('map-settings-button')).toBeNull();
+    });
+
+    it('evacuation モードではハンバーガーメニューを表示する', () => {
+      useMapModeStore.setState({ mapMode: 'evacuation' });
+
+      render(<MapScreen />);
+
+      expect(screen.getByTestId('map-settings-button')).toBeTruthy();
+    });
+
+    it('ハンバーガーメニューをタップすると半径設定モーダルが開き、閉じると閉じる', () => {
+      useMapModeStore.setState({ mapMode: 'evacuation' });
+
+      render(<MapScreen />);
+      expect(screen.queryByTestId('shelter-radius-modal')).toBeNull();
+
+      fireEvent.press(screen.getByTestId('map-settings-button'));
+      expect(screen.getByTestId('shelter-radius-modal')).toBeTruthy();
+
+      fireEvent.press(screen.getByTestId('shelter-radius-modal'));
+      expect(screen.queryByTestId('shelter-radius-modal')).toBeNull();
+    });
+
+    it('モーダルを開いたまま観光モードへ切り替わると、半径設定モーダルも閉じる', () => {
+      useMapModeStore.setState({ mapMode: 'evacuation' });
+
+      render(<MapScreen />);
+      fireEvent.press(screen.getByTestId('map-settings-button'));
+      expect(screen.getByTestId('shelter-radius-modal')).toBeTruthy();
+
+      // spotId 付きの遷移で観光モードへ強制的に切り替わるケース（#677 と同じ経路）。
+      act(() => {
+        useMapModeStore.setState({ mapMode: 'tourism' });
+      });
+
+      expect(screen.queryByTestId('shelter-radius-modal')).toBeNull();
     });
   });
 });

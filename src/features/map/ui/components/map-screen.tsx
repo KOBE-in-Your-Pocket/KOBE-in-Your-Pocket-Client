@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import {
   EvacuationShelterCard,
   filterSheltersWithinRadius,
+  ShelterRadiusModal,
   useEvacuationShelters,
 } from '@/features/evacuation';
 import type { EvacuationShelter } from '@/features/evacuation';
@@ -19,6 +20,7 @@ import { useRoute } from '../../application/use-route';
 import { useMapModeStore } from '../../store/use-map-mode-store';
 import { styles } from '../styles/map-screen.styles';
 import { MapModeToggle } from './map-mode-toggle';
+import { MapSettingsButton } from './map-settings-button';
 import { RouteAttribution } from './route-attribution';
 import { SpotCard } from './spot-card';
 
@@ -41,6 +43,7 @@ export function MapScreen() {
   // 住所タップ経由で選択された避難所の id。圏外でも選択を維持するため #594 の自動解除から除外する。
   const [pinnedShelterId, setPinnedShelterId] = useState<string | undefined>(undefined);
   const [showServicesModal, setShowServicesModal] = useState(false);
+  const [isRadiusModalOpen, setIsRadiusModalOpen] = useState(false);
 
   // 一度でも現在地が取れたあとに、位置情報が使えなくなった瞬間だけモーダルを開く。
   // iOS ではサービスのグローバルオフが権限拒否として返ることもあるため、
@@ -59,6 +62,14 @@ export function MapScreen() {
 
   const handleCloseServicesModal = useCallback(() => {
     setShowServicesModal(false);
+  }, []);
+
+  const handleOpenRadiusModal = useCallback(() => {
+    setIsRadiusModalOpen(true);
+  }, []);
+
+  const handleCloseRadiusModal = useCallback(() => {
+    setIsRadiusModalOpen(false);
   }, []);
 
   // 現在地から半径 1km 以内の避難所だけを地図に出す（#594）。マーカーと選択解除判定で共有する。
@@ -142,6 +153,11 @@ export function MapScreen() {
     setSelectedShelter(null);
     setPinnedShelterId(undefined);
   }
+  // 避難所の表示半径設定モーダルも避難所モード専用なので、モードが外れたら閉じる
+  // （保持すると観光モードへ切り替わった後も避難所向けモーダルが残ってしまうため）。
+  if (mapMode !== 'evacuation' && isRadiusModalOpen) {
+    setIsRadiusModalOpen(false);
+  }
 
   // 現在地更新などで選択中の避難所が 1km 圏外（表示対象外）になったら選択を解除する。
   // 地図にピンが無い避難所をカード・経路が指し続ける不整合を防ぐ（#594）。
@@ -223,6 +239,9 @@ export function MapScreen() {
 
       <MapModeToggle />
 
+      {/* 避難所の表示半径設定は避難所モードのときだけ意味を持つため、このモードでのみ表示する（#672）。 */}
+      {mapMode === 'evacuation' ? <MapSettingsButton onPress={handleOpenRadiusModal} /> : null}
+
       {/* 経路を描画しているときだけ OSM / ORS の帰属表示を出す（ODbL）。 */}
       {route?.coordinates ? <RouteAttribution /> : null}
 
@@ -246,6 +265,8 @@ export function MapScreen() {
       ) : null}
 
       <LocationServicesModal visible={showServicesModal} onClose={handleCloseServicesModal} />
+
+      <ShelterRadiusModal visible={isRadiusModalOpen} onClose={handleCloseRadiusModal} />
     </ThemedView>
   );
 }

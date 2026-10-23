@@ -202,6 +202,10 @@
       "tsunami": "海啸",
       "large-fire": "大规模火灾"
     },
+    "radiusFilter": {
+      "title": "显示范围",
+      "close": "关闭"
+    },
     "suitability": {
       "title": "按灾害类型的可用性",
       "suitable": "可使用",
@@ -296,6 +300,9 @@
     "modeToggle": {
       "tourism": "观光",
       "evacuation": "疏散"
+    },
+    "settings": {
+      "open": "打开设置"
     },
     "spotCard": {
       "detail": "查看详情",
