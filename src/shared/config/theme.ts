@@ -7,6 +7,19 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
+/**
+ * アプリ全体で参照するカラートークン（ライト / ダークの2系統）。
+ * ここが唯一の定義元で、UI からは {@link useTheme} 経由で現在のテーマを取得する。
+ * 既存画面の見た目を変えないため、既存トークンのライト値は従来どおりに保つこと。
+ *
+ * トークンの意味:
+ * - `text` / `textSecondary`: 本文・補助テキスト
+ * - `background`: 画面の地色
+ * - `backgroundElement`: カード・入力欄などの要素背景
+ * - `backgroundSelected`: 選択中・押下中の背景
+ * - `primary` / `onPrimary`: ブランド基調色（ボタン・リンク等）とその上に載せる文字・アイコン色
+ * - `border`: 区切り線・枠線の控えめな境界色
+ */
 export const Colors = {
   light: {
     text: '#000000',
@@ -14,6 +27,9 @@ export const Colors = {
     backgroundElement: '#F0F0F3',
     backgroundSelected: '#E0E1E6',
     textSecondary: '#60646C',
+    primary: '#208AEF',
+    onPrimary: '#FFFFFF',
+    border: '#D9D9E0',
   },
   dark: {
     text: '#ffffff',
@@ -21,6 +37,9 @@ export const Colors = {
     backgroundElement: '#212225',
     backgroundSelected: '#2E3135',
     textSecondary: '#B0B4BA',
+    primary: '#4DA3F5',
+    onPrimary: '#FFFFFF',
+    border: '#3A3D42',
   },
 } as const;
 
