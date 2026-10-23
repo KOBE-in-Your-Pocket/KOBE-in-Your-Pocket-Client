@@ -15,14 +15,16 @@ const EVACUATION_ICON: { ios: SFSymbol; android: AndroidSymbol; web: AndroidSymb
 };
 
 /**
- * 避難所ピン。緑のしずく型ピン（丸い頭＋下向き先端）＋白い円で、観光の赤ピンと区別する。
- * 先端（コンテナ下端）が座標を指すよう `anchor={{x:0.5,y:1}}` にする。
- *
- * `detailed` のとき白い円の中に「走る人」ピクトグラムを表示する。ネイティブの {@link SymbolView} は
- * フォント読込が非同期で初回スナップショットに写らないことがあるため、表示中は `tracksViewChanges` を
- * 常時有効にして確実に描画する（詳細表示は現在地が取れているときだけで、対象は半径 1km 内＝少数）。
- * `detailed` でないとき（現在地なし＝#604 の全件表示フォールバック等、マーカーが多数になりうる場合）は
- * アイコンを出さず純 View だけにし、`tracksViewChanges` を切って描画コストを抑える。
+ * 詳細ピン（アイコン＋常時トラッキング）にする避難所マーカー件数の上限。超えたら簡易ピンにする。
+ * 以前は currentLocation の有無で判定していたが、#676 で半径「無制限」を選べるようになり
+ * 前提が崩れたため件数ベースに変更。
+ */
+const DETAILED_EVACUATION_MARKER_LIMIT = 50;
+
+/**
+ * 避難所ピン。緑のしずく型＋白い円＋走る人ピクトグラム（`detailed`時のみ）で観光ピンと区別する。
+ * 先端が座標を指すよう `anchor={{x:0.5,y:1}}`。
+ * `tracksViewChanges` は `detailed` な間だけ有効にする（{@link SymbolView} のフォント非同期読込に対応するため）。
  */
 function EvacuationMarker({
   marker,
@@ -68,10 +70,9 @@ export function Map({
   onMarkerPress,
   routeCoordinates,
 }: MapProps) {
-  // 現在地が取れているときは避難所の表示対象が半径 1km 内（少数）なのでアイコン付きの詳細ピンにする。
-  // 現在地が無いとき（#604 のフォールバックで全避難所を表示している可能性）は多数になりうるため、
-  // アイコン無しの簡易ピンにして描画負荷を抑える。
-  const detailedEvacuation = currentLocation != null;
+  const evacuationMarkerCount =
+    markers?.filter((marker) => marker.variant === 'evacuation').length ?? 0;
+  const detailedEvacuation = evacuationMarkerCount <= DETAILED_EVACUATION_MARKER_LIMIT;
 
   return (
     <MapView
