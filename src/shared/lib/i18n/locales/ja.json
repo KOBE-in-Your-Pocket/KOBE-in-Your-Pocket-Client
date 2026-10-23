@@ -202,6 +202,10 @@
       "tsunami": "津波",
       "large-fire": "大火事"
     },
+    "radiusFilter": {
+      "title": "表示範囲",
+      "close": "閉じる"
+    },
     "suitability": {
       "title": "災害ごとの利用可否",
       "suitable": "利用できる",
@@ -296,6 +300,9 @@
     "modeToggle": {
       "tourism": "観光",
       "evacuation": "避難"
+    },
+    "settings": {
+      "open": "設定を開く"
     },
     "spotCard": {
       "detail": "詳細を見る",
