@@ -1,16 +1,21 @@
 import { File } from 'expo-file-system';
-import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 
-/** アイコン画像の長辺（px）。backend 側の正規化（512px）に寄せて、無駄なアップロード量を減らす。 */
-const ICON_MAX_EDGE_PX = 512;
-/** JPEG 圧縮品質（0〜1）。backend のアイコン専用上限（既定 2MB）を十分下回る大きさにする。 */
-const ICON_JPEG_COMPRESS = 0.8;
+/**
+ * 選んだ直後の画像。`width` / `height` は回転情報を反映した見た目の寸法（#715 で確認済み）。
+ * 寸法を取得できなかった場合は 0 になりうる。
+ */
+export type PickedProfileIconImage = { uri: string; width: number; height: number };
 
-export type PickProfileIconResult = { status: 'picked'; uri: string } | { status: 'canceled' };
+export type PickProfileIconResult =
+  | { status: 'picked'; image: PickedProfileIconImage }
+  | { status: 'canceled' };
 
 /**
- * 端末の写真ライブラリからアイコン用の画像を選び、アップロード用に加工する（#546）。
+ * 端末の写真ライブラリからアイコン用の画像を選ぶ（#546）。
+ *
+ * 加工はせず、ピッカーの結果をそのまま返す。切り抜き・縮小・保存は
+ * `cropProfileIcon`、使わなくなった元画像の削除は {@link discardPickedProfileIcon} で行う。
  *
  * SDK 56 の画像選択は事前の権限リクエストを必要としない（必要な場合は
  * `launchImageLibraryAsync` が内部で処理する）ため、ここでは要求しない。
@@ -26,39 +31,18 @@ export async function pickProfileIcon(): Promise<PickProfileIconResult> {
     return { status: 'canceled' };
   }
 
-  const uri = await normalizeIconImage(result.assets[0]);
-  return { status: 'picked', uri };
+  const { uri, width, height } = result.assets[0];
+  return { status: 'picked', image: { uri, width, height } };
 }
 
-async function normalizeIconImage(asset: { uri: string; width: number; height: number }) {
-  const context = ImageManipulator.manipulate(asset.uri);
-  const longEdge = Math.max(asset.width, asset.height);
-
-  if (longEdge <= 0) {
-    // 寸法を取得できない場合でも、片辺だけ指定して ImageManipulator に比率計算を
-    // 任せる（手元で両辺を計算すると極端な縦横比で 0px に丸まりうる）。
-    context.resize({ width: ICON_MAX_EDGE_PX });
-  } else if (longEdge > ICON_MAX_EDGE_PX) {
-    if (asset.width >= asset.height) {
-      context.resize({ width: ICON_MAX_EDGE_PX });
-    } else {
-      context.resize({ height: ICON_MAX_EDGE_PX });
-    }
-  }
-
-  const rendered = await context.renderAsync();
-  const saved = await rendered.saveAsync({ format: SaveFormat.JPEG, compress: ICON_JPEG_COMPRESS });
-
-  // 縮小・再エンコード後は選択直後の元画像（フルサイズ）が不要になる。削除に
-  // 失敗してもキャッシュに残るだけなので、選択自体は成功として扱う。
-  deleteLocalFileQuietly(asset.uri);
-
-  return saved.uri;
-}
-
-function deleteLocalFileQuietly(uri: string): void {
+/**
+ * 選んだ直後の元画像（フルサイズの一時ファイル）を削除する。
+ * 切り抜いて保存したあとや、調整をキャンセルしたときに呼ぶ。
+ * 削除に失敗してもキャッシュに残るだけなので、例外は投げない。
+ */
+export function discardPickedProfileIcon(image: Pick<PickedProfileIconImage, 'uri'>): void {
   try {
-    const file = new File(uri);
+    const file = new File(image.uri);
     if (file.exists) {
       file.delete();
     }

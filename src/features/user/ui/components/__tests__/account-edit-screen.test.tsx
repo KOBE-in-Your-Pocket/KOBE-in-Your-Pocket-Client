@@ -42,8 +42,15 @@ jest.mock('../../../infrastructure/api/user-api', () => ({
 }));
 
 const mockPickProfileIcon = jest.fn<Promise<PickProfileIconResult>, []>();
+const mockDiscardPickedProfileIcon = jest.fn();
 jest.mock('../../../application/pick-profile-icon', () => ({
   pickProfileIcon: () => mockPickProfileIcon(),
+  discardPickedProfileIcon: (image: unknown) => mockDiscardPickedProfileIcon(image),
+}));
+
+const mockCropProfileIcon = jest.fn();
+jest.mock('../../../application/crop-profile-icon', () => ({
+  cropProfileIcon: (image: unknown, crop: unknown) => mockCropProfileIcon(image, crop),
 }));
 
 jest.mock('expo-image', () => ({ Image: () => null }));
@@ -53,6 +60,8 @@ jest.mock('expo-router', () => ({
 }));
 
 const USER = { id: 'user-1', name: 'Google 太郎', iconUrl: 'https://i.pravatar.cc/150?img=12' };
+const PICKED_IMAGE = { uri: 'file:///tmp/picked.jpg', width: 900, height: 1200 };
+const PICKED: PickProfileIconResult = { status: 'picked', image: PICKED_IMAGE };
 const NEW_ICON_URI = 'file:///tmp/new-icon.jpg';
 const UPLOADED_ICON_URL = 'https://media.example.com/icons/icon-1.jpg';
 
@@ -83,6 +92,7 @@ describe('AccountEditScreen', () => {
       name: USER.name,
       iconUrl: UPLOADED_ICON_URL,
     });
+    mockCropProfileIcon.mockResolvedValue(NEW_ICON_URI);
     useAuthStore.setState({
       currentUser: USER,
       accessToken: 'access-token',
@@ -133,7 +143,7 @@ describe('AccountEditScreen', () => {
   });
 
   it('アイコンを選んで保存すると画像がアップロードされ、応答の URL が反映される', async () => {
-    mockPickProfileIcon.mockResolvedValue({ status: 'picked', uri: NEW_ICON_URI });
+    mockPickProfileIcon.mockResolvedValue(PICKED);
     renderScreen();
 
     await pressChangeIcon();
@@ -144,8 +154,41 @@ describe('AccountEditScreen', () => {
     expect(useAuthStore.getState().currentUser?.iconUrl).toBe(UPLOADED_ICON_URL);
   });
 
+  it('写真を選んだら、中央の正方形で切り抜く', async () => {
+    mockPickProfileIcon.mockResolvedValue(PICKED);
+    renderScreen();
+
+    await pressChangeIcon();
+
+    await waitFor(() =>
+      expect(mockCropProfileIcon).toHaveBeenCalledWith(PICKED_IMAGE, {
+        originX: 0,
+        originY: 150,
+        width: 900,
+        height: 900,
+      }),
+    );
+  });
+
+  it('切り抜きに失敗したらエラー文を表示し、元画像を消してアップロードを呼ばない', async () => {
+    mockPickProfileIcon.mockResolvedValue(PICKED);
+    mockCropProfileIcon.mockRejectedValue(new Error('crop failed'));
+    renderScreen();
+
+    await pressChangeIcon();
+
+    await waitFor(() =>
+      expect(screen.getByText('settings.accountEdit.iconPickError')).toBeTruthy(),
+    );
+    expect(mockDiscardPickedProfileIcon).toHaveBeenCalledWith(PICKED_IMAGE);
+
+    fireEvent.press(screen.getByRole('button', { name: 'settings.accountEdit.save' }));
+    await waitFor(() => expect(router.back).toHaveBeenCalled());
+    expect(mockUploadMyIcon).not.toHaveBeenCalled();
+  });
+
   it('一度写真を選んだ後に選び直しが失敗したら、前に選んだ写真を使わず保存する', async () => {
-    mockPickProfileIcon.mockResolvedValueOnce({ status: 'picked', uri: NEW_ICON_URI });
+    mockPickProfileIcon.mockResolvedValueOnce(PICKED);
     renderScreen();
     fireEvent.press(screen.getByLabelText('settings.accountEdit.changeIcon'));
     await waitFor(() => expect(mockPickProfileIcon).toHaveBeenCalledTimes(1));
@@ -217,7 +260,7 @@ describe('AccountEditScreen', () => {
   });
 
   it('アイコンのアップロードに失敗したらエラー文を表示し、アイコンを差し替えない', async () => {
-    mockPickProfileIcon.mockResolvedValue({ status: 'picked', uri: NEW_ICON_URI });
+    mockPickProfileIcon.mockResolvedValue(PICKED);
     mockUploadMyIcon.mockRejectedValue(new Error('upload failed'));
     renderScreen();
 
