@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import type { PersistedUserStore, UserGateway } from '../domain/auth-ports';
 import {
@@ -14,6 +14,7 @@ import {
   getSessionGeneration,
   isSessionGenerationCurrent,
 } from './session-operation';
+import { CURRENT_USER_QUERY_KEY } from './use-sync-current-user';
 
 type UpdateProfileDeps = {
   persistedUserStore: PersistedUserStore;
@@ -105,7 +106,22 @@ async function applyUpdatedUser(
   }
 }
 
-/** アカウント編集を保存する mutation。 */
+/**
+ * アカウント編集を保存する mutation。
+ *
+ * 成功後は `GET /api/v1/users/me` のキャッシュも保存後の値に揃える。古いキャッシュが残っていると、
+ * 再ログインや画面の再マウントで useSyncCurrentUser がそれをストアへ書き戻し、
+ * 次の再取得（staleTime 経過後）まで変更前の表示名に戻って見えるため。
+ */
 export function useUpdateProfile() {
-  return useMutation({ mutationFn: (edits: ProfileEdits) => performProfileUpdate(edits) });
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (edits: ProfileEdits) => performProfileUpdate(edits),
+    onSuccess: () => {
+      const { currentUser } = useAuthStore.getState();
+      if (currentUser !== null) {
+        queryClient.setQueryData([...CURRENT_USER_QUERY_KEY, currentUser.id], currentUser);
+      }
+    },
+  });
 }
