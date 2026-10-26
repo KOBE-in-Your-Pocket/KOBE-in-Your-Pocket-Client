@@ -202,6 +202,10 @@
       "tsunami": "쓰나미",
       "large-fire": "대형 화재"
     },
+    "radiusFilter": {
+      "title": "표시 범위",
+      "close": "닫기"
+    },
     "suitability": {
       "title": "재해별 이용 가능 여부",
       "suitable": "이용 가능",
@@ -296,6 +300,9 @@
     "modeToggle": {
       "tourism": "관광",
       "evacuation": "대피"
+    },
+    "settings": {
+      "open": "설정 열기"
     },
     "spotCard": {
       "detail": "상세 보기",

@@ -31,3 +31,4 @@ export { EvacuationList } from './ui/components/evacuation-list';
 export { EvacuationScreen } from './ui/components/evacuation-screen';
 export { EvacuationShelterCard } from './ui/components/evacuation-shelter-card';
 export { EvacuationShelterDetailScreen } from './ui/components/evacuation-shelter-detail-screen';
+export { ShelterRadiusModal } from './ui/components/shelter-radius-modal';

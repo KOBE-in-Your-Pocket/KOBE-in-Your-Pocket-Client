@@ -202,6 +202,10 @@
       "tsunami": "Tsunami",
       "large-fire": "Large fire"
     },
+    "radiusFilter": {
+      "title": "Display range",
+      "close": "Close"
+    },
     "suitability": {
       "title": "Availability by disaster",
       "suitable": "Available",
@@ -296,6 +300,9 @@
     "modeToggle": {
       "tourism": "Tourism",
       "evacuation": "Evacuation"
+    },
+    "settings": {
+      "open": "Open settings"
     },
     "spotCard": {
       "detail": "Spot Detail",
