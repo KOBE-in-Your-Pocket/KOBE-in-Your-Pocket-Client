@@ -131,6 +131,11 @@ jest.mock('react-i18next', () => ({
 jest.mock('expo-router', () => ({
   router: { push: jest.fn() },
   useLocalSearchParams: () => mockUseLocalSearchParams(),
+  // テストではフォーカスの出入りが発生しないため、マウント時に一度だけ呼べば十分。
+  useFocusEffect: (effect: () => void) => {
+    const { useEffect } = jest.requireActual('react');
+    useEffect(effect, [effect]);
+  },
 }));
 
 // MapModeToggle は出し分けの対象外なのでスタブ化する。

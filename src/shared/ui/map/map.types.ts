@@ -40,4 +40,6 @@ export type MapProps = {
   onMarkerPress?: (marker: MapMarker) => void;
   /** 経路として描画する座標列（現在地→目的地の道なり経路など）。 */
   routeCoordinates?: MapCoordinate[];
+  /** マーカーを強制的に作り直すためのキー。値が変わるたびに各マーカーの React key が変わり、ネイティブ側のマーカーが再生成される（#740）。 */
+  markerResyncKey?: number;
 };

@@ -76,6 +76,7 @@ export function Map({
   markers,
   onMarkerPress,
   routeCoordinates,
+  markerResyncKey,
 }: MapProps) {
   return (
     <MapView
@@ -86,19 +87,20 @@ export function Map({
       {routeCoordinates && routeCoordinates.length > 1 ? (
         <Polyline coordinates={routeCoordinates} strokeColor={ROUTE_STROKE_COLOR} strokeWidth={4} />
       ) : null}
-      {markers?.map((marker) =>
-        marker.variant === 'evacuation' ? (
-          <EvacuationMarker key={marker.id} marker={marker} onPress={onMarkerPress} />
+      {markers?.map((marker) => {
+        const key = `${marker.id}:${markerResyncKey ?? 0}`;
+        return marker.variant === 'evacuation' ? (
+          <EvacuationMarker key={key} marker={marker} onPress={onMarkerPress} />
         ) : (
           <Marker
-            key={marker.id}
+            key={key}
             coordinate={marker.coordinate}
             title={marker.title}
             description={marker.description}
             onPress={() => onMarkerPress?.(marker)}
           />
-        ),
-      )}
+        );
+      })}
       {currentLocation ? (
         <Marker coordinate={currentLocation} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={false}>
           {/* Google/Apple マップ風の現在地ドット（白フチ + 青ドット） */}
