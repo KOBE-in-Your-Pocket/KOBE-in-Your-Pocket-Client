@@ -204,7 +204,13 @@
     },
     "radiusFilter": {
       "title": "显示范围",
-      "close": "关闭"
+      "close": "关闭",
+      "options": {
+        "1km": "1公里",
+        "3km": "3公里",
+        "5km": "5公里",
+        "unlimited": "无限制"
+      }
     },
     "suitability": {
       "title": "按灾害类型的可用性",

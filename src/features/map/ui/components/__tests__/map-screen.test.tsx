@@ -6,6 +6,10 @@ import { useMapModeStore } from '../../../store/use-map-mode-store';
 
 import { MapScreen } from '../map-screen';
 
+// @/features/evacuation はこのファイルでモック化しているが、useMapModeStore と同様に
+// 実物の zustand ストア（同一インスタンス）を取得して直接 setState で操作する。
+import { useShelterRadiusStore } from '@/features/evacuation/store/use-shelter-radius-store';
+
 import type { ReactNode } from 'react';
 
 // マーカー出し分けの検証用フィクスチャ。
@@ -73,9 +77,13 @@ jest.mock('@/features/tourism', () => ({
 
 jest.mock('@/features/evacuation', () => ({
   useEvacuationShelters: () => ({ data: mockShelters }),
-  // 距離フィルタ本体は use-case 側で検証。ここでは coords を受け取りつつ返す避難所を差し替えられるようにする。
-  filterSheltersWithinRadius: (shelters: MockShelter[], coords: unknown) =>
-    mockFilterShelters(shelters, coords),
+  // 距離フィルタ本体は use-case 側で検証。ここでは coords/radiusKm を受け取りつつ返す避難所を差し替えられるようにする。
+  filterSheltersWithinRadius: (shelters: MockShelter[], coords: unknown, radiusKm: unknown) =>
+    mockFilterShelters(shelters, coords, radiusKm),
+  // 実物の zustand ストアをそのまま使う（useMapModeStore と同じ方針）。
+  useShelterRadiusStore: jest.requireActual<
+    typeof import('@/features/evacuation/store/use-shelter-radius-store')
+  >('@/features/evacuation/store/use-shelter-radius-store').useShelterRadiusStore,
   EvacuationShelterCard: ({
     shelter,
     onDetail,
@@ -153,6 +161,8 @@ describe('MapScreen のマーカー出し分け', () => {
     // マッチして回帰を見逃さないように）。実装は下で再設定する。
     jest.clearAllMocks();
     useMapModeStore.setState({ mapMode: 'tourism' });
+    // 既定: 表示半径は 1km（#672 の初期値）。個別テストで上書きする。
+    useShelterRadiusStore.setState({ selectedRadiusKm: 1 });
     // 既定: 現在地なし・絞り込みなし（全件返す）。個別テストで上書きする。
     mockUseCurrentLocation.mockReturnValue({
       coords: null,
@@ -399,7 +409,7 @@ describe('MapScreen のマーカー出し分け', () => {
       expect(screen.getByTestId('marker-shelter-1')).toBeTruthy();
       expect(screen.getByTestId('marker-shelter-2')).toBeTruthy();
       // 画面は現在地（null）をフィルタに渡している。
-      expect(mockFilterShelters).toHaveBeenCalledWith(mockShelters, null);
+      expect(mockFilterShelters).toHaveBeenCalledWith(mockShelters, null, 1);
     });
 
     it('現在地取得後は半径内の絞り込み結果へ切り替わる', () => {
@@ -467,6 +477,44 @@ describe('MapScreen のマーカー出し分け', () => {
       });
 
       expect(screen.queryByTestId('shelter-radius-modal')).toBeNull();
+    });
+
+    it('選択中の半径（km）をフィルタに渡す（#676）', () => {
+      useMapModeStore.setState({ mapMode: 'evacuation' });
+      useShelterRadiusStore.setState({ selectedRadiusKm: 3 });
+      mockUseCurrentLocation.mockReturnValue({
+        coords: { latitude: 34.69, longitude: 135.19 },
+        servicesDisabled: false,
+        permissionDenied: false,
+      });
+
+      render(<MapScreen />);
+
+      expect(mockFilterShelters).toHaveBeenCalledWith(
+        mockShelters,
+        { latitude: 34.69, longitude: 135.19 },
+        3,
+      );
+    });
+
+    it('「無制限」（null）を選ぶと絞り込まず全件表示する（#676）', () => {
+      useMapModeStore.setState({ mapMode: 'evacuation' });
+      useShelterRadiusStore.setState({ selectedRadiusKm: null });
+      mockUseCurrentLocation.mockReturnValue({
+        coords: { latitude: 34.69, longitude: 135.19 },
+        servicesDisabled: false,
+        permissionDenied: false,
+      });
+      // 「無制限」のときはフィルタ自体を呼ばない実装のため、呼ばれたら誤って絞り込んでいる。
+      mockFilterShelters.mockImplementation((shelters: MockShelter[]) =>
+        shelters.filter((shelter) => shelter.id === 'shelter-1'),
+      );
+
+      render(<MapScreen />);
+
+      expect(mockFilterShelters).not.toHaveBeenCalled();
+      expect(screen.getByTestId('marker-shelter-1')).toBeTruthy();
+      expect(screen.getByTestId('marker-shelter-2')).toBeTruthy();
     });
   });
 });
