@@ -5,11 +5,17 @@ import type { PlatformSymbolName } from '../types';
 
 import { Spacing } from '@/shared/config';
 
-export type ShelterTypeBadgeStyle = {
+export type ShelterTypeBadgeColors = {
   /** 文字・アイコン・枠線の強調色。 */
   color: string;
   /** バッジ背景（強調色を薄く敷く）。 */
   background: string;
+};
+
+export type ShelterTypeBadgeStyle = {
+  /** ライト / ダークそれぞれの配色。ダークは黒地で沈まないよう同系の明るい色にする。 */
+  light: ShelterTypeBadgeColors;
+  dark: ShelterTypeBadgeColors;
   icon: PlatformSymbolName;
 };
 
@@ -22,18 +28,18 @@ export type ShelterTypeBadgeStyle = {
  */
 export const SHELTER_TYPE_BADGE: Record<ShelterType, ShelterTypeBadgeStyle> = {
   emergency: {
-    color: '#EA580C',
-    background: 'rgba(234, 88, 12, 0.12)',
+    light: { color: '#EA580C', background: 'rgba(234, 88, 12, 0.12)' },
+    dark: { color: '#FB923C', background: 'rgba(251, 146, 60, 0.16)' },
     icon: { ios: 'figure.run', android: 'directions_run', web: 'directions_run' },
   },
   designated: {
-    color: '#2563EB',
-    background: 'rgba(37, 99, 235, 0.12)',
+    light: { color: '#2563EB', background: 'rgba(37, 99, 235, 0.12)' },
+    dark: { color: '#60A5FA', background: 'rgba(96, 165, 250, 0.16)' },
     icon: { ios: 'house.fill', android: 'home', web: 'home' },
   },
   both: {
-    color: '#7C3AED',
-    background: 'rgba(124, 58, 237, 0.12)',
+    light: { color: '#7C3AED', background: 'rgba(124, 58, 237, 0.12)' },
+    dark: { color: '#A78BFA', background: 'rgba(167, 139, 250, 0.16)' },
     icon: { ios: 'checkmark.shield.fill', android: 'verified_user', web: 'verified_user' },
   },
 };

@@ -2,8 +2,11 @@ import { StyleSheet } from 'react-native';
 
 import { Spacing } from '@/shared/config';
 
-/** カテゴリ表示のアクセントカラー（避難所ピン・カードの緑と統一）。 */
-export const DETAIL_ACCENT_COLOR = '#0F8A4F';
+/**
+ * カテゴリ表示のアクセントカラー（避難所ピン・カードの緑と統一）。
+ * ダークでは濃い緑だと黒地に沈むため、同系の明るい緑にする。
+ */
+export const DETAIL_ACCENT_COLOR = { light: '#0F8A4F', dark: '#34C77B' } as const;
 /** 外部リンク（テキスト・アイコン）の色（避難モードの赤）。 */
 export const EXTERNAL_LINK_COLOR = '#EF4444';
 /** 経路案内ボタンの背景色（各コンテンツ・ピンカードで共通の紫）。 */
@@ -40,7 +43,6 @@ export const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   category: {
-    color: DETAIL_ACCENT_COLOR,
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1,

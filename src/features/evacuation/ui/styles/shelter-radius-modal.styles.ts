@@ -2,10 +2,14 @@ import { StyleSheet } from 'react-native';
 
 import { Spacing } from '@/shared/config';
 
-/** 選択中の行のアクセント色（青）。文字・チェックアイコンに使う。 */
-export const RADIUS_SELECTED_COLOR = '#2563EB';
-/** 選択中の行の背景（薄い青）。ライト／ダークどちらの地色でも成立するよう半透明にする。 */
-export const RADIUS_SELECTED_BACKGROUND = 'rgba(37, 99, 235, 0.12)';
+/**
+ * 選択中の行の配色（青）。`color` は文字・チェックアイコン、`background` は行の地に薄く敷く。
+ * ダークでは濃い青だと暗い行背景に沈むため、明るい青に寄せる。
+ */
+export const RADIUS_SELECTED_COLORS = {
+  light: { color: '#2563EB', background: 'rgba(37, 99, 235, 0.12)' },
+  dark: { color: '#60A5FA', background: 'rgba(96, 165, 250, 0.18)' },
+} as const;
 
 export const styles = StyleSheet.create({
   // 背景の暗幕。シートを上寄せにするため上揃え。暗幕のタップで閉じる。

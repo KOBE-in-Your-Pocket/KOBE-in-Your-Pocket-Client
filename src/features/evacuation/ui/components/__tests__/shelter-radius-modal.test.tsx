@@ -29,6 +29,7 @@ jest.mock('@/shared/config', () => ({
 }));
 
 jest.mock('@/shared/lib/theme', () => ({
+  useThemeScheme: () => 'light',
   useTheme: () => ({
     text: '#000000',
     textSecondary: '#60646C',

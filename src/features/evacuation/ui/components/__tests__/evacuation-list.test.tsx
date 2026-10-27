@@ -46,6 +46,7 @@ jest.mock('@/shared/lib/geo', () => ({
 }));
 
 jest.mock('@/shared/lib/theme', () => ({
+  useThemeScheme: () => 'light',
   useTheme: () => ({
     text: '#000000',
     textSecondary: '#60646C',

@@ -11,6 +11,7 @@ import type { Review } from '../../domain/review';
 import { ReviewForm } from './review-form';
 
 import { useCurrentUser, UserAvatar } from '@/features/user';
+import { useThemeScheme } from '@/shared/lib/theme';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
 const MAX_RATING = 5;
@@ -26,13 +27,14 @@ function formatPostedAt(postedAt: string, language: string): string {
 
 function ReviewStars({ value }: { value: number }) {
   const filled = Math.round(value);
+  const scheme = useThemeScheme();
 
   return (
     <View style={styles.starsRow}>
       {Array.from({ length: MAX_RATING }, (_, index) => (
         <SymbolView
           key={index}
-          tintColor={index < filled ? RATING_STAR_COLOR : EMPTY_STAR_COLOR}
+          tintColor={index < filled ? RATING_STAR_COLOR : EMPTY_STAR_COLOR[scheme]}
           name={{ ios: 'star.fill', android: 'star', web: 'star' }}
           size={14}
         />

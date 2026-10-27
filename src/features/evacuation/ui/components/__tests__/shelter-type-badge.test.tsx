@@ -20,11 +20,21 @@ jest.mock('@/shared/config', () => ({
   Spacing: { half: 2, one: 4, two: 8, three: 16, four: 24, five: 32, six: 64 },
 }));
 
+const mockUseThemeScheme = jest.fn(() => 'light');
+
+jest.mock('@/shared/lib/theme', () => ({
+  useThemeScheme: () => mockUseThemeScheme(),
+}));
+
 jest.mock('@/shared/ui', () => ({
   ThemedText: ({ children }: { children: ReactNode }) => <MockText>{children}</MockText>,
 }));
 
 describe('ShelterTypeBadge', () => {
+  afterEach(() => {
+    mockUseThemeScheme.mockReturnValue('light');
+  });
+
   it.each(['emergency', 'designated', 'both'] as const)(
     '%s 区分はラベル・説明文と区分別の色・アイコンを出し分ける',
     (type) => {
@@ -37,14 +47,26 @@ describe('ShelterTypeBadge', () => {
       ).toBeTruthy();
 
       // 配色・アイコン: 区分ごとに定義した色とアイコンで表示する。
-      const { color, icon } = SHELTER_TYPE_BADGE[type];
-      expect(screen.getByText(`icon:${icon.android}:${color}`)).toBeTruthy();
+      const { light, icon } = SHELTER_TYPE_BADGE[type];
+      expect(screen.getByText(`icon:${icon.android}:${light.color}`)).toBeTruthy();
     },
   );
 
-  it('区分ごとに異なる色を割り当てている', () => {
+  it.each(['emergency', 'designated', 'both'] as const)(
+    'ダークモードでは %s 区分をダーク用の配色で表示する',
+    (type) => {
+      mockUseThemeScheme.mockReturnValue('dark');
+
+      render(<ShelterTypeBadge type={type} />);
+
+      const { dark, icon } = SHELTER_TYPE_BADGE[type];
+      expect(screen.getByText(`icon:${icon.android}:${dark.color}`)).toBeTruthy();
+    },
+  );
+
+  it.each(['light', 'dark'] as const)('%s でも区分ごとに異なる色を割り当てている', (scheme) => {
     const colors = (['emergency', 'designated', 'both'] as const).map(
-      (type) => SHELTER_TYPE_BADGE[type].color,
+      (type) => SHELTER_TYPE_BADGE[type][scheme].color,
     );
 
     expect(new Set(colors).size).toBe(colors.length);

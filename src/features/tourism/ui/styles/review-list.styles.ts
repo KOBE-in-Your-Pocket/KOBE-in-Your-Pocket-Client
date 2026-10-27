@@ -3,7 +3,8 @@ import { StyleSheet } from 'react-native';
 import { Spacing } from '@/shared/config';
 
 export const RATING_STAR_COLOR = '#F5A623';
-export const EMPTY_STAR_COLOR = '#D8D8D8';
+/** 評価の空き星。ダークで明るい灰色のままだと塗り星と紛れるため、地色に沈む暗い灰色にする。 */
+export const EMPTY_STAR_COLOR = { light: '#D8D8D8', dark: '#3A3D42' } as const;
 
 export const styles = StyleSheet.create({
   container: {

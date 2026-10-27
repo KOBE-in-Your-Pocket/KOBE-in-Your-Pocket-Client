@@ -3,10 +3,18 @@ import { Platform, StyleSheet } from 'react-native';
 import { Spacing } from '@/shared/config';
 
 export const CATEGORY_COLOR = '#3A6EA5';
+/** 施設カテゴリの文字色。ダークでは {@link CATEGORY_COLOR} だと黒地で読みにくいため明るい青にする。 */
+export const CATEGORY_TEXT_COLOR = { light: CATEGORY_COLOR, dark: '#7FB0E6' } as const;
 /** 最寄りバッジ専用のアクセントカラー（避難モードの赤）。 */
 export const NEAREST_BADGE_COLOR = '#EF4444';
-/** 位置情報フォールバックバナーの警告テキスト色。背景が固定色のため、ダークモードでも読めるよう文字色も固定する。 */
-export const LOCATION_BANNER_TEXT_COLOR = '#B71C1C';
+/**
+ * 位置情報フォールバックバナーの配色。ライトは淡い赤地に濃い赤字、ダークは淡い赤地が浮かないよう
+ * 半透明の赤を敷き、文字は明るい赤にする。
+ */
+export const LOCATION_BANNER_COLORS = {
+  light: { background: '#FDECEA', text: '#B71C1C' },
+  dark: { background: 'rgba(239, 68, 68, 0.18)', text: '#FF8A80' },
+} as const;
 
 export const styles = StyleSheet.create({
   centered: {
@@ -35,10 +43,6 @@ export const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
     borderRadius: Spacing.two,
-    backgroundColor: '#FDECEA',
-  },
-  locationBannerText: {
-    color: LOCATION_BANNER_TEXT_COLOR,
   },
   filterEmpty: {
     textAlign: 'center',
@@ -72,7 +76,6 @@ export const styles = StyleSheet.create({
     rowGap: Spacing.one,
   },
   category: {
-    color: CATEGORY_COLOR,
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 0.5,

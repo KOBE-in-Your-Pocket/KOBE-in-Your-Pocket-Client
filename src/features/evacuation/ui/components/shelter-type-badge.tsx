@@ -10,6 +10,7 @@ import {
   type ShelterTypeBadgeStyle,
 } from '../styles/shelter-type-badge.styles';
 
+import { useThemeScheme } from '@/shared/lib/theme';
 import { ThemedText } from '@/shared/ui';
 
 /**
@@ -22,12 +23,14 @@ import { ThemedText } from '@/shared/ui';
  */
 export function ShelterTypeBadge({ type }: { type: ShelterType }) {
   const { t } = useTranslation();
+  const scheme = useThemeScheme();
   // バックエンドの値をそのまま通す（evacuation-shelter-mapper.ts）ため、未知の区分が来うる。
   // 定義が無い区分では、誤った色・アイコンで誤認させないよう fallback 表示ではなくバッジ自体を出さない。
   const badge: ShelterTypeBadgeStyle | undefined = SHELTER_TYPE_BADGE[type];
   if (!badge) return null;
 
-  const { color, background, icon } = badge;
+  const { icon } = badge;
+  const { color, background } = badge[scheme];
   const label = t(`evacuation.shelterDetail.typeBadge.${type}.label`);
   const description = t(`evacuation.shelterDetail.typeBadge.${type}.description`);
 

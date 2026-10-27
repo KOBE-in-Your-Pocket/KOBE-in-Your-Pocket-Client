@@ -6,14 +6,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useKindFilterStore, type SelectedKind } from '../../store/use-kind-filter-store';
 import { useScopeFilterStore, type SelectedScope } from '../../store/use-scope-filter-store';
 
-import {
-  FILTER_SELECTED_BACKGROUND,
-  FILTER_SELECTED_COLOR,
-  styles,
-} from '../styles/manner-filter-modal.styles';
+import { FILTER_SELECTED_COLORS, styles } from '../styles/manner-filter-modal.styles';
 
 import { Spacing } from '@/shared/config';
-import { useTheme } from '@/shared/lib/theme';
+import { useTheme, useThemeScheme } from '@/shared/lib/theme';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
 /** カテゴリー（種別）の選択肢と表示順（全て・ルール・マナー）。 */
@@ -40,6 +36,7 @@ function FilterSection<T extends string>({
   onSelect,
 }: FilterSectionProps<T>) {
   const theme = useTheme();
+  const selectedColors = FILTER_SELECTED_COLORS[useThemeScheme()];
 
   return (
     <View accessibilityRole="radiogroup">
@@ -54,7 +51,7 @@ function FilterSection<T extends string>({
             style={[
               styles.row,
               {
-                backgroundColor: isSelected ? FILTER_SELECTED_BACKGROUND : theme.backgroundElement,
+                backgroundColor: isSelected ? selectedColors.background : theme.backgroundElement,
               },
             ]}
             onPress={() => onSelect(option.value)}
@@ -65,13 +62,13 @@ function FilterSection<T extends string>({
             accessibilityLabel={`${label} ${option.label}`}
           >
             <ThemedText
-              style={[styles.rowLabel, isSelected ? { color: FILTER_SELECTED_COLOR } : undefined]}
+              style={[styles.rowLabel, isSelected ? { color: selectedColors.color } : undefined]}
             >
               {option.label}
             </ThemedText>
             {isSelected ? (
               <SymbolView
-                tintColor={FILTER_SELECTED_COLOR}
+                tintColor={selectedColors.color}
                 name={{
                   ios: 'checkmark.circle.fill',
                   android: 'check_circle',

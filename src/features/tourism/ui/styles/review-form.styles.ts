@@ -3,7 +3,8 @@ import { StyleSheet } from 'react-native';
 import { Spacing } from '@/shared/config';
 
 export const ACTIVE_STAR_COLOR = '#F5A623';
-export const INACTIVE_STAR_COLOR = '#D8D8D8';
+/** 未選択の星。ダークで明るい灰色のままだと選択済みと紛れるため、地色に沈む暗い灰色にする。 */
+export const INACTIVE_STAR_COLOR = { light: '#D8D8D8', dark: '#3A3D42' } as const;
 
 export const styles = StyleSheet.create({
   trigger: {

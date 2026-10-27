@@ -10,7 +10,7 @@ import { ACTIVE_STAR_COLOR, INACTIVE_STAR_COLOR, styles } from '../styles/review
 
 import { useCurrentUser } from '@/features/user/application/use-current-user';
 import { IS_USER_CONTENT_ENABLED } from '@/shared/config';
-import { useTheme } from '@/shared/lib/theme';
+import { useTheme, useThemeScheme } from '@/shared/lib/theme';
 import { useIsAdult } from '@/shared/store';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
@@ -18,6 +18,7 @@ const MAX_RATING = 5;
 
 function StarInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const { t } = useTranslation();
+  const scheme = useThemeScheme();
   return (
     <View style={styles.starsRow}>
       {Array.from({ length: MAX_RATING }, (_, i) => (
@@ -30,7 +31,7 @@ function StarInput({ value, onChange }: { value: number; onChange: (v: number) =
         >
           <SymbolView
             name={{ ios: 'star.fill', android: 'star', web: 'star' }}
-            tintColor={i < value ? ACTIVE_STAR_COLOR : INACTIVE_STAR_COLOR}
+            tintColor={i < value ? ACTIVE_STAR_COLOR : INACTIVE_STAR_COLOR[scheme]}
             size={28}
           />
         </Pressable>
