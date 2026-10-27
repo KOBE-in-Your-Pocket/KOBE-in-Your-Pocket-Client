@@ -57,7 +57,13 @@
       "saveError": "无法保存。请稍后再试。",
       "changeIcon": "更换头像",
       "iconPickError": "无法使用该照片，请换一张试试。",
-      "notSignedIn": "编辑账户前请先登录。"
+      "notSignedIn": "编辑账户前请先登录。",
+      "iconCrop": {
+        "title": "调整头像",
+        "confirm": "完成",
+        "hint": "拖动可调整位置，双指缩放可调整大小",
+        "areaLabel": "头像显示范围"
+      }
     },
     "deleteAccount": "删除账户（注销）",
     "deleteAccountConfirm": "删除账户",

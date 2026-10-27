@@ -41,4 +41,16 @@ describe('locale files', () => {
     expect(suitability.label).toContain('{{disaster}}');
     expect(suitability.label).toContain('{{status}}');
   });
+
+  it.each(SUPPORTED_LANGUAGES)('%s にアイコン調整画面の翻訳がある', (language) => {
+    const locale = LOCALES[language];
+    const { iconCrop } = locale.settings.accountEdit;
+
+    expect(iconCrop.title).toBeTruthy();
+    expect(iconCrop.confirm).toBeTruthy();
+    expect(iconCrop.hint).toBeTruthy();
+    expect(iconCrop.areaLabel).toBeTruthy();
+    // キャンセルは設定画面共通の文言を使う。
+    expect(locale.settings.cancel).toBeTruthy();
+  });
 });
