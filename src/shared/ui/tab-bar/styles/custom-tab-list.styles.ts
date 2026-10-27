@@ -1,7 +1,5 @@
 import { StyleSheet } from 'react-native';
 
-import { TAB_BAR_COLORS } from '../tab-bar-config';
-
 import { Spacing } from '@/shared/config';
 
 export const styles = StyleSheet.create({
@@ -10,11 +8,12 @@ export const styles = StyleSheet.create({
     width: '100%',
     bottom: 0,
   },
+  // 背景色・上端境界線の色はテーマ追従のためコンポーネント側で指定する。
   tabBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    backgroundColor: TAB_BAR_COLORS.background,
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingTop: Spacing.two,

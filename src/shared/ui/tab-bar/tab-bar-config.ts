@@ -1,13 +1,6 @@
 /** タブバー本体の高さ（セーフエリア除く）。アイコン + ラベル + 余白。 */
 export const TAB_BAR_CONTENT_HEIGHT = 68;
 
-export const TAB_BAR_COLORS = {
-  active: '#208AEF',
-  inactive: '#6B635B',
-  activeBorder: '#C4E0FA',
-  background: '#FFFFFF',
-} as const;
-
 export type TabDefinition = {
   name: string;
   labelKey: string;
