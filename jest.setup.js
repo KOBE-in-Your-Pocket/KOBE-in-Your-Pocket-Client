@@ -2,6 +2,13 @@
 // https://docs.swmansion.com/react-native-gesture-handler/docs/guides/testing
 require('react-native-gesture-handler/jestSetup');
 
+// Reanimated / Worklets はネイティブ部分が無いと読み込めないため、公式のモックへ差し替える。
+// 調整画面（user feature）が Reanimated を使うので、user の公開 API を読み込むだけのテストでも必要になる。
+// モックの withTiming は終了値をすぐ返す。
+// https://docs.swmansion.com/react-native-reanimated/docs/guides/testing
+jest.mock('react-native-worklets', () => require('react-native-worklets/src/mock'));
+jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
+
 // AsyncStorage はネイティブモジュールに依存するため、テストでは公式提供のモックへ差し替える。
 // https://react-native-async-storage.github.io/async-storage/docs/advanced/jest
 jest.mock('@react-native-async-storage/async-storage', () =>
