@@ -15,11 +15,15 @@ import { DisasterFilter } from './disaster-filter';
 import { ShelterDatasetNotice } from './shelter-dataset-notice';
 import { ShelterSuitabilityChips } from './shelter-suitability';
 
-import { styles } from '../styles/evacuation-list.styles';
+import {
+  CATEGORY_TEXT_COLOR,
+  LOCATION_BANNER_COLORS,
+  styles,
+} from '../styles/evacuation-list.styles';
 
 import { Spacing } from '@/shared/config';
 import { formatDistanceKm, useCurrentLocation } from '@/shared/lib/geo';
-import { useTheme } from '@/shared/lib/theme';
+import { useTheme, useThemeScheme } from '@/shared/lib/theme';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
 function ShelterListItem({
@@ -30,6 +34,7 @@ function ShelterListItem({
   isNearest: boolean;
 }) {
   const theme = useTheme();
+  const scheme = useThemeScheme();
   const { t } = useTranslation();
 
   return (
@@ -41,7 +46,7 @@ function ShelterListItem({
       <ThemedView style={styles.card}>
         <View style={styles.content}>
           <View style={styles.categoryRow}>
-            <ThemedText style={styles.category}>
+            <ThemedText style={[styles.category, { color: CATEGORY_TEXT_COLOR[scheme] }]}>
               {t(`evacuation.list.category.${shelter.facilityCategory}`)}
             </ThemedText>
             {isNearest ? (
@@ -122,6 +127,7 @@ function ListHeader({
 }) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const bannerColors = LOCATION_BANNER_COLORS[useThemeScheme()];
 
   if (!showHeader && !showDisasterFilter && !permissionDenied && !servicesDisabled) return null;
 
@@ -143,8 +149,8 @@ function ListHeader({
       ) : null}
 
       {permissionDenied || servicesDisabled ? (
-        <View style={styles.locationBanner}>
-          <ThemedText type="smallBold" style={styles.locationBannerText}>
+        <View style={[styles.locationBanner, { backgroundColor: bannerColors.background }]}>
+          <ThemedText type="smallBold" style={{ color: bannerColors.text }}>
             {permissionDenied
               ? t('location.permissionDeniedNotice')
               : t('evacuation.list.locationServicesDisabled')}

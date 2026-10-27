@@ -30,6 +30,7 @@ import { useBlockedAuthorIds } from '../../store/use-blocked-author-store';
 import { useReportedReviewIds } from '../../store/use-reported-review-store';
 import type { ReviewEdit } from '../../store/use-review-store';
 
+import { ACTIVE_STAR_COLOR, INACTIVE_STAR_COLOR } from '../styles/review-form.styles';
 import { RATING_STAR_COLOR, styles } from '../styles/spot-detail.styles';
 
 import { ReviewForm } from './review-form';
@@ -41,7 +42,7 @@ import { SignInModal, useCurrentUser, UserAvatar } from '@/features/user';
 import { IS_USER_CONTENT_ENABLED, Spacing } from '@/shared/config';
 import { confirmOpenDirections } from '@/shared/lib/directions';
 import { useCurrentLocation } from '@/shared/lib/geo';
-import { useTheme } from '@/shared/lib/theme';
+import { useTheme, useThemeScheme } from '@/shared/lib/theme';
 import { useIsAdult } from '@/shared/store';
 import { DestructiveConfirmDialog, ThemedText, ThemedView } from '@/shared/ui';
 
@@ -93,6 +94,7 @@ function ReviewCard({
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const scheme = useThemeScheme();
   const { width: screenWidth } = useWindowDimensions();
   const menuAnchorRef = useRef<View>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -187,7 +189,7 @@ function ReviewCard({
             >
               <SymbolView
                 name={{ ios: 'star.fill', android: 'star', web: 'star' }}
-                tintColor={i < editRating ? '#F5A623' : '#D8D8D8'}
+                tintColor={i < editRating ? ACTIVE_STAR_COLOR : INACTIVE_STAR_COLOR[scheme]}
                 size={24}
               />
             </Pressable>

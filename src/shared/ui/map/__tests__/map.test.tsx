@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react-native';
 import { View as MockView } from 'react-native';
 
 import { Map } from '../map';
+import { TOURISM_PIN_RED } from '../styles/map.styles';
 
 import type { MapMarker } from '../map.types';
 import type { ReactNode } from 'react';
@@ -15,10 +16,15 @@ jest.mock('react-native-maps', () => {
   return {
     __esModule: true,
     default: ({ children }: { children?: ReactNode }) => <RNView>{children}</RNView>,
-    Marker: fr(({ children }: { children?: ReactNode }, ref: React.Ref<{ redraw: () => void }>) => {
-      uih(ref, () => ({ redraw: mockRedraw }));
-      return <RNView>{children}</RNView>;
-    }),
+    Marker: fr(
+      (
+        { children, pinColor }: { children?: ReactNode; pinColor?: string },
+        ref: React.Ref<{ redraw: () => void }>,
+      ) => {
+        uih(ref, () => ({ redraw: mockRedraw }));
+        return <RNView testID={pinColor ? `pin:${pinColor}` : undefined}>{children}</RNView>;
+      },
+    ),
     Polyline: () => null,
     PROVIDER_GOOGLE: 'google',
   };
@@ -105,5 +111,18 @@ describe('Map の避難所ピン詳細表示（#735 アイコン読込レース�
     jest.advanceTimersByTime(5000);
 
     expect(mockRedraw).not.toHaveBeenCalled();
+  });
+});
+
+describe('Map の観光ピン', () => {
+  it('iOS では観光ピンに固定色を渡し、ダークモードでもライトと同じ色にする', () => {
+    render(
+      <Map
+        currentLocation={null}
+        markers={[{ id: 'spot-1', coordinate: { latitude: 34.69, longitude: 135.19 } }]}
+      />,
+    );
+
+    expect(screen.getByTestId(`pin:${TOURISM_PIN_RED}`)).toBeTruthy();
   });
 });

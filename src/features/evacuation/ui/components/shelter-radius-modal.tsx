@@ -8,14 +8,10 @@ import {
   useShelterRadiusStore,
 } from '../../store/use-shelter-radius-store';
 
-import {
-  RADIUS_SELECTED_BACKGROUND,
-  RADIUS_SELECTED_COLOR,
-  styles,
-} from '../styles/shelter-radius-modal.styles';
+import { RADIUS_SELECTED_COLORS, styles } from '../styles/shelter-radius-modal.styles';
 
 import { Spacing } from '@/shared/config';
-import { useTheme } from '@/shared/lib/theme';
+import { useTheme, useThemeScheme } from '@/shared/lib/theme';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
 /** `SHELTER_RADIUS_OPTIONS_KM` の各値に使う i18n キー（`evacuation.radiusFilter.options.*`）。 */
@@ -40,6 +36,7 @@ export function ShelterRadiusModal({
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const selectedColors = RADIUS_SELECTED_COLORS[useThemeScheme()];
   const insets = useSafeAreaInsets();
   const selectedRadiusKm = useShelterRadiusStore((state) => state.selectedRadiusKm);
   const setSelectedRadiusKm = useShelterRadiusStore((state) => state.setSelectedRadiusKm);
@@ -80,7 +77,7 @@ export function ShelterRadiusModal({
                         styles.row,
                         {
                           backgroundColor: isSelected
-                            ? RADIUS_SELECTED_BACKGROUND
+                            ? selectedColors.background
                             : theme.backgroundElement,
                         },
                       ]}
@@ -92,14 +89,14 @@ export function ShelterRadiusModal({
                       <ThemedText
                         style={[
                           styles.rowLabel,
-                          isSelected ? { color: RADIUS_SELECTED_COLOR } : undefined,
+                          isSelected ? { color: selectedColors.color } : undefined,
                         ]}
                       >
                         {label}
                       </ThemedText>
                       {isSelected ? (
                         <SymbolView
-                          tintColor={RADIUS_SELECTED_COLOR}
+                          tintColor={selectedColors.color}
                           name={{
                             ios: 'checkmark.circle.fill',
                             android: 'check_circle',

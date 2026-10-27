@@ -7,6 +7,7 @@ import { RELATED_SPOT_LINK_COLOR, styles } from '../styles/manner-related-spots.
 
 import type { MannerItem } from '../../domain/manner-item';
 
+import { useThemeScheme } from '@/shared/lib/theme';
 import { ThemedText } from '@/shared/ui';
 
 /** manner 機能が tourism 機能に依存しないよう、Spot の形を直接importせずこの最小形で受け取る。 */
@@ -40,6 +41,7 @@ export function MannerRelatedSpots({
   state: RelatedSpotsState;
 }) {
   const { t } = useTranslation();
+  const linkColors = RELATED_SPOT_LINK_COLOR[useThemeScheme()];
   const hasRelations = manner.relatedSpotIds.length > 0;
   const relatedSpots = state.data?.filter((spot) => manner.relatedSpotIds.includes(spot.id)) ?? [];
 
@@ -59,17 +61,20 @@ export function MannerRelatedSpots({
           {relatedSpots.map((spot) => (
             <Pressable
               key={spot.id}
-              style={styles.relatedSpotChip}
+              style={[styles.relatedSpotChip, { backgroundColor: linkColors.background }]}
               onPress={() => router.push({ pathname: '/tourism/[id]', params: { id: spot.id } })}
               accessibilityRole="link"
               accessibilityLabel={spot.name}
             >
               <SymbolView
-                tintColor={RELATED_SPOT_LINK_COLOR.foreground}
+                tintColor={linkColors.foreground}
                 name={{ ios: 'mappin', android: 'location_on', web: 'location_on' }}
                 size={12}
               />
-              <ThemedText type="small" style={styles.relatedSpotText}>
+              <ThemedText
+                type="small"
+                style={[styles.relatedSpotText, { color: linkColors.foreground }]}
+              >
                 {spot.name}
               </ThemedText>
             </Pressable>

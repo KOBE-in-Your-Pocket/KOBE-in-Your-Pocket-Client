@@ -14,14 +14,18 @@ import { ShelterTypeBadge } from './shelter-type-badge';
 
 import { useShelterPhoneCall } from '../hooks/use-shelter-phone-call';
 
-import { EXTERNAL_LINK_COLOR, styles } from '../styles/evacuation-shelter-detail.styles';
+import {
+  DETAIL_ACCENT_COLOR,
+  EXTERNAL_LINK_COLOR,
+  styles,
+} from '../styles/evacuation-shelter-detail.styles';
 
 import type { EvacuationShelter } from '../../domain/evacuation-shelter';
 
 import { Spacing } from '@/shared/config';
 import { confirmOpenDirections } from '@/shared/lib/directions';
 import { useCurrentLocation } from '@/shared/lib/geo';
-import { useTheme } from '@/shared/lib/theme';
+import { useTheme, useThemeScheme } from '@/shared/lib/theme';
 import { PhoneCallConfirmDialog, ThemedText, ThemedView } from '@/shared/ui';
 
 function BackButton({ label }: { label: string }) {
@@ -57,6 +61,7 @@ function BackButton({ label }: { label: string }) {
 
 function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
   const theme = useTheme();
+  const scheme = useThemeScheme();
   const { t } = useTranslation();
   const { coords } = useCurrentLocation();
 
@@ -89,7 +94,7 @@ function ShelterDetailContent({ shelter }: { shelter: EvacuationShelter }) {
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
       <View style={styles.body}>
-        <ThemedText style={styles.category}>
+        <ThemedText style={[styles.category, { color: DETAIL_ACCENT_COLOR[scheme] }]}>
           {t(`evacuation.list.category.${shelter.facilityCategory}`)}
         </ThemedText>
 
