@@ -1,4 +1,4 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -65,6 +65,20 @@ export function MapScreen() {
   const handleCloseServicesModal = useCallback(() => {
     setShowServicesModal(false);
   }, []);
+
+  // 詳細画面から戻ってきたときだけ地図のマーカーを作り直す（タブ切替での再フォーカスは対象外）。
+  // 画面遷移中はネイティブの地図ビューが一旦切り離され、再アタッチ時にピンの表示が
+  // ズレることがあるため（#740）、詳細画面への遷移直前に立てたフラグを再フォーカス時に見て、
+  // markerResyncKey を変えてマーカーの React key を変化させ、ネイティブマーカーを作り直させる。
+  const [markerResyncKey, setMarkerResyncKey] = useState(0);
+  const pendingMarkerResync = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (!pendingMarkerResync.current) return;
+      pendingMarkerResync.current = false;
+      setMarkerResyncKey((key) => key + 1);
+    }, []),
+  );
 
   const handleOpenRadiusModal = useCallback(() => {
     setIsRadiusModalOpen(true);
@@ -217,11 +231,13 @@ export function MapScreen() {
 
   const handleOpenDetail = useCallback(() => {
     if (!selectedSpot) return;
+    pendingMarkerResync.current = true;
     router.push({ pathname: '/tourism/[id]', params: { id: selectedSpot.id } });
   }, [selectedSpot]);
 
   const handleOpenShelterDetail = useCallback(() => {
     if (!selectedShelter) return;
+    pendingMarkerResync.current = true;
     router.push({ pathname: '/evacuation/[id]', params: { id: selectedShelter.id } });
   }, [selectedShelter]);
 
@@ -238,6 +254,7 @@ export function MapScreen() {
         markers={markers}
         onMarkerPress={handleMarkerPress}
         routeCoordinates={route?.coordinates}
+        markerResyncKey={markerResyncKey}
       />
 
       <MapModeToggle />
