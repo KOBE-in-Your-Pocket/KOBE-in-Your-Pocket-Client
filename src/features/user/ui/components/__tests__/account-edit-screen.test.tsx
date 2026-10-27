@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { router } from 'expo-router';
-import { Text as MockText, View as MockView } from 'react-native';
+import { Modal, Text as MockText, View as MockView } from 'react-native';
 
 import { useAuthStore } from '../../../store/use-auth-store';
 import { AccountEditScreen } from '../account-edit-screen';
@@ -53,6 +53,38 @@ jest.mock('../../../application/crop-profile-icon', () => ({
   cropProfileIcon: (image: unknown, crop: unknown) => mockCropProfileIcon(image, crop),
 }));
 
+// 調整画面はジェスチャーと Reanimated を使うため、決定とキャンセルだけを持つスタブにする
+// （調整画面そのものは icon-crop-screen.test.tsx で確認している）。
+const CROP = { originX: 100, originY: 200, width: 600, height: 600 };
+jest.mock('../icon-crop-screen', () => {
+  const { Pressable: MockPressable } = jest.requireActual('react-native');
+  return {
+    IconCropScreen: ({
+      onConfirm,
+      onCancel,
+    }: {
+      onConfirm: (crop: typeof CROP) => void;
+      onCancel: () => void;
+    }) => (
+      <MockView testID="icon-crop-screen">
+        <MockPressable accessibilityRole="button" onPress={() => onConfirm(CROP)}>
+          <MockText>icon-crop.confirm</MockText>
+        </MockPressable>
+        <MockPressable accessibilityRole="button" onPress={onCancel}>
+          <MockText>icon-crop.cancel</MockText>
+        </MockPressable>
+      </MockView>
+    ),
+  };
+});
+
+// プレビューに出ているアイコンを確かめられるよう、URL を文字で出す。
+jest.mock('../user-avatar', () => ({
+  UserAvatar: ({ iconUrl }: { iconUrl: string }) => (
+    <MockText testID="avatar-preview">{iconUrl}</MockText>
+  ),
+}));
+
 jest.mock('expo-image', () => ({ Image: () => null }));
 jest.mock('expo-symbols', () => ({ SymbolView: () => null }));
 jest.mock('expo-router', () => ({
@@ -78,6 +110,29 @@ async function pressChangeIcon() {
   fireEvent.press(screen.getByLabelText('settings.accountEdit.changeIcon'));
   await waitFor(() => expect(mockPickProfileIcon).toHaveBeenCalled());
 }
+
+/** 写真を選んで調整画面が開くまで進める。 */
+async function pickAndOpenCrop() {
+  const calls = mockPickProfileIcon.mock.calls.length;
+  fireEvent.press(screen.getByLabelText('settings.accountEdit.changeIcon'));
+  await waitFor(() => expect(mockPickProfileIcon).toHaveBeenCalledTimes(calls + 1));
+  await waitFor(() => expect(screen.getByTestId('icon-crop-screen')).toBeTruthy());
+}
+
+/** 調整画面で決定し、切り抜きが終わるまで待つ。 */
+async function confirmCrop() {
+  fireEvent.press(screen.getByText('icon-crop.confirm'));
+  await waitFor(() => expect(screen.queryByTestId('icon-crop-screen')).toBeNull());
+  await waitFor(() =>
+    expect(screen.getByLabelText('settings.accountEdit.changeIcon')).not.toBeDisabled(),
+  );
+}
+
+function cancelCrop() {
+  fireEvent.press(screen.getByText('icon-crop.cancel'));
+}
+
+const preview = () => screen.getByTestId('avatar-preview');
 
 describe('AccountEditScreen', () => {
   beforeEach(() => {
@@ -146,7 +201,8 @@ describe('AccountEditScreen', () => {
     mockPickProfileIcon.mockResolvedValue(PICKED);
     renderScreen();
 
-    await pressChangeIcon();
+    await pickAndOpenCrop();
+    await confirmCrop();
     fireEvent.press(screen.getByRole('button', { name: 'settings.accountEdit.save' }));
 
     await waitFor(() => expect(router.back).toHaveBeenCalled());
@@ -154,33 +210,100 @@ describe('AccountEditScreen', () => {
     expect(useAuthStore.getState().currentUser?.iconUrl).toBe(UPLOADED_ICON_URL);
   });
 
-  it('写真を選んだら、中央の正方形で切り抜く', async () => {
+  it('写真を選ぶと調整画面が開き、決定すると調整した範囲で切り抜いてプレビューに出す', async () => {
     mockPickProfileIcon.mockResolvedValue(PICKED);
     renderScreen();
 
-    await pressChangeIcon();
+    await pickAndOpenCrop();
+    expect(mockCropProfileIcon).not.toHaveBeenCalled();
 
-    await waitFor(() =>
-      expect(mockCropProfileIcon).toHaveBeenCalledWith(PICKED_IMAGE, {
-        originX: 0,
-        originY: 150,
-        width: 900,
-        height: 900,
-      }),
-    );
+    await confirmCrop();
+
+    expect(mockCropProfileIcon).toHaveBeenCalledWith(PICKED_IMAGE, CROP);
+    expect(preview()).toHaveTextContent(NEW_ICON_URI);
   });
 
-  it('切り抜きに失敗したらエラー文を表示し、元画像を消してアップロードを呼ばない', async () => {
+  it('調整画面でキャンセルすると、元画像を消してプレビューを変えない', async () => {
     mockPickProfileIcon.mockResolvedValue(PICKED);
-    mockCropProfileIcon.mockRejectedValue(new Error('crop failed'));
     renderScreen();
 
-    await pressChangeIcon();
+    await pickAndOpenCrop();
+    cancelCrop();
 
-    await waitFor(() =>
-      expect(screen.getByText('settings.accountEdit.iconPickError')).toBeTruthy(),
-    );
+    await waitFor(() => expect(screen.queryByTestId('icon-crop-screen')).toBeNull());
     expect(mockDiscardPickedProfileIcon).toHaveBeenCalledWith(PICKED_IMAGE);
+    expect(mockCropProfileIcon).not.toHaveBeenCalled();
+    expect(preview()).toHaveTextContent(USER.iconUrl);
+    expect(screen.getByRole('button', { name: 'settings.accountEdit.save' })).toBeEnabled();
+  });
+
+  it('決定したあとに選び直してキャンセルすると、前に決定したアイコンのまま', async () => {
+    mockPickProfileIcon.mockResolvedValue(PICKED);
+    renderScreen();
+
+    await pickAndOpenCrop();
+    await confirmCrop();
+    await pickAndOpenCrop();
+    cancelCrop();
+
+    await waitFor(() => expect(screen.queryByTestId('icon-crop-screen')).toBeNull());
+    expect(preview()).toHaveTextContent(NEW_ICON_URI);
+
+    fireEvent.press(screen.getByRole('button', { name: 'settings.accountEdit.save' }));
+    await waitFor(() => expect(router.back).toHaveBeenCalled());
+    expect(mockUploadMyIcon).toHaveBeenCalledWith(NEW_ICON_URI);
+  });
+
+  it('Android の戻るボタン（onRequestClose）はキャンセルと同じ扱いにする', async () => {
+    mockPickProfileIcon.mockResolvedValue(PICKED);
+    renderScreen();
+
+    await pickAndOpenCrop();
+    const modal = screen.UNSAFE_getByType(Modal);
+    act(() => {
+      modal.props.onRequestClose();
+    });
+
+    await waitFor(() => expect(screen.queryByTestId('icon-crop-screen')).toBeNull());
+    expect(mockDiscardPickedProfileIcon).toHaveBeenCalledWith(PICKED_IMAGE);
+    expect(mockCropProfileIcon).not.toHaveBeenCalled();
+    expect(preview()).toHaveTextContent(USER.iconUrl);
+  });
+
+  it('調整画面を開いている間と、決定してから切り抜きが終わるまでは、保存とアイコンの選び直しができない', async () => {
+    mockPickProfileIcon.mockResolvedValue(PICKED);
+    mockCropProfileIcon.mockReturnValue(new Promise<string>(() => {}));
+    renderScreen();
+    const saveButton = () => screen.getByRole('button', { name: 'settings.accountEdit.save' });
+    const iconButton = () => screen.getByLabelText('settings.accountEdit.changeIcon');
+
+    await pickAndOpenCrop();
+    expect(saveButton()).toBeDisabled();
+    expect(iconButton()).toBeDisabled();
+
+    fireEvent.press(screen.getByText('icon-crop.confirm'));
+    await waitFor(() => expect(screen.queryByTestId('icon-crop-screen')).toBeNull());
+
+    expect(mockCropProfileIcon).toHaveBeenCalled();
+    expect(saveButton()).toBeDisabled();
+    expect(iconButton()).toBeDisabled();
+  });
+
+  it('決定したあとに選び直して切り抜きに失敗すると、エラーを出して前に選んだアイコンも取り消す', async () => {
+    mockPickProfileIcon.mockResolvedValue(PICKED);
+    renderScreen();
+
+    await pickAndOpenCrop();
+    await confirmCrop();
+    expect(preview()).toHaveTextContent(NEW_ICON_URI);
+
+    mockCropProfileIcon.mockRejectedValueOnce(new Error('crop failed'));
+    await pickAndOpenCrop();
+    await confirmCrop();
+
+    expect(screen.getByText('settings.accountEdit.iconPickError')).toBeTruthy();
+    expect(mockDiscardPickedProfileIcon).toHaveBeenCalledWith(PICKED_IMAGE);
+    expect(preview()).toHaveTextContent(USER.iconUrl);
 
     fireEvent.press(screen.getByRole('button', { name: 'settings.accountEdit.save' }));
     await waitFor(() => expect(router.back).toHaveBeenCalled());
@@ -190,8 +313,8 @@ describe('AccountEditScreen', () => {
   it('一度写真を選んだ後に選び直しが失敗したら、前に選んだ写真を使わず保存する', async () => {
     mockPickProfileIcon.mockResolvedValueOnce(PICKED);
     renderScreen();
-    fireEvent.press(screen.getByLabelText('settings.accountEdit.changeIcon'));
-    await waitFor(() => expect(mockPickProfileIcon).toHaveBeenCalledTimes(1));
+    await pickAndOpenCrop();
+    await confirmCrop();
 
     mockPickProfileIcon.mockRejectedValueOnce(new Error('picker failed'));
     fireEvent.press(screen.getByLabelText('settings.accountEdit.changeIcon'));
@@ -264,7 +387,8 @@ describe('AccountEditScreen', () => {
     mockUploadMyIcon.mockRejectedValue(new Error('upload failed'));
     renderScreen();
 
-    await pressChangeIcon();
+    await pickAndOpenCrop();
+    await confirmCrop();
     fireEvent.press(screen.getByRole('button', { name: 'settings.accountEdit.save' }));
 
     await waitFor(() => expect(screen.getByText('settings.accountEdit.saveError')).toBeTruthy());

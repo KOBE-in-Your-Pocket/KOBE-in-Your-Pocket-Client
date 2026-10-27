@@ -2,7 +2,7 @@ import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { MaxContentWidth, Spacing } from '@/shared/config';
@@ -17,10 +17,11 @@ import {
 } from '../../application/pick-profile-icon';
 import { useCurrentUser } from '../../application/use-current-user';
 import { useUpdateProfile } from '../../application/use-update-profile';
-import { computeIconCropRect, INITIAL_ICON_CROP_TRANSFORM } from '../../domain/icon-crop';
 import { isValidDisplayName, MAX_DISPLAY_NAME_LENGTH } from '../../domain/profile-edits';
+import { IconCropScreen } from './icon-crop-screen';
 import { UserAvatar } from './user-avatar';
 
+import type { IconCropRect } from '../../domain/icon-crop';
 import type { PublicUser } from '../../domain/public-user';
 
 const SAVE_BUTTON_COLOR = '#D45B45';
@@ -30,7 +31,8 @@ const AVATAR_SIZE = 96;
 /**
  * アカウント編集画面（#402）。
  * 現在のアカウント情報を初期表示し、表示名とアイコンを編集できる。
- * アイコンはタップで端末の写真ライブラリを開いて選ぶ（#546）。
+ * アイコンはタップで端末の写真ライブラリを開いて選び（#546）、調整画面で
+ * 位置と大きさを決めてから切り抜く（#720）。
  */
 export function AccountEditScreen() {
   const { t } = useTranslation();
@@ -115,7 +117,10 @@ function AccountEditForm({ currentUser }: { currentUser: PublicUser }) {
 
   const [name, setName] = useState(currentUser.name);
   const [newIconUri, setNewIconUri] = useState<string | undefined>(undefined);
-  const [picking, setPicking] = useState(false);
+  // 写真の選択・調整・切り抜きのどれかをしている間。保存とアイコンの選び直しを止める。
+  const [busy, setBusy] = useState(false);
+  // 調整中の画像。null でないときに調整画面を開く。
+  const [adjustingImage, setAdjustingImage] = useState<PickedProfileIconImage | null>(null);
   const [pickErrorKey, setPickErrorKey] = useState<string | null>(null);
 
   const canSave = isValidDisplayName(name);
@@ -129,32 +134,79 @@ function AccountEditForm({ currentUser }: { currentUser: PublicUser }) {
   }
 
   async function handleChangeIcon() {
-    setPicking(true);
+    setBusy(true);
     setPickErrorKey(null);
     try {
       const result = await pickProfileIcon();
       if (result.status === 'picked') {
-        setNewIconUri(await cropCentered(result.image));
+        // 調整画面を閉じるまで busy のままにする。
+        setAdjustingImage(result.image);
+        return;
       }
     } catch {
       // 以前に選んだ画像が残っていると、エラー表示のまま保存したときに
       // 無関係な古い画像がアップロードされてしまう。
       setNewIconUri(undefined);
       setPickErrorKey('settings.accountEdit.iconPickError');
-    } finally {
-      setPicking(false);
     }
+    setBusy(false);
+  }
+
+  // 決定とキャンセルが続けて届いても取り違えないよう、state ではなく開いたときの画像を受け取る。
+  async function handleCropConfirm(image: PickedProfileIconImage, crop: IconCropRect | null) {
+    setAdjustingImage(null);
+    try {
+      setNewIconUri(await cropProfileIcon(image, crop));
+    } catch {
+      // 切り抜きに失敗すると元画像が残るので消す。古い画像を使わないよう選択も取り消す。
+      discardPickedProfileIcon(image);
+      setNewIconUri(undefined);
+      setPickErrorKey('settings.accountEdit.iconPickError');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // キャンセルしたら、プレビューは調整画面を開く前のままにする。
+  function handleCropCancel(image: PickedProfileIconImage) {
+    discardPickedProfileIcon(image);
+    setAdjustingImage(null);
+    setBusy(false);
   }
 
   return (
     <>
-      <Header canSave={canSave} isSaving={updateProfile.isPending || picking} onSave={handleSave} />
+      <Header canSave={canSave} isSaving={updateProfile.isPending || busy} onSave={handleSave} />
+
+      {/* Expo Router のルート間ではコールバックを渡せないため、この画面の中で開く。
+          ページシートだと下へのスワイプで閉じる操作が画像のドラッグとぶつかるので全画面にする。 */}
+      <Modal
+        visible={adjustingImage !== null}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => {
+          // Android の戻るボタンはキャンセルと同じ扱いにする。
+          if (adjustingImage) {
+            handleCropCancel(adjustingImage);
+          }
+        }}
+      >
+        {adjustingImage ? (
+          <IconCropScreen
+            // 開くたびに位置と大きさを初期状態に戻す。
+            key={adjustingImage.uri}
+            image={adjustingImage}
+            onConfirm={(crop) => handleCropConfirm(adjustingImage, crop)}
+            onCancel={() => handleCropCancel(adjustingImage)}
+          />
+        ) : null}
+      </Modal>
 
       <View style={styles.iconArea}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t('settings.accountEdit.changeIcon')}
-          disabled={picking || updateProfile.isPending}
+          disabled={busy || updateProfile.isPending}
           onPress={handleChangeIcon}
           style={styles.avatarButton}
         >
@@ -269,17 +321,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
-/**
- * 調整画面（#720）ができるまでの間、初期状態（中央の正方形）で切り抜く。
- * 移動量が 0 なので枠の一辺は結果に影響せず、仮に 1 を渡している。
- * 切り抜きに失敗したら、残った元画像を消してから例外を投げ直す。
- */
-async function cropCentered(image: PickedProfileIconImage): Promise<string> {
-  try {
-    return await cropProfileIcon(image, computeIconCropRect(INITIAL_ICON_CROP_TRANSFORM, image, 1));
-  } catch (error) {
-    discardPickedProfileIcon(image);
-    throw error;
-  }
-}
