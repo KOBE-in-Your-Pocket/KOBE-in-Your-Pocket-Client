@@ -4,7 +4,12 @@ import { Platform, View } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 
 import { KOBE_INITIAL_REGION } from './kobe-initial-region';
-import { EVACUATION_MARKER_GREEN, ROUTE_STROKE_COLOR, styles } from './styles/map.styles';
+import {
+  EVACUATION_MARKER_GREEN,
+  ROUTE_STROKE_COLOR,
+  styles,
+  TOURISM_PIN_RED,
+} from './styles/map.styles';
 
 import type { MapMarker, MapProps } from './map.types';
 
@@ -95,6 +100,8 @@ export function Map({
             coordinate={marker.coordinate}
             title={marker.title}
             description={marker.description}
+            // Android（Google Maps）の既定ピンはダークでも変わらないため、iOS だけ固定色を渡す。
+            pinColor={Platform.OS === 'ios' ? TOURISM_PIN_RED : undefined}
             onPress={() => onMarkerPress?.(marker)}
           />
         ),

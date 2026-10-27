@@ -6,6 +6,12 @@ const CURRENT_LOCATION_BLUE = '#208AEF';
 /** 経路ライン（Polyline）の色。 */
 export const ROUTE_STROKE_COLOR = '#208AEF';
 
+/**
+ * 観光ピンの色（iOS のライト時の標準ピンと同じ赤）。iOS は未指定だとシステムの動的な赤になり、
+ * ダークでくすんだ赤に変わるため、固定色を明示してテーマに関わらず同じ見た目にする。
+ */
+export const TOURISM_PIN_RED = '#FF2D55';
+
 /** 避難所マーカーの色（安全色系の緑。観光ピンの赤と明確に区別する）。アイコンの tint にも使う。 */
 export const EVACUATION_MARKER_GREEN = '#0F8A4F';
 
