@@ -117,11 +117,13 @@ function AccountEditForm({ currentUser }: { currentUser: PublicUser }) {
 
   const [name, setName] = useState(currentUser.name);
   const [newIconUri, setNewIconUri] = useState<string | undefined>(undefined);
-  // 写真の選択・調整・切り抜きのどれかをしている間。保存とアイコンの選び直しを止める。
-  const [busy, setBusy] = useState(false);
-  // 調整中の画像。null でないときに調整画面を開く。
+  const [picking, setPicking] = useState(false);
   const [adjustingImage, setAdjustingImage] = useState<PickedProfileIconImage | null>(null);
+  const [cropping, setCropping] = useState(false);
   const [pickErrorKey, setPickErrorKey] = useState<string | null>(null);
+
+  // 写真の選択・調整・切り抜きのどれかをしている間は、保存とアイコンの選び直しを止める。
+  const busy = picking || adjustingImage !== null || cropping;
 
   const canSave = isValidDisplayName(name);
   const previewIconUrl = newIconUri ?? currentUser.iconUrl;
@@ -134,27 +136,26 @@ function AccountEditForm({ currentUser }: { currentUser: PublicUser }) {
   }
 
   async function handleChangeIcon() {
-    setBusy(true);
+    setPicking(true);
     setPickErrorKey(null);
     try {
       const result = await pickProfileIcon();
       if (result.status === 'picked') {
-        // 調整画面を閉じるまで busy のままにする。
         setAdjustingImage(result.image);
-        return;
       }
     } catch {
       // 以前に選んだ画像が残っていると、エラー表示のまま保存したときに
       // 無関係な古い画像がアップロードされてしまう。
       setNewIconUri(undefined);
       setPickErrorKey('settings.accountEdit.iconPickError');
+    } finally {
+      setPicking(false);
     }
-    setBusy(false);
   }
 
-  // 決定とキャンセルが続けて届いても取り違えないよう、state ではなく開いたときの画像を受け取る。
   async function handleCropConfirm(image: PickedProfileIconImage, crop: IconCropRect | null) {
     setAdjustingImage(null);
+    setCropping(true);
     try {
       setNewIconUri(await cropProfileIcon(image, crop));
     } catch {
@@ -163,15 +164,13 @@ function AccountEditForm({ currentUser }: { currentUser: PublicUser }) {
       setNewIconUri(undefined);
       setPickErrorKey('settings.accountEdit.iconPickError');
     } finally {
-      setBusy(false);
+      setCropping(false);
     }
   }
 
-  // キャンセルしたら、プレビューは調整画面を開く前のままにする。
   function handleCropCancel(image: PickedProfileIconImage) {
     discardPickedProfileIcon(image);
     setAdjustingImage(null);
-    setBusy(false);
   }
 
   return (
@@ -193,8 +192,6 @@ function AccountEditForm({ currentUser }: { currentUser: PublicUser }) {
       >
         {adjustingImage ? (
           <IconCropScreen
-            // 開くたびに位置と大きさを初期状態に戻す。
-            key={adjustingImage.uri}
             image={adjustingImage}
             onConfirm={(crop) => handleCropConfirm(adjustingImage, crop)}
             onCancel={() => handleCropCancel(adjustingImage)}

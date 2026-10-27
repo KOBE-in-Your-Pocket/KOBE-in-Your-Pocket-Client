@@ -289,6 +289,23 @@ describe('AccountEditScreen', () => {
     expect(iconButton()).toBeDisabled();
   });
 
+  it('切り抜きに失敗したらエラー文を表示し、元画像を消してアップロードを呼ばない', async () => {
+    mockPickProfileIcon.mockResolvedValue(PICKED);
+    mockCropProfileIcon.mockRejectedValue(new Error('crop failed'));
+    renderScreen();
+
+    await pickAndOpenCrop();
+    await confirmCrop();
+
+    expect(screen.getByText('settings.accountEdit.iconPickError')).toBeTruthy();
+    expect(mockDiscardPickedProfileIcon).toHaveBeenCalledWith(PICKED_IMAGE);
+    expect(preview()).toHaveTextContent(USER.iconUrl);
+
+    fireEvent.press(screen.getByRole('button', { name: 'settings.accountEdit.save' }));
+    await waitFor(() => expect(router.back).toHaveBeenCalled());
+    expect(mockUploadMyIcon).not.toHaveBeenCalled();
+  });
+
   it('決定したあとに選び直して切り抜きに失敗すると、エラーを出して前に選んだアイコンも取り消す', async () => {
     mockPickProfileIcon.mockResolvedValue(PICKED);
     renderScreen();
