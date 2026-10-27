@@ -1,4 +1,5 @@
 import { SymbolView, type AndroidSymbol, type SFSymbol } from 'expo-symbols';
+import { useEffect, useRef, type ComponentRef } from 'react';
 import { Platform, View } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 
@@ -15,41 +16,47 @@ const EVACUATION_ICON: { ios: SFSymbol; android: AndroidSymbol; web: AndroidSymb
 };
 
 /**
- * 詳細ピン（アイコン＋常時トラッキング）にする避難所マーカー件数の上限。超えたら簡易ピンにする。
- * 以前は currentLocation の有無で判定していたが、#676 で半径「無制限」を選べるようになり
- * 前提が崩れたため件数ベースに変更。
+ * ピン表示直後、この間隔（ms）でマーカーの見た目を撮り直す。
+ * {@link SymbolView} はフォントを非同期読込するため、`tracksViewChanges` の自動検知だけに
+ * 頼るとアイコン読込前のスナップショットのまま固定されることがある（#735）。
+ * 複数回 `redraw()` を呼ぶことで読込タイミングに関係なく確実に反映させる。
  */
-const DETAILED_EVACUATION_MARKER_LIMIT = 50;
+const MARKER_REDRAW_DELAYS_MS = [300, 800, 1500];
 
 /**
- * 避難所ピン。緑のしずく型＋白い円＋走る人ピクトグラム（`detailed`時のみ）で観光ピンと区別する。
+ * 避難所ピン。緑のしずく型＋白い円＋走る人ピクトグラムで観光ピンと区別する。
  * 先端が座標を指すよう `anchor={{x:0.5,y:1}}`。
- * `tracksViewChanges` は `detailed` な間だけ有効にする（{@link SymbolView} のフォント非同期読込に対応するため）。
  */
 function EvacuationMarker({
   marker,
   onPress,
-  detailed,
 }: {
   marker: MapMarker;
   onPress?: (marker: MapMarker) => void;
-  detailed: boolean;
 }) {
+  const markerRef = useRef<ComponentRef<typeof Marker>>(null);
+
+  useEffect(() => {
+    const timers = MARKER_REDRAW_DELAYS_MS.map((delay) =>
+      setTimeout(() => markerRef.current?.redraw(), delay),
+    );
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
   return (
     <Marker
+      ref={markerRef}
       coordinate={marker.coordinate}
       title={marker.title}
       description={marker.description}
       onPress={() => onPress?.(marker)}
       anchor={{ x: 0.5, y: 1 }}
-      tracksViewChanges={detailed}
+      tracksViewChanges={false}
     >
       <View style={styles.evacuationPin}>
         <View style={styles.evacuationPinHead}>
           <View style={styles.evacuationPinCore}>
-            {detailed ? (
-              <SymbolView name={EVACUATION_ICON} tintColor={EVACUATION_MARKER_GREEN} size={18} />
-            ) : null}
+            <SymbolView name={EVACUATION_ICON} tintColor={EVACUATION_MARKER_GREEN} size={18} />
           </View>
         </View>
         <View style={styles.evacuationPinTip} />
@@ -70,10 +77,6 @@ export function Map({
   onMarkerPress,
   routeCoordinates,
 }: MapProps) {
-  const evacuationMarkerCount =
-    markers?.filter((marker) => marker.variant === 'evacuation').length ?? 0;
-  const detailedEvacuation = evacuationMarkerCount <= DETAILED_EVACUATION_MARKER_LIMIT;
-
   return (
     <MapView
       style={[styles.map, style]}
@@ -85,12 +88,7 @@ export function Map({
       ) : null}
       {markers?.map((marker) =>
         marker.variant === 'evacuation' ? (
-          <EvacuationMarker
-            key={marker.id}
-            marker={marker}
-            onPress={onMarkerPress}
-            detailed={detailedEvacuation}
-          />
+          <EvacuationMarker key={marker.id} marker={marker} onPress={onMarkerPress} />
         ) : (
           <Marker
             key={marker.id}
