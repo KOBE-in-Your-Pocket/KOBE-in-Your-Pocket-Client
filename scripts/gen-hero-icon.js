@@ -1,7 +1,7 @@
 /* global __dirname */
 // assets/images/app-icon.png から、ホームのヒーロー背景用に
 // 「左上が濃く、右下へ斜めにフェード（透明化）」したアイコンを焼き込んで生成する。
-// 以前の神戸市章（kobe-emblem.png）が持っていた斜めフェードを app-icon で再現するためのもの。
+// 以前ホーム背景に使っていた神戸市章の斜めフェードを app-icon で再現するためのもの。
 const fs = require('fs');
 const path = require('path');
 const { PNG } = require('pngjs');
