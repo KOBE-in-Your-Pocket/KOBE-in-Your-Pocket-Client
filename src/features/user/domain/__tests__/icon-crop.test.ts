@@ -7,6 +7,7 @@ import {
   isUsableIconImageSize,
   MAX_ICON_ZOOM,
   MIN_ICON_CROP_EDGE_PX,
+  zoomIconCropTransform,
   type IconCropRect,
   type IconImageSize,
 } from '../icon-crop';
@@ -136,6 +137,50 @@ describe('clampIconCropTransform', () => {
     expect(result).not.toBe(INITIAL_ICON_CROP_TRANSFORM);
     result.translateX = 99;
     expect(INITIAL_ICON_CROP_TRANSFORM.translateX).toBe(0);
+  });
+});
+
+describe('zoomIconCropTransform', () => {
+  it('中央に置いたまま倍率を変えると、中央のまま拡大する', () => {
+    expect(zoomIconCropTransform(INITIAL_ICON_CROP_TRANSFORM, 2, LANDSCAPE, FRAME)).toEqual({
+      scale: 2,
+      translateX: 0,
+      translateY: 0,
+    });
+  });
+
+  it('枠の中心に見えている部分を保つよう、移動量も倍率に合わせて変える', () => {
+    // 2 倍のとき横に (1200*(300/900)*2 - 300)/2 = 250 まで動かせる。
+    const zoomed = zoomIconCropTransform(
+      { scale: 2, translateX: 100, translateY: -100 },
+      3,
+      LANDSCAPE,
+      FRAME,
+    );
+
+    expect(zoomed.scale).toBe(3);
+    expect(zoomed.translateX).toBeCloseTo(150);
+    expect(zoomed.translateY).toBeCloseTo(-150);
+  });
+
+  it('縮小して余白ができる移動量は、範囲内に収める', () => {
+    // 1 倍のとき横は 50 まで、縦は 0 までしか動かせない。
+    expect(
+      zoomIconCropTransform({ scale: 2, translateX: 200, translateY: 200 }, 1, LANDSCAPE, FRAME),
+    ).toEqual({ scale: 1, translateX: 50, translateY: 0 });
+  });
+
+  it('倍率は 1 〜 上限に収める', () => {
+    expect(zoomIconCropTransform(INITIAL_ICON_CROP_TRANSFORM, 0.2, SQUARE, FRAME).scale).toBe(1);
+    expect(zoomIconCropTransform(INITIAL_ICON_CROP_TRANSFORM, 100, SQUARE, FRAME).scale).toBe(
+      getMaxIconZoom(SQUARE),
+    );
+  });
+
+  it('元の倍率が壊れているときは、中央に戻す', () => {
+    expect(
+      zoomIconCropTransform({ scale: 0, translateX: 30, translateY: 0 }, 2, LANDSCAPE, FRAME),
+    ).toEqual({ scale: 2, translateX: 0, translateY: 0 });
   });
 });
 

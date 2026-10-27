@@ -127,6 +127,33 @@ export function clampIconCropTransform(
 }
 
 /**
+ * 倍率を変えたときの置き方。枠の中心に見えている部分を保ったまま拡大・縮小し、
+ * {@link clampIconCropTransform} で枠の中に余白ができない範囲に収める。
+ * ボタンやマウスホイールなど、ピンチ以外で倍率を変えるときに使う。
+ */
+export function zoomIconCropTransform(
+  transform: IconCropTransform,
+  scale: number,
+  image: IconImageSize,
+  frameSize: number,
+): IconCropTransform {
+  'worklet';
+  const nextScale = clampIconZoom(scale, image);
+  // 元の倍率が壊れていると比率を求められないので、中央に戻す。
+  const ratio =
+    Number.isFinite(transform.scale) && transform.scale > 0 ? nextScale / transform.scale : 0;
+  return clampIconCropTransform(
+    {
+      scale: nextScale,
+      translateX: transform.translateX * ratio,
+      translateY: transform.translateY * ratio,
+    },
+    image,
+    frameSize,
+  );
+}
+
+/**
  * 調整画面での置き方から、元画像の切り抜き範囲（正方形・整数 px）を求める。
  * 範囲外の倍率・移動量は {@link clampIconCropTransform} で収めてから計算するので、
  * 結果は必ず元画像の内側に収まる。寸法が使えない場合は null。
