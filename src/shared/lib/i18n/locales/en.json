@@ -62,6 +62,9 @@
         "title": "Adjust icon",
         "confirm": "Done",
         "hint": "Drag to move, pinch to zoom",
+        "hintWeb": "Drag to move, use the buttons or mouse wheel to zoom",
+        "zoomIn": "Zoom in",
+        "zoomOut": "Zoom out",
         "areaLabel": "Icon crop area"
       }
     },

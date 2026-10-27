@@ -50,6 +50,9 @@ describe('locale files', () => {
     expect(iconCrop.confirm).toBeTruthy();
     expect(iconCrop.hint).toBeTruthy();
     expect(iconCrop.areaLabel).toBeTruthy();
+    expect(iconCrop.hintWeb).toBeTruthy();
+    expect(iconCrop.zoomIn).toBeTruthy();
+    expect(iconCrop.zoomOut).toBeTruthy();
     // キャンセルは設定画面共通の文言を使う。
     expect(locale.settings.cancel).toBeTruthy();
   });
