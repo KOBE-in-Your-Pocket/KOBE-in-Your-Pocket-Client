@@ -8,10 +8,8 @@ import { IconCropScreen } from '../icon-crop-screen';
 import type { ReactNode } from 'react';
 import type { PanGesture, PinchGesture } from 'react-native-gesture-handler';
 
-// Reanimated / Worklets はネイティブ部分が無いと読み込めないため、公式のモックへ差し替える。
-// モックの withTiming は終了値をすぐ返すので、指を離した直後に範囲内へ戻った状態になる。
-jest.mock('react-native-worklets', () => jest.requireActual('react-native-worklets/src/mock'));
-jest.mock('react-native-reanimated', () => jest.requireActual('react-native-reanimated/mock'));
+// Reanimated は jest.setup.js で公式のモックへ差し替えている。モックの withTiming は
+// 終了値をすぐ返すので、指を離した直後に範囲内へ戻った状態になる。
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
