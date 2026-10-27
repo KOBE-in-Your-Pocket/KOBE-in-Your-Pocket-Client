@@ -1,10 +1,12 @@
 import { Image } from 'expo-image';
-import { useState } from 'react';
+import { SymbolView, type SymbolViewProps } from 'expo-symbols';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { scheduleOnRN } from 'react-native-worklets';
 
 import { Spacing } from '@/shared/config';
 import { useTheme } from '@/shared/lib/theme';
@@ -16,8 +18,10 @@ import {
   getMaxIconZoom,
   INITIAL_ICON_CROP_TRANSFORM,
   isUsableIconImageSize,
+  zoomIconCropTransform,
   type IconCropRect,
 } from '../../domain/icon-crop';
+import { useWheel } from '../hooks/use-wheel';
 
 import type { PickedProfileIconImage } from '../../application/pick-profile-icon';
 
@@ -35,6 +39,10 @@ const SETTLE_DURATION_MS = 200;
 const MIN_GESTURE_ZOOM = 0.5;
 /** 操作中に拡大できる上限の、本来の上限に対する比率。指を離すと上限に戻る。 */
 const GESTURE_ZOOM_OVERSHOOT = 1.5;
+/** 「＋」「−」ボタンやスクリーンリーダーの操作 1 回で変える倍率。 */
+const ZOOM_STEP = 0.5;
+/** マウスホイールの回転量（px）を倍率の変化に直す係数。100px で約 1.2 倍になる。 */
+const WHEEL_ZOOM_SENSITIVITY = 0.002;
 
 export type IconCropScreenProps = {
   /** 選んだ画像。寸法を取得できなかった場合は 0 になりうる。 */
@@ -50,6 +58,7 @@ export type IconCropScreenProps = {
 
 /**
  * アイコンにする範囲を、ドラッグ（位置）とピンチ（大きさ）で調整する画面（#718）。
+ * Web ではピンチの代わりに、「＋」「−」ボタンとマウスホイールで大きさを変える（#719）。
  *
  * 操作中は枠の外へはみ出せるが、指を離すと `clampIconCropTransform` で
  * 枠の中に余白ができない位置・大きさへアニメーションで戻す。
@@ -60,6 +69,11 @@ export function IconCropScreen({ image, onConfirm, onCancel }: IconCropScreenPro
   const theme = useTheme();
   const window = useWindowDimensions();
   const [confirmed, setConfirmed] = useState(false);
+  // ボタンの有効・無効を決めるための倍率。アニメーションの行き先（範囲内に収めた値）を持つ。
+  const [zoom, setZoom] = useState(INITIAL_ICON_CROP_TRANSFORM.scale);
+  const areaRef = useRef<View>(null);
+  // Web ではピンチが使えないため、拡大・縮小のボタンとマウスホイールで大きさを変える（#719）。
+  const showsZoomButtons = Platform.OS === 'web';
 
   const frameSize = Math.min(
     window.width - Spacing.four * 2,
@@ -74,6 +88,7 @@ export function IconCropScreen({ image, onConfirm, onCancel }: IconCropScreenPro
     : { width: frameSize, height: frameSize };
   // マスクの枠線の太さ。画面のどこまで操作エリアが広がっても外側を覆いきれる太さにする。
   const maskBorder = Math.max(window.width, window.height);
+  const maxZoom = getMaxIconZoom(image);
 
   const scale = useSharedValue(INITIAL_ICON_CROP_TRANSFORM.scale);
   const translateX = useSharedValue(INITIAL_ICON_CROP_TRANSFORM.translateX);
@@ -104,6 +119,7 @@ export function IconCropScreen({ image, onConfirm, onCancel }: IconCropScreenPro
     scale.set(withTiming(clamped.scale, config));
     translateX.set(withTiming(clamped.translateX, config));
     translateY.set(withTiming(clamped.translateY, config));
+    scheduleOnRN(setZoom, clamped.scale);
   };
 
   const pan = Gesture.Pan()
@@ -162,6 +178,41 @@ export function IconCropScreen({ image, onConfirm, onCancel }: IconCropScreenPro
     ],
   }));
 
+  /** 枠の中心に見えている部分を保ったまま、倍率を `nextScale` に変える（範囲内に収める）。 */
+  function zoomTo(nextScale: number, animated: boolean) {
+    const next = zoomIconCropTransform(
+      { scale: scale.get(), translateX: translateX.get(), translateY: translateY.get() },
+      nextScale,
+      image,
+      frameSize,
+    );
+    if (animated) {
+      const config = { duration: SETTLE_DURATION_MS };
+      scale.set(withTiming(next.scale, config));
+      translateX.set(withTiming(next.translateX, config));
+      translateY.set(withTiming(next.translateY, config));
+    } else {
+      scale.set(next.scale);
+      translateX.set(next.translateX);
+      translateY.set(next.translateY);
+    }
+    setZoom(next.scale);
+  }
+
+  // 続けて押したときにアニメーション途中の値から足さないよう、行き先の倍率から変える。
+  const zoomIn = () => zoomTo(zoom + ZOOM_STEP, true);
+  const zoomOut = () => zoomTo(zoom - ZOOM_STEP, true);
+  const canZoomIn = usable && zoom < maxZoom;
+  const canZoomOut = usable && zoom > 1;
+
+  // ホイールは細かく何度も届くので、アニメーションせずにそのまま追従させる。
+  // 下へ回す（deltaY > 0）と縮小、上へ回すと拡大する。
+  useWheel(
+    areaRef,
+    (deltaY) => zoomTo(scale.get() * Math.exp(-deltaY * WHEEL_ZOOM_SENSITIVITY), false),
+    usable,
+  );
+
   function handleConfirm() {
     if (confirmed) {
       return;
@@ -177,6 +228,10 @@ export function IconCropScreen({ image, onConfirm, onCancel }: IconCropScreenPro
       ),
     );
   }
+
+  const hint = showsZoomButtons
+    ? t('settings.accountEdit.iconCrop.hintWeb')
+    : t('settings.accountEdit.iconCrop.hint');
 
   return (
     <GestureHandlerRootView style={[styles.root, { backgroundColor: theme.background }]}>
@@ -208,9 +263,20 @@ export function IconCropScreen({ image, onConfirm, onCancel }: IconCropScreenPro
 
         <GestureDetector gesture={gesture}>
           <View
+            ref={areaRef}
             accessible
+            accessibilityRole="adjustable"
             accessibilityLabel={t('settings.accountEdit.iconCrop.areaLabel')}
-            accessibilityHint={t('settings.accountEdit.iconCrop.hint')}
+            accessibilityHint={hint}
+            // ピンチできないスクリーンリーダーの利用者も、上下のスワイプで大きさを変えられる。
+            accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+            onAccessibilityAction={(event) => {
+              if (event.nativeEvent.actionName === 'increment') {
+                zoomIn();
+              } else if (event.nativeEvent.actionName === 'decrement') {
+                zoomOut();
+              }
+            }}
             style={styles.area}
             onLayout={(event) => {
               areaCenterX.set(event.nativeEvent.layout.width / 2);
@@ -248,11 +314,56 @@ export function IconCropScreen({ image, onConfirm, onCancel }: IconCropScreenPro
           </View>
         </GestureDetector>
 
+        {showsZoomButtons ? (
+          <View style={styles.zoomButtons}>
+            <ZoomButton
+              label={t('settings.accountEdit.iconCrop.zoomOut')}
+              symbol={{ ios: 'minus', android: 'remove', web: 'remove' }}
+              enabled={canZoomOut}
+              onPress={zoomOut}
+            />
+            <ZoomButton
+              label={t('settings.accountEdit.iconCrop.zoomIn')}
+              symbol={{ ios: 'plus', android: 'add', web: 'add' }}
+              enabled={canZoomIn}
+              onPress={zoomIn}
+            />
+          </View>
+        ) : null}
+
         <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
-          {t('settings.accountEdit.iconCrop.hint')}
+          {hint}
         </ThemedText>
       </SafeAreaView>
     </GestureHandlerRootView>
+  );
+}
+
+/** 拡大・縮小のボタン（Web のみ）。 */
+function ZoomButton({
+  label,
+  symbol,
+  enabled,
+  onPress,
+}: {
+  label: string;
+  symbol: SymbolViewProps['name'];
+  enabled: boolean;
+  onPress: () => void;
+}) {
+  const theme = useTheme();
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !enabled }}
+      disabled={!enabled}
+      onPress={onPress}
+      style={[styles.zoomButton, { backgroundColor: theme.backgroundElement }]}
+    >
+      <SymbolView name={symbol} tintColor={enabled ? theme.text : theme.textSecondary} size={20} />
+    </Pressable>
   );
 }
 
@@ -287,6 +398,18 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   center: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  zoomButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: Spacing.four,
+  },
+  zoomButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
