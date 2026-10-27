@@ -40,9 +40,13 @@ const mockShelters = [
 const mockUseCurrentLocation = jest.fn();
 const mockFilterShelters = jest.fn();
 const mockUseLocalSearchParams = jest.fn();
+// useFocusEffect に渡された最新の effect を保持する。実際のフォーカス復帰を再現するため、
+// テストから直接呼び出して「他画面から戻ってきた」を模擬する（#740）。
+let mockLatestFocusEffect: (() => void) | undefined;
 
 // Map は markers を受け取る共有 UI。ここでは各マーカーの id を testID、variant をテキストとして
 // 描画するスタブに差し替え、「どのピンが・どの見た目で」渡されたかを検証できるようにする。
+// markerResyncKey もテキストとして出し、再同期（#740）のたびに変わることを検証できるようにする。
 type MockMarker = { id: string; variant?: string };
 
 type MockShelter = { id: string; coordinates: { latitude: number; longitude: number } };
@@ -51,11 +55,14 @@ jest.mock('@/shared/ui', () => ({
   Map: ({
     markers = [],
     onMarkerPress,
+    markerResyncKey = 0,
   }: {
     markers?: MockMarker[];
     onMarkerPress?: (marker: MockMarker) => void;
+    markerResyncKey?: number;
   }) => (
     <MockView>
+      <MockText testID="marker-resync-key">{markerResyncKey}</MockText>
       {markers.map((marker) => (
         <MockText
           key={marker.id}
@@ -131,8 +138,10 @@ jest.mock('react-i18next', () => ({
 jest.mock('expo-router', () => ({
   router: { push: jest.fn() },
   useLocalSearchParams: () => mockUseLocalSearchParams(),
-  // テストではフォーカスの出入りが発生しないため、マウント時に一度だけ呼べば十分。
+  // マウント時に一度だけ実行しつつ、effect 自体は保持する。
+  // 再フォーカス（#740）はテストから mockLatestFocusEffect を直接呼んで模擬する。
   useFocusEffect: (effect: () => void) => {
+    mockLatestFocusEffect = effect;
     const { useEffect } = jest.requireActual('react');
     useEffect(effect, [effect]);
   },
@@ -165,6 +174,7 @@ describe('MapScreen のマーカー出し分け', () => {
     // 呼び出し履歴を毎テストで初期化する（toHaveBeenCalledWith が前テストの履歴に
     // マッチして回帰を見逃さないように）。実装は下で再設定する。
     jest.clearAllMocks();
+    mockLatestFocusEffect = undefined;
     useMapModeStore.setState({ mapMode: 'tourism' });
     // 既定: 表示半径は 1km（#672 の初期値）。個別テストで上書きする。
     useShelterRadiusStore.setState({ selectedRadiusKm: 1 });
@@ -520,6 +530,35 @@ describe('MapScreen のマーカー出し分け', () => {
       expect(mockFilterShelters).not.toHaveBeenCalled();
       expect(screen.getByTestId('marker-shelter-1')).toBeTruthy();
       expect(screen.getByTestId('marker-shelter-2')).toBeTruthy();
+    });
+  });
+
+  describe('画面遷移から戻ったときのマーカー再同期（#740）', () => {
+    it('避難所詳細を開いて戻ってきたときだけ markerResyncKey が増える', () => {
+      useMapModeStore.setState({ mapMode: 'evacuation' });
+
+      render(<MapScreen />);
+      expect(screen.getByTestId('marker-resync-key').props.children).toBe(0);
+
+      // タブ切替などの無関係な再フォーカスでは増えない。
+      act(() => mockLatestFocusEffect?.());
+      expect(screen.getByTestId('marker-resync-key').props.children).toBe(0);
+
+      // 避難所カードの詳細ボタンで避難所詳細画面へ遷移する。
+      fireEvent.press(screen.getByTestId('marker-shelter-1'));
+      fireEvent.press(screen.getByTestId('shelter-card'));
+      expect(router.push).toHaveBeenCalledWith({
+        pathname: '/evacuation/[id]',
+        params: { id: 'shelter-1' },
+      });
+
+      // 詳細画面から戻って再フォーカスされると、マーカーの再同期キーが変わる。
+      act(() => mockLatestFocusEffect?.());
+      expect(screen.getByTestId('marker-resync-key').props.children).toBe(1);
+
+      // フラグは一度使うと消費されるので、続けて再フォーカスしても増えない。
+      act(() => mockLatestFocusEffect?.());
+      expect(screen.getByTestId('marker-resync-key').props.children).toBe(1);
     });
   });
 });
