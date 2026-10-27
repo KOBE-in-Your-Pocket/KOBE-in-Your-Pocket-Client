@@ -1,3 +1,7 @@
+// react-native-gesture-handler のネイティブモジュールを公式のモックへ差し替える。
+// https://docs.swmansion.com/react-native-gesture-handler/docs/guides/testing
+require('react-native-gesture-handler/jestSetup');
+
 // AsyncStorage はネイティブモジュールに依存するため、テストでは公式提供のモックへ差し替える。
 // https://react-native-async-storage.github.io/async-storage/docs/advanced/jest
 jest.mock('@react-native-async-storage/async-storage', () =>
