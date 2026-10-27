@@ -57,7 +57,13 @@
       "saveError": "저장하지 못했습니다. 잠시 후 다시 시도해 주세요.",
       "changeIcon": "아이콘 변경",
       "iconPickError": "해당 사진을 사용할 수 없습니다. 다른 사진을 선택해 주세요.",
-      "notSignedIn": "계정을 편집하려면 로그인이 필요합니다."
+      "notSignedIn": "계정을 편집하려면 로그인이 필요합니다.",
+      "iconCrop": {
+        "title": "아이콘 조정",
+        "confirm": "완료",
+        "hint": "드래그로 위치, 핀치로 크기를 조정할 수 있습니다",
+        "areaLabel": "아이콘 표시 범위"
+      }
     },
     "deleteAccount": "계정 삭제(탈퇴)",
     "deleteAccountConfirm": "계정 삭제",

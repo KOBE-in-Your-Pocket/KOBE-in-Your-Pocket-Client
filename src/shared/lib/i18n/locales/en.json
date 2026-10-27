@@ -57,7 +57,13 @@
       "saveError": "Could not save your changes. Please try again later.",
       "changeIcon": "Change icon",
       "iconPickError": "Could not use that photo. Please try another one.",
-      "notSignedIn": "Sign in to edit your account."
+      "notSignedIn": "Sign in to edit your account.",
+      "iconCrop": {
+        "title": "Adjust icon",
+        "confirm": "Done",
+        "hint": "Drag to move, pinch to zoom",
+        "areaLabel": "Icon crop area"
+      }
     },
     "deleteAccount": "Delete Account",
     "deleteAccountConfirm": "Delete Account",

@@ -57,7 +57,13 @@
       "saveError": "保存できませんでした。時間をおいて再度お試しください。",
       "changeIcon": "アイコンを変更",
       "iconPickError": "その写真は使用できませんでした。別の写真をお試しください。",
-      "notSignedIn": "アカウントを編集するにはログインが必要です。"
+      "notSignedIn": "アカウントを編集するにはログインが必要です。",
+      "iconCrop": {
+        "title": "アイコンを調整",
+        "confirm": "決定",
+        "hint": "ドラッグで位置、ピンチで大きさを調整できます",
+        "areaLabel": "アイコンの表示範囲"
+      }
     },
     "deleteAccount": "アカウント削除（退会）",
     "deleteAccountConfirm": "アカウント削除",
