@@ -3,8 +3,9 @@ import { TabTriggerSlotProps } from 'expo-router/ui';
 import { Pressable, View } from 'react-native';
 
 import { styles } from '../styles/tab-button.styles';
-import { TAB_BAR_COLORS, TAB_DEFS } from '../tab-bar-config';
+import { TAB_DEFS } from '../tab-bar-config';
 
+import { useTheme } from '@/shared/lib/theme';
 import { ThemedText } from '@/shared/ui';
 
 type TabButtonProps = TabTriggerSlotProps & {
@@ -12,11 +13,13 @@ type TabButtonProps = TabTriggerSlotProps & {
 };
 
 export function TabButton({ children, isFocused, symbol, ...props }: TabButtonProps) {
-  const tintColor = isFocused ? TAB_BAR_COLORS.active : TAB_BAR_COLORS.inactive;
+  const theme = useTheme();
+  // アクティブはブランド基調色、非アクティブは補助テキスト色。テーマ（ライト/ダーク）に追従する。
+  const tintColor = isFocused ? theme.primary : theme.textSecondary;
 
   return (
     <Pressable {...props} style={({ pressed }) => [styles.tabButton, pressed && styles.pressed]}>
-      <View style={[styles.tabButtonInner, isFocused && styles.tabButtonInnerFocused]}>
+      <View style={[styles.tabButtonInner, isFocused && { borderColor: theme.primary }]}>
         <SymbolView tintColor={tintColor} name={symbol} size={22} />
         <ThemedText
           type="small"

@@ -1,7 +1,5 @@
 import { StyleSheet } from 'react-native';
 
-import { TAB_BAR_COLORS } from '../tab-bar-config';
-
 import { Spacing } from '@/shared/config';
 
 export const styles = StyleSheet.create({
@@ -19,12 +17,10 @@ export const styles = StyleSheet.create({
     paddingHorizontal: Spacing.one,
     borderRadius: Spacing.two,
     borderWidth: 1,
+    // 透明の枠線で領域を確保し、フォーカス時に theme.primary の枠線へ切り替えてもレイアウトが動かないようにする。
     borderColor: 'transparent',
     width: '100%',
     maxWidth: '100%',
-  },
-  tabButtonInnerFocused: {
-    borderColor: TAB_BAR_COLORS.activeBorder,
   },
   tabLabel: {
     fontSize: 11,
