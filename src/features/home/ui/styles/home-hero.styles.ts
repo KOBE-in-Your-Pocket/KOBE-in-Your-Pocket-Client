@@ -12,7 +12,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     justifyContent: 'center',
   },
-  // 背景に大きく敷く市章。左上が濃く、右下へ向けて白へフェードする（アセットに焼き込み済み）。
+  // 背景に大きく敷くアプリアイコン。左上が濃く、右下へ向けて斜めにフェードする（アセットに焼き込み済み）。
   emblem: {
     position: 'absolute',
     left: -Spacing.three,
@@ -20,7 +20,7 @@ export const styles = StyleSheet.create({
     width: 210,
     height: 210,
   },
-  // キャッチフレーズは右寄せ。フェード側（右）に置くため市章の濃い部分と重ならない。
+  // キャッチフレーズは右寄せ。フェード側（右）に置くためアプリアイコンの濃い部分と重ならない。
   catchphrase: {
     alignItems: 'flex-end',
   },
