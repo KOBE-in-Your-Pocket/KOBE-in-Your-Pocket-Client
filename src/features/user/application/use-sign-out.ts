@@ -1,10 +1,11 @@
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import type { AuthGateway, SessionStore } from '../domain/auth-ports';
 import { useAuthStore } from '../store/use-auth-store';
 import { defaultAuthGateway, defaultSessionStore } from './auth-deps';
 import { bumpSessionGeneration, enqueueSessionWrite } from './session-operation';
+import { CURRENT_USER_QUERY_KEY } from './use-sync-current-user';
 
 type SignOutDeps = {
   authGateway: AuthGateway;
@@ -50,7 +51,18 @@ export async function performSignOut(
   }
 }
 
-/** ログアウトを実行する mutation。 */
+/**
+ * ログアウトを実行する mutation。
+ *
+ * 現在ユーザーのキャッシュも捨てる。残すと同じユーザーで再ログインしたとき、
+ * サインイン応答の最新の表示名を useSyncCurrentUser が古いキャッシュで上書きしてしまう。
+ */
 export function useSignOut() {
-  return useMutation({ mutationFn: () => performSignOut() });
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => performSignOut(),
+    onSettled: () => {
+      queryClient.removeQueries({ queryKey: CURRENT_USER_QUERY_KEY });
+    },
+  });
 }
