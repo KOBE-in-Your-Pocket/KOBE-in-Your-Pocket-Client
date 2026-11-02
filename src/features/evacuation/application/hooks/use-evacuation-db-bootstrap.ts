@@ -5,8 +5,9 @@ import { useUiStore } from '@/shared/store';
 import { bootstrapEvacuationDatabase } from '../use-cases/bootstrap-evacuation-database';
 
 /**
- * `AppProviders` から呼ばれるため `<I18nextProvider>` の外側にあり、`useTranslation`
- * は使えない。`useLanguageBootstrap` と同様 `useUiStore` から言語を読む。
+ * プライバシーポリシーへの同意後に `app/_layout.tsx` の `AppBootstrap` から呼ばれる（#697）。
+ * 呼び出し位置が `<I18nextProvider>` の内外どちらでも動くよう、`useTranslation` ではなく
+ * `useLanguageBootstrap` と同様 `useUiStore` から言語を読む。
  * 表示言語が変わるたびに再実行し、避難所データの再シードをトリガーする。
  *
  * 不変条件: `useEvacuationShelters`/`useEvacuationShelterDetail` は

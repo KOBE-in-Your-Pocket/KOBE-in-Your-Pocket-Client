@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router';
 
+import { useEvacuationDbBootstrap } from '@/features/evacuation';
 import { PrivacyConsentGate } from '@/features/legal';
 import { createApiMannerRepository, MannerRepositoryProvider } from '@/features/manner';
 import { createAuthTokenProvider, useRestoreSession, useSyncCurrentUser } from '@/features/user';
@@ -15,10 +16,15 @@ setAuthTokenProvider(createAuthTokenProvider());
 const mannerRepository = createApiMannerRepository();
 
 /**
- * QueryClientProvider（AppProviders 内）を必要とする起動時の副作用をまとめる。
- * RootLayout 直下では QueryClient がまだ無いため、Provider の内側で実行する。
+ * プライバシーポリシーへの同意後にだけ実行する起動時の副作用をまとめる（#697）。
+ *
+ * `PrivacyConsentGate` の内側でマウントされるため、未同意の間はセッション復元や
+ * 避難所データの取得といった通信を一切行わない。あわせて QueryClientProvider
+ * （AppProviders 内）を必要とする副作用もここで実行する。
  */
 function AppBootstrap() {
+  useRestoreSession();
+  useEvacuationDbBootstrap();
   useSyncCurrentUser();
 
   return (
@@ -29,8 +35,6 @@ function AppBootstrap() {
 }
 
 export default function RootLayout() {
-  useRestoreSession();
-
   return (
     <AppProviders>
       <PrivacyConsentGate>
