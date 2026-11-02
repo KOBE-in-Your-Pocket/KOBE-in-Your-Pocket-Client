@@ -25,6 +25,10 @@ import {
   setLastSeededShelterLanguage,
 } from '../../infrastructure/storage/shelter-language-storage';
 import {
+  getShelterLastFetchedAt,
+  setShelterLastFetchedAt,
+} from '../../infrastructure/storage/shelter-last-fetched-at-storage';
+import {
   getLastSeededShelterVersion,
   setLastSeededShelterVersion,
 } from '../../infrastructure/storage/shelter-seed-version-storage';
@@ -50,6 +54,11 @@ jest.mock('../../infrastructure/storage/shelter-language-storage', () => ({
 jest.mock('../../infrastructure/storage/shelter-seed-version-storage', () => ({
   getLastSeededShelterVersion: jest.fn(),
   setLastSeededShelterVersion: jest.fn(),
+}));
+
+jest.mock('../../infrastructure/storage/shelter-last-fetched-at-storage', () => ({
+  getShelterLastFetchedAt: jest.fn(),
+  setShelterLastFetchedAt: jest.fn(),
 }));
 
 jest.mock('../../infrastructure/storage/shelter-dataset-metadata-storage', () => ({
@@ -150,6 +159,8 @@ describe('オフライン（DBのみ）避難所参照', () => {
       .mocked(getLastSeededShelterVersion)
       .mockResolvedValue(schema.EVACUATION_SHELTERS_SEED_VERSION);
     jest.mocked(setLastSeededShelterVersion).mockResolvedValue(undefined);
+    jest.mocked(getShelterLastFetchedAt).mockImplementation(async () => Date.now());
+    jest.mocked(setShelterLastFetchedAt).mockResolvedValue(undefined);
 
     const { db, close } = createInMemoryEvacuationDatabase();
     closeDatabase = close;
