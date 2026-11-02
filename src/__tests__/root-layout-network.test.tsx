@@ -18,10 +18,18 @@ import { initI18n } from '@/shared/lib/i18n';
  *
  * #697 の不具合は「起動時の処理をどこで呼んでいるか」の問題なので、ゲートや
  * `AppBootstrap` 単体ではなく実際の `RootLayout`（`AppProviders` を含む）を描画する。
- * 通信は gateway ではなく `global.fetch` で捕まえ、認証（独自の postJson）と
+ * 通信は gateway ではなく `fetch` で捕まえ、認証（独自の postJson）と
  * 避難所（apiFetch）の両経路、および今後増える経路もまとめて検出する。
+ * 描画中だけでなく、モジュールの読み込み時やタイマー経由の通信も対象にする。
  * モックはネイティブ・入出力の境界（SQLite・secure-store・fetch）に限る。
  */
+
+// Expo の実行環境は、読み込まれるたびにグローバルの `fetch` を `expo/src/winter/fetch` の
+// 実装で入れ直す。`global.fetch` の差し替えだけでは読み込み時の通信を捕まえられないため、
+// 入れ直される実装そのものをモックにする。
+jest.mock('expo/src/winter/fetch', () => ({
+  fetch: jest.fn(async () => new Response('{}', { status: 503 })),
+}));
 
 // feature の公開 API（バレル）経由で読み込まれるだけで、この画面では描画しない。
 // ネイティブモジュールが無いと読み込み時点で落ちるため、空の部品へ差し替える。
@@ -96,7 +104,11 @@ function renderApp() {
     index: () => <Text>home</Text>,
   });
   // renderRouter は内部で偽タイマーに切り替える。ストレージ読み出しや通信の Promise を
-  // 実際の順序で流したいので、描画後は実タイマーへ戻す。
+  // 実際の順序で流したいので、描画後は実タイマーへ戻す。戻す前に、描画中に予約された
+  // タイマーを実行しておく（偽タイマーに積まれたままだと、その中の通信を見逃すため）。
+  act(() => {
+    jest.runOnlyPendingTimers();
+  });
   jest.useRealTimers();
   rendered = result;
   return result;
@@ -144,6 +156,21 @@ describe('RootLayout: プライバシー同意前の通信（#698）', () => {
     process.env.EXPO_PUBLIC_API_BASE_URL = originalApiBaseUrl;
     jest.mocked(SecureStore.getItemAsync).mockResolvedValue(null);
     jest.restoreAllMocks();
+  });
+
+  it('RootLayout の読み込み時に fetch が呼ばれない', () => {
+    let loadTimeCalls = -1;
+    // 読み込み直したモジュールが使う fetch のモックは、同じ isolateModules の中で取り出す。
+    // isolateModules の中で読み込み直すには require が必要。
+    jest.isolateModules(() => {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      require('@/app/_layout');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { fetch: expoFetch } = require('expo/src/winter/fetch') as { fetch: jest.Mock };
+      loadTimeCalls = expoFetch.mock.calls.length;
+    });
+
+    expect(loadTimeCalls).toBe(0);
   });
 
   it.each([
