@@ -1,4 +1,4 @@
-import { AuthApiError } from '../domain/auth-api-error';
+import { isInvalidRefreshTokenError } from '../domain/auth-api-error';
 import type { AuthGateway, SessionStore } from '../domain/auth-ports';
 import { useAuthStore } from '../store/use-auth-store';
 import { defaultAuthGateway, defaultSessionStore } from './auth-deps';
@@ -24,8 +24,8 @@ let inFlightRefresh: Promise<string | null> | null = null;
  * 後発のリクエストが失効済みトークンを使って必ず失敗する）。
  *
  * 再発行できない場合は null を返す。リフレッシュトークンが backend に拒否された
- * ときはローカルのセッションも破棄して未ログインに戻す。ネットワークエラー等では
- * セッションを残し、次の機会に再試行できるようにする。
+ * （400 / 401）ときだけローカルのセッションも破棄して未ログインに戻す。
+ * 5xx・解析エラー（502）・ネットワークエラーではセッションを残し、次の機会に再試行できるようにする。
  */
 export function refreshAccessToken(
   deps: RefreshAccessTokenDeps = {
@@ -53,7 +53,7 @@ async function executeRefresh(deps: RefreshAccessTokenDeps): Promise<string | nu
     const committed = await commitSession(session, generation, deps.sessionStore);
     return committed?.accessToken ?? null;
   } catch (error) {
-    if (error instanceof AuthApiError && isSessionGenerationCurrent(generation)) {
+    if (isInvalidRefreshTokenError(error) && isSessionGenerationCurrent(generation)) {
       await discardSession(generation, deps.sessionStore);
     }
     return null;

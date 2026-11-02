@@ -57,17 +57,40 @@ describe('refreshAccessToken', () => {
     expect(useAuthStore.getState().refreshToken).toBe('new-refresh-token');
   });
 
-  it('backend がリフレッシュトークンを拒否したらローカルのセッションを破棄する', async () => {
-    (deps.authGateway.refreshAuthSession as jest.Mock).mockRejectedValue(
-      new AuthApiError(401, 'リフレッシュトークンが失効しました'),
-    );
+  it.each([400, 401])(
+    'backend がリフレッシュトークンを拒否したら（%i）ローカルのセッションを破棄する',
+    async (status) => {
+      (deps.authGateway.refreshAuthSession as jest.Mock).mockRejectedValue(
+        new AuthApiError(status, 'リフレッシュトークンが失効しました'),
+      );
 
-    await expect(refreshAccessToken(deps)).resolves.toBeNull();
+      await expect(refreshAccessToken(deps)).resolves.toBeNull();
 
-    expect(deps.sessionStore.clearPersistedSession).toHaveBeenCalled();
-    expect(useAuthStore.getState().currentUser).toBeNull();
-    expect(useAuthStore.getState().refreshToken).toBeNull();
-  });
+      expect(deps.sessionStore.clearPersistedSession).toHaveBeenCalled();
+      expect(useAuthStore.getState().currentUser).toBeNull();
+      expect(useAuthStore.getState().refreshToken).toBeNull();
+    },
+  );
+
+  it.each([
+    [500, 'サーバーエラー'],
+    [503, 'サービス利用不可'],
+    [502, '認証 API のレスポンスを解析できませんでした'],
+  ])(
+    'サーバーの一時的な不調（%i）ではセッションを残し、次の機会に再試行できるようにする',
+    async (status, message) => {
+      (deps.authGateway.refreshAuthSession as jest.Mock).mockRejectedValue(
+        new AuthApiError(status, message),
+      );
+
+      await expect(refreshAccessToken(deps)).resolves.toBeNull();
+
+      expect(deps.sessionStore.clearPersistedSession).not.toHaveBeenCalled();
+      expect(useAuthStore.getState().currentUser).not.toBeNull();
+      expect(useAuthStore.getState().accessToken).toBe('old-access-token');
+      expect(useAuthStore.getState().refreshToken).toBe('stored-refresh-token');
+    },
+  );
 
   it('ネットワークエラーではセッションを残し、次の機会に再試行できるようにする', async () => {
     (deps.authGateway.refreshAuthSession as jest.Mock).mockRejectedValue(new Error('network down'));
