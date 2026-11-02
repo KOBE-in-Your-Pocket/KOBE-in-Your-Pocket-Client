@@ -38,6 +38,42 @@ function isRefetchDue(lastFetchedAt: number | null, now: number): boolean {
 }
 
 /**
+ * 再シードをいつ行うか。
+ * - `none`: 再シード不要
+ * - `blocking`: 完了を待ってから読む。保存済みのデータが無い、または別の言語・古い項目構成で
+ *   そのままでは表示できないため
+ * - `background`: 24 時間経過のみ。保存済みのデータはそのまま表示できるので裏で取り直す（#694）
+ */
+export type ShelterReseedTiming = 'none' | 'blocking' | 'background';
+
+async function readReseedState(deps: ReseedEvacuationSheltersDeps) {
+  const [lastLanguage, lastVersion, lastFetchedAt, existing] = await Promise.all([
+    deps.getLastSeededLanguage(),
+    deps.getLastSeededVersion(),
+    deps.getLastFetchedAt(),
+    deps.repository.findAll(),
+  ]);
+  const now = deps.now();
+
+  let timing: ShelterReseedTiming = 'none';
+  if (lastLanguage !== deps.language || lastVersion !== deps.seedVersion || existing.length === 0) {
+    timing = 'blocking';
+  } else if (isRefetchDue(lastFetchedAt, now)) {
+    timing = 'background';
+  }
+
+  return { existing, now, timing };
+}
+
+/** 今回の起動で再シードが必要か、必要なら完了を待つべきかを判定する。 */
+export async function getShelterReseedTiming(
+  deps: ReseedEvacuationSheltersDeps,
+): Promise<ShelterReseedTiming> {
+  const { timing } = await readReseedState(deps);
+  return timing;
+}
+
+/**
  * 必要なときだけ避難所データを取得し直して SQLite に再投入する。
  *
  * 次のいずれかの場合に再フェッチする。
@@ -57,20 +93,9 @@ function isRefetchDue(lastFetchedAt: number | null, now: number): boolean {
 export async function reseedEvacuationSheltersIfNeeded(
   deps: ReseedEvacuationSheltersDeps,
 ): Promise<boolean> {
-  const [lastLanguage, lastVersion, lastFetchedAt, existing] = await Promise.all([
-    deps.getLastSeededLanguage(),
-    deps.getLastSeededVersion(),
-    deps.getLastFetchedAt(),
-    deps.repository.findAll(),
-  ]);
-  const now = deps.now();
+  const { existing, now, timing } = await readReseedState(deps);
 
-  if (
-    lastLanguage === deps.language &&
-    lastVersion === deps.seedVersion &&
-    existing.length > 0 &&
-    !isRefetchDue(lastFetchedAt, now)
-  ) {
+  if (timing === 'none') {
     return false;
   }
 

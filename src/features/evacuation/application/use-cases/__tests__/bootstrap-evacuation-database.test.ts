@@ -5,7 +5,10 @@ import {
   bootstrapEvacuationDatabase,
   resetEvacuationDatabaseBootstrapForTests,
 } from '../bootstrap-evacuation-database';
-import { reseedEvacuationSheltersIfNeeded } from '../reseed-evacuation-shelters-if-needed';
+import {
+  getShelterReseedTiming,
+  reseedEvacuationSheltersIfNeeded,
+} from '../reseed-evacuation-shelters-if-needed';
 
 jest.mock('../../../infrastructure/api/shelter-api', () => ({
   fetchEvacuationShelterDataset: jest.fn(),
@@ -43,6 +46,7 @@ jest.mock('../../../infrastructure/storage/shelter-dataset-metadata-storage', ()
 }));
 
 jest.mock('../reseed-evacuation-shelters-if-needed', () => ({
+  getShelterReseedTiming: jest.fn(),
   reseedEvacuationSheltersIfNeeded: jest.fn(),
 }));
 
@@ -64,7 +68,90 @@ describe('bootstrapEvacuationDatabase', () => {
     jest.mocked(getEvacuationDatabase).mockReturnValue(mockDb as never);
     jest.mocked(createSqliteEvacuationShelterRepository).mockReturnValue(mockRepository as never);
     jest.mocked(runEvacuationMigrations).mockResolvedValue(undefined);
+    jest.mocked(getShelterReseedTiming).mockResolvedValue('blocking');
     jest.mocked(reseedEvacuationSheltersIfNeeded).mockResolvedValue(true);
+  });
+
+  describe('再シードのタイミング（#694）', () => {
+    it('再シード不要なら取得せず reseeded は false になる', async () => {
+      jest.mocked(getShelterReseedTiming).mockResolvedValue('none');
+
+      const { reseeded } = await bootstrapEvacuationDatabase('ja');
+
+      await expect(reseeded).resolves.toBe(false);
+      expect(reseedEvacuationSheltersIfNeeded).not.toHaveBeenCalled();
+    });
+
+    it('blocking は再シードの完了を待ってから解決する', async () => {
+      let resolveReseed: ((value: boolean) => void) | undefined;
+      jest.mocked(reseedEvacuationSheltersIfNeeded).mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveReseed = resolve;
+          }),
+      );
+      const onSettled = jest.fn();
+
+      const bootstrap = bootstrapEvacuationDatabase('ja');
+      void bootstrap.then(onSettled);
+      await waitFor(() => resolveReseed !== undefined);
+      expect(onSettled).not.toHaveBeenCalled();
+
+      resolveReseed?.(true);
+      await expect((await bootstrap).reseeded).resolves.toBe(true);
+    });
+
+    it('background は再シードの完了を待たずに解決し、結果を reseeded で返す', async () => {
+      jest.mocked(getShelterReseedTiming).mockResolvedValue('background');
+      let resolveReseed: ((value: boolean) => void) | undefined;
+      jest.mocked(reseedEvacuationSheltersIfNeeded).mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveReseed = resolve;
+          }),
+      );
+
+      const { reseeded } = await bootstrapEvacuationDatabase('ja');
+      expect(resolveReseed).toBeDefined();
+
+      resolveReseed?.(true);
+      await expect(reseeded).resolves.toBe(true);
+    });
+
+    it('background の再シードが失敗しても reject せず reseeded は false になる', async () => {
+      const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+      jest.mocked(getShelterReseedTiming).mockResolvedValue('background');
+      jest.mocked(reseedEvacuationSheltersIfNeeded).mockRejectedValue(new Error('db error'));
+
+      const { reseeded } = await bootstrapEvacuationDatabase('ja');
+
+      await expect(reseeded).resolves.toBe(false);
+      expect(consoleError).toHaveBeenCalled();
+      consoleError.mockRestore();
+    });
+
+    it('別言語の bootstrap は裏の再シードの完了を待ってから始まる（#487）', async () => {
+      jest.mocked(getShelterReseedTiming).mockResolvedValueOnce('background');
+      let resolveReseed: ((value: boolean) => void) | undefined;
+      jest.mocked(reseedEvacuationSheltersIfNeeded).mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveReseed = resolve;
+          }),
+      );
+
+      await bootstrapEvacuationDatabase('ja');
+      const second = bootstrapEvacuationDatabase('en');
+
+      for (let i = 0; i < 20; i++) {
+        await Promise.resolve();
+      }
+      expect(getShelterReseedTiming).toHaveBeenCalledTimes(1);
+
+      resolveReseed?.(true);
+      await second;
+      expect(getShelterReseedTiming).toHaveBeenCalledTimes(2);
+    });
   });
 
   it('失敗時は Promise キャッシュをクリアし、再呼び出しでリトライできる', async () => {
@@ -74,7 +161,7 @@ describe('bootstrapEvacuationDatabase', () => {
       .mockResolvedValueOnce(undefined);
 
     await expect(bootstrapEvacuationDatabase('ja')).rejects.toThrow('migration failed');
-    await expect(bootstrapEvacuationDatabase('ja')).resolves.toBeUndefined();
+    await expect(bootstrapEvacuationDatabase('ja')).resolves.toBeDefined();
 
     expect(runEvacuationMigrations).toHaveBeenCalledTimes(2);
     expect(reseedEvacuationSheltersIfNeeded).toHaveBeenCalledTimes(1);
@@ -94,7 +181,8 @@ describe('bootstrapEvacuationDatabase', () => {
 
     await waitFor(() => resolveMigration !== undefined);
     resolveMigration?.();
-    await expect(Promise.all([first, second])).resolves.toEqual([undefined, undefined]);
+    await Promise.all([first, second]);
+    expect(first).toBe(second);
 
     expect(runEvacuationMigrations).toHaveBeenCalledTimes(1);
     expect(reseedEvacuationSheltersIfNeeded).toHaveBeenCalledTimes(1);
@@ -164,7 +252,7 @@ describe('bootstrapEvacuationDatabase', () => {
 
     await waitFor(() => resolveEnReseed !== undefined);
     resolveEnReseed?.();
-    await expect(second).resolves.toBeUndefined();
+    await expect(second).resolves.toBeDefined();
 
     const enCalls = jest
       .mocked(reseedEvacuationSheltersIfNeeded)
