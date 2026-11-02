@@ -11,6 +11,10 @@ import {
   setLastSeededShelterLanguage,
 } from '../../infrastructure/storage/shelter-language-storage';
 import {
+  getShelterLastFetchedAt,
+  setShelterLastFetchedAt,
+} from '../../infrastructure/storage/shelter-last-fetched-at-storage';
+import {
   getLastSeededShelterVersion,
   setLastSeededShelterVersion,
 } from '../../infrastructure/storage/shelter-seed-version-storage';
@@ -35,6 +39,9 @@ async function doBootstrapEvacuationDatabase(language: SupportedLanguage): Promi
     getLastSeededVersion: getLastSeededShelterVersion,
     setLastSeededVersion: setLastSeededShelterVersion,
     setDatasetMetadata: setShelterDatasetMetadata,
+    now: Date.now,
+    getLastFetchedAt: getShelterLastFetchedAt,
+    setLastFetchedAt: setShelterLastFetchedAt,
   });
 }
 
