@@ -36,6 +36,7 @@ export type EvacuationDatabaseBootstrapResult = {
 let bootstrapPromise: Promise<EvacuationDatabaseBootstrapResult> | null = null;
 let bootstrapLanguage: SupportedLanguage | null = null;
 let backgroundReseed: Promise<boolean> | null = null;
+let runningBootstraps = 0;
 
 async function doBootstrapEvacuationDatabase(
   language: SupportedLanguage,
@@ -70,10 +71,16 @@ async function doBootstrapEvacuationDatabase(
     return { reseeded: Promise.resolve(await reseedEvacuationSheltersIfNeeded(deps, state)) };
   }
 
-  const reseeded = reseedEvacuationSheltersIfNeeded(deps, state).catch((error: unknown) => {
-    console.error('[evacuation] Failed to refresh shelters in background:', error);
-    return false;
-  });
+  const reseeded: Promise<boolean> = reseedEvacuationSheltersIfNeeded(deps, state)
+    .catch((error: unknown) => {
+      console.error('[evacuation] Failed to refresh shelters in background:', error);
+      return false;
+    })
+    .finally(() => {
+      if (backgroundReseed === reseeded) {
+        backgroundReseed = null;
+      }
+    });
   backgroundReseed = reseeded;
   return { reseeded };
 }
@@ -97,6 +104,7 @@ export function bootstrapEvacuationDatabase(
 
   const previous = bootstrapPromise ?? Promise.resolve();
   bootstrapLanguage = language;
+  runningBootstraps += 1;
   const current: Promise<EvacuationDatabaseBootstrapResult> = previous
     .catch(() => undefined)
     .then(() => doBootstrapEvacuationDatabase(language))
@@ -108,13 +116,35 @@ export function bootstrapEvacuationDatabase(
         bootstrapLanguage = null;
       }
       throw error;
+    })
+    .finally(() => {
+      runningBootstraps -= 1;
     });
   bootstrapPromise = current;
   return current;
+}
+
+/**
+ * bootstrap の結果の使い回しをやめて、再シードが必要かを判定し直す（#760）。
+ * アプリがフォアグラウンドに戻ったときに呼ばれる。
+ *
+ * bootstrap や裏の取り直しの実行中は何もしない。後ろに連結すると、読み手が
+ * その通信の完了まで待たされるため。実行中の処理の結果は、それを始めた呼び出し側が受け取る。
+ */
+export function recheckEvacuationDatabase(
+  language: SupportedLanguage,
+): Promise<EvacuationDatabaseBootstrapResult> {
+  if (runningBootstraps > 0 || backgroundReseed !== null) {
+    return Promise.resolve({ reseeded: Promise.resolve(false) });
+  }
+
+  bootstrapPromise = null;
+  return bootstrapEvacuationDatabase(language);
 }
 
 export function resetEvacuationDatabaseBootstrapForTests(): void {
   bootstrapPromise = null;
   bootstrapLanguage = null;
   backgroundReseed = null;
+  runningBootstraps = 0;
 }
