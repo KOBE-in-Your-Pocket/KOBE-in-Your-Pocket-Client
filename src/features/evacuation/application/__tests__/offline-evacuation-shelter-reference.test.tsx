@@ -9,7 +9,10 @@ import type { EvacuationShelter } from '../../domain/evacuation-shelter';
 import type { ShelterDataset } from '../../domain/shelter-dataset-metadata';
 import { useEvacuationShelterDetail } from '../hooks/use-evacuation-shelter-detail';
 import { useEvacuationShelters } from '../hooks/use-evacuation-shelters';
-import { resetEvacuationDatabaseBootstrapForTests } from '../use-cases/bootstrap-evacuation-database';
+import {
+  bootstrapEvacuationDatabase,
+  resetEvacuationDatabaseBootstrapForTests,
+} from '../use-cases/bootstrap-evacuation-database';
 import {
   getEvacuationShelterByIdFromLocalDb,
   getEvacuationSheltersFromLocalDb,
@@ -224,6 +227,48 @@ describe('オフライン（DBのみ）避難所参照', () => {
       await expect(getEvacuationSheltersFromLocalDb('en')).resolves.toEqual(seededSheltersEn);
       expect(fetchEvacuationShelterDataset).toHaveBeenCalledTimes(2);
       expect(fetchEvacuationShelterDataset).toHaveBeenLastCalledWith('en');
+    });
+
+    describe('前回の取得から 24 時間経過（#694）', () => {
+      const refreshedShelters = seededShelters.map((shelter) => ({
+        ...shelter,
+        name: `${shelter.name}（更新後）`,
+      }));
+
+      beforeEach(async () => {
+        const repository = createSqliteEvacuationShelterRepository(getEvacuationDatabase());
+        await repository.replaceAll(seededShelters);
+        jest.mocked(getLastSeededShelterLanguage).mockResolvedValue('ja');
+        jest.mocked(getShelterLastFetchedAt).mockResolvedValue(0);
+      });
+
+      it('取得の完了を待たずに保存済みの一覧を返し、裏で取り直す', async () => {
+        let resolveFetch: ((value: ReturnType<typeof datasetOf>) => void) | undefined;
+        jest.mocked(fetchEvacuationShelterDataset).mockImplementation(
+          () =>
+            new Promise((resolve) => {
+              resolveFetch = resolve;
+            }),
+        );
+
+        await expect(getEvacuationSheltersFromLocalDb('ja')).resolves.toEqual(seededShelters);
+
+        resolveFetch?.(datasetOf(refreshedShelters));
+        const { reseeded } = await bootstrapEvacuationDatabase('ja');
+        await expect(reseeded).resolves.toBe(true);
+        await expect(getEvacuationSheltersFromLocalDb('ja')).resolves.toEqual(refreshedShelters);
+      });
+
+      it('取り直しに失敗しても保存済みの一覧を返し、取得日時は更新しない', async () => {
+        jest.mocked(fetchEvacuationShelterDataset).mockRejectedValue(new Error('network error'));
+
+        await expect(getEvacuationSheltersFromLocalDb('ja')).resolves.toEqual(seededShelters);
+        const { reseeded } = await bootstrapEvacuationDatabase('ja');
+        await expect(reseeded).resolves.toBe(false);
+
+        await expect(getEvacuationSheltersFromLocalDb('ja')).resolves.toEqual(seededShelters);
+        expect(setShelterLastFetchedAt).not.toHaveBeenCalled();
+      });
     });
 
     describe('シード版を記録する前のバージョンでシードした端末（アプリ更新直後）', () => {

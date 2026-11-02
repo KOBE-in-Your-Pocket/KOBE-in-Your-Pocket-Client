@@ -36,7 +36,9 @@ describe('local-evacuation-shelter-queries', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.mocked(bootstrapEvacuationDatabase).mockResolvedValue(undefined);
+    jest
+      .mocked(bootstrapEvacuationDatabase)
+      .mockResolvedValue({ reseeded: Promise.resolve(false) });
     jest.mocked(getEvacuationDatabase).mockReturnValue({} as never);
     jest.mocked(createSqliteEvacuationShelterRepository).mockReturnValue({
       findAll,
