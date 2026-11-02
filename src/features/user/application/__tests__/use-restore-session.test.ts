@@ -66,15 +66,34 @@ describe('restoreSession', () => {
     expect(saveMock).toHaveBeenCalledWith(REFRESHED_SESSION);
   });
 
-  it('backend がエラーを返した場合（失効）は保存済みセッションを破棄する', async () => {
-    loadMock.mockResolvedValue(PERSISTED);
-    refreshMock.mockRejectedValue(new AuthApiError(401, 'expired'));
+  it.each([400, 401])(
+    'backend がリフレッシュトークンを拒否した場合（%i）は保存済みセッションを破棄する',
+    async (status) => {
+      loadMock.mockResolvedValue(PERSISTED);
+      refreshMock.mockRejectedValue(new AuthApiError(status, 'expired'));
 
-    await restoreSession();
+      await restoreSession();
 
-    expect(clearMock).toHaveBeenCalled();
-    expect(useAuthStore.getState().currentUser).toBeNull();
-  });
+      expect(clearMock).toHaveBeenCalled();
+      expect(useAuthStore.getState().currentUser).toBeNull();
+    },
+  );
+
+  it.each([
+    [500, 'サーバーエラー'],
+    [503, 'サービス利用不可'],
+    [502, '認証 API のレスポンスを解析できませんでした'],
+  ])(
+    'サーバーの一時的な不調（%i）では保存済みセッションを残す（次回起動時に再試行）',
+    async (status, message) => {
+      loadMock.mockResolvedValue(PERSISTED);
+      refreshMock.mockRejectedValue(new AuthApiError(status, message));
+
+      await restoreSession();
+
+      expect(clearMock).not.toHaveBeenCalled();
+    },
+  );
 
   it('ネットワークエラー等では保存済みセッションを残す（次回起動時に再試行）', async () => {
     loadMock.mockResolvedValue(PERSISTED);
