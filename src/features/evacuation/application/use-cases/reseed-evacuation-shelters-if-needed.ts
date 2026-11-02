@@ -38,6 +38,43 @@ function isRefetchDue(lastFetchedAt: number | null, now: number): boolean {
 }
 
 /**
+ * 再シードをいつ行うか。
+ * - `none`: 再シード不要
+ * - `blocking`: 完了を待ってから読む。保存済みのデータが無い、または別の言語・古い項目構成で
+ *   そのままでは表示できないため
+ * - `background`: 24 時間経過のみ。保存済みのデータはそのまま表示できるので裏で取り直す（#694）
+ */
+export type ShelterReseedTiming = 'none' | 'blocking' | 'background';
+
+export type ShelterReseedState = {
+  existing: EvacuationShelter[];
+  now: number;
+  timing: ShelterReseedTiming;
+};
+
+/** 今回の起動で再シードが必要か、必要なら完了を待つべきかを判定する。 */
+export async function readShelterReseedState(
+  deps: ReseedEvacuationSheltersDeps,
+): Promise<ShelterReseedState> {
+  const [lastLanguage, lastVersion, lastFetchedAt, existing] = await Promise.all([
+    deps.getLastSeededLanguage(),
+    deps.getLastSeededVersion(),
+    deps.getLastFetchedAt(),
+    deps.repository.findAll(),
+  ]);
+  const now = deps.now();
+
+  let timing: ShelterReseedTiming = 'none';
+  if (lastLanguage !== deps.language || lastVersion !== deps.seedVersion || existing.length === 0) {
+    timing = 'blocking';
+  } else if (isRefetchDue(lastFetchedAt, now)) {
+    timing = 'background';
+  }
+
+  return { existing, now, timing };
+}
+
+/**
  * 必要なときだけ避難所データを取得し直して SQLite に再投入する。
  *
  * 次のいずれかの場合に再フェッチする。
@@ -51,26 +88,16 @@ function isRefetchDue(lastFetchedAt: number | null, now: number): boolean {
  * 取得に失敗（オフライン等）しても DB に既存データがあれば、それをそのまま表示し続ける
  * ために例外を握りつぶす（避難所は防災情報のため、言語切り替えやアプリ更新時の一時的な
  * 通信断で一覧が丸ごと見られなくなるのは避けたい）。取得できなかった言語・シード版・取得日時は
- * 記録しないため、次回オンライン復帰時に改めて再取得が試みられる。DB が空で表示するものが
+ * 記録しないため、次回の起動時に改めて再取得が試みられる。DB が空で表示するものが
  * 無い場合のみ例外を伝播する。
  */
 export async function reseedEvacuationSheltersIfNeeded(
   deps: ReseedEvacuationSheltersDeps,
+  state?: ShelterReseedState,
 ): Promise<boolean> {
-  const [lastLanguage, lastVersion, lastFetchedAt, existing] = await Promise.all([
-    deps.getLastSeededLanguage(),
-    deps.getLastSeededVersion(),
-    deps.getLastFetchedAt(),
-    deps.repository.findAll(),
-  ]);
-  const now = deps.now();
+  const { existing, now, timing } = state ?? (await readShelterReseedState(deps));
 
-  if (
-    lastLanguage === deps.language &&
-    lastVersion === deps.seedVersion &&
-    existing.length > 0 &&
-    !isRefetchDue(lastFetchedAt, now)
-  ) {
+  if (timing === 'none') {
     return false;
   }
 
