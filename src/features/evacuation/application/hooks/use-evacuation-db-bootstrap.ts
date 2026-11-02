@@ -26,15 +26,21 @@ export function useEvacuationDbBootstrap(): void {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    let cancelled = false;
+
     void bootstrapEvacuationDatabase(language)
       .then(({ reseeded }) => reseeded)
       .then((didReseed) =>
-        didReseed
+        didReseed && !cancelled
           ? queryClient.invalidateQueries({ queryKey: EVACUATION_SHELTERS_QUERY_KEY })
           : undefined,
       )
       .catch((error: unknown) => {
         console.error('[evacuation] Failed to bootstrap local database:', error);
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, [language, queryClient]);
 }

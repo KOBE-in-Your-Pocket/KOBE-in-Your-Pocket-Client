@@ -46,7 +46,16 @@ function isRefetchDue(lastFetchedAt: number | null, now: number): boolean {
  */
 export type ShelterReseedTiming = 'none' | 'blocking' | 'background';
 
-async function readReseedState(deps: ReseedEvacuationSheltersDeps) {
+export type ShelterReseedState = {
+  existing: EvacuationShelter[];
+  now: number;
+  timing: ShelterReseedTiming;
+};
+
+/** 今回の起動で再シードが必要か、必要なら完了を待つべきかを判定する。 */
+export async function readShelterReseedState(
+  deps: ReseedEvacuationSheltersDeps,
+): Promise<ShelterReseedState> {
   const [lastLanguage, lastVersion, lastFetchedAt, existing] = await Promise.all([
     deps.getLastSeededLanguage(),
     deps.getLastSeededVersion(),
@@ -65,14 +74,6 @@ async function readReseedState(deps: ReseedEvacuationSheltersDeps) {
   return { existing, now, timing };
 }
 
-/** 今回の起動で再シードが必要か、必要なら完了を待つべきかを判定する。 */
-export async function getShelterReseedTiming(
-  deps: ReseedEvacuationSheltersDeps,
-): Promise<ShelterReseedTiming> {
-  const { timing } = await readReseedState(deps);
-  return timing;
-}
-
 /**
  * 必要なときだけ避難所データを取得し直して SQLite に再投入する。
  *
@@ -87,13 +88,14 @@ export async function getShelterReseedTiming(
  * 取得に失敗（オフライン等）しても DB に既存データがあれば、それをそのまま表示し続ける
  * ために例外を握りつぶす（避難所は防災情報のため、言語切り替えやアプリ更新時の一時的な
  * 通信断で一覧が丸ごと見られなくなるのは避けたい）。取得できなかった言語・シード版・取得日時は
- * 記録しないため、次回オンライン復帰時に改めて再取得が試みられる。DB が空で表示するものが
+ * 記録しないため、次回の起動時に改めて再取得が試みられる。DB が空で表示するものが
  * 無い場合のみ例外を伝播する。
  */
 export async function reseedEvacuationSheltersIfNeeded(
   deps: ReseedEvacuationSheltersDeps,
+  state?: ShelterReseedState,
 ): Promise<boolean> {
-  const { existing, now, timing } = await readReseedState(deps);
+  const { existing, now, timing } = state ?? (await readShelterReseedState(deps));
 
   if (timing === 'none') {
     return false;

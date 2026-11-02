@@ -20,7 +20,7 @@ import {
 } from '../../infrastructure/storage/shelter-seed-version-storage';
 
 import {
-  getShelterReseedTiming,
+  readShelterReseedState,
   reseedEvacuationSheltersIfNeeded,
   type ReseedEvacuationSheltersDeps,
 } from './reseed-evacuation-shelters-if-needed';
@@ -62,15 +62,15 @@ async function doBootstrapEvacuationDatabase(
     setLastFetchedAt: setShelterLastFetchedAt,
   };
 
-  const timing = await getShelterReseedTiming(deps);
-  if (timing === 'none') {
+  const state = await readShelterReseedState(deps);
+  if (state.timing === 'none') {
     return { reseeded: Promise.resolve(false) };
   }
-  if (timing === 'blocking') {
-    return { reseeded: Promise.resolve(await reseedEvacuationSheltersIfNeeded(deps)) };
+  if (state.timing === 'blocking') {
+    return { reseeded: Promise.resolve(await reseedEvacuationSheltersIfNeeded(deps, state)) };
   }
 
-  const reseeded = reseedEvacuationSheltersIfNeeded(deps).catch((error: unknown) => {
+  const reseeded = reseedEvacuationSheltersIfNeeded(deps, state).catch((error: unknown) => {
     console.error('[evacuation] Failed to refresh shelters in background:', error);
     return false;
   });

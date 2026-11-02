@@ -6,7 +6,7 @@ import {
   resetEvacuationDatabaseBootstrapForTests,
 } from '../bootstrap-evacuation-database';
 import {
-  getShelterReseedTiming,
+  readShelterReseedState,
   reseedEvacuationSheltersIfNeeded,
 } from '../reseed-evacuation-shelters-if-needed';
 
@@ -46,7 +46,7 @@ jest.mock('../../../infrastructure/storage/shelter-dataset-metadata-storage', ()
 }));
 
 jest.mock('../reseed-evacuation-shelters-if-needed', () => ({
-  getShelterReseedTiming: jest.fn(),
+  readShelterReseedState: jest.fn(),
   reseedEvacuationSheltersIfNeeded: jest.fn(),
 }));
 
@@ -68,13 +68,17 @@ describe('bootstrapEvacuationDatabase', () => {
     jest.mocked(getEvacuationDatabase).mockReturnValue(mockDb as never);
     jest.mocked(createSqliteEvacuationShelterRepository).mockReturnValue(mockRepository as never);
     jest.mocked(runEvacuationMigrations).mockResolvedValue(undefined);
-    jest.mocked(getShelterReseedTiming).mockResolvedValue('blocking');
+    jest
+      .mocked(readShelterReseedState)
+      .mockResolvedValue({ existing: [], now: 0, timing: 'blocking' });
     jest.mocked(reseedEvacuationSheltersIfNeeded).mockResolvedValue(true);
   });
 
   describe('再シードのタイミング（#694）', () => {
     it('再シード不要なら取得せず reseeded は false になる', async () => {
-      jest.mocked(getShelterReseedTiming).mockResolvedValue('none');
+      jest
+        .mocked(readShelterReseedState)
+        .mockResolvedValue({ existing: [], now: 0, timing: 'none' });
 
       const { reseeded } = await bootstrapEvacuationDatabase('ja');
 
@@ -102,7 +106,9 @@ describe('bootstrapEvacuationDatabase', () => {
     });
 
     it('background は再シードの完了を待たずに解決し、結果を reseeded で返す', async () => {
-      jest.mocked(getShelterReseedTiming).mockResolvedValue('background');
+      jest
+        .mocked(readShelterReseedState)
+        .mockResolvedValue({ existing: [], now: 0, timing: 'background' });
       let resolveReseed: ((value: boolean) => void) | undefined;
       jest.mocked(reseedEvacuationSheltersIfNeeded).mockImplementation(
         () =>
@@ -120,7 +126,9 @@ describe('bootstrapEvacuationDatabase', () => {
 
     it('background の再シードが失敗しても reject せず reseeded は false になる', async () => {
       const consoleError = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-      jest.mocked(getShelterReseedTiming).mockResolvedValue('background');
+      jest
+        .mocked(readShelterReseedState)
+        .mockResolvedValue({ existing: [], now: 0, timing: 'background' });
       jest.mocked(reseedEvacuationSheltersIfNeeded).mockRejectedValue(new Error('db error'));
 
       const { reseeded } = await bootstrapEvacuationDatabase('ja');
@@ -131,7 +139,9 @@ describe('bootstrapEvacuationDatabase', () => {
     });
 
     it('別言語の bootstrap は裏の再シードの完了を待ってから始まる（#487）', async () => {
-      jest.mocked(getShelterReseedTiming).mockResolvedValueOnce('background');
+      jest
+        .mocked(readShelterReseedState)
+        .mockResolvedValueOnce({ existing: [], now: 0, timing: 'background' });
       let resolveReseed: ((value: boolean) => void) | undefined;
       jest.mocked(reseedEvacuationSheltersIfNeeded).mockImplementationOnce(
         () =>
@@ -146,11 +156,11 @@ describe('bootstrapEvacuationDatabase', () => {
       for (let i = 0; i < 20; i++) {
         await Promise.resolve();
       }
-      expect(getShelterReseedTiming).toHaveBeenCalledTimes(1);
+      expect(readShelterReseedState).toHaveBeenCalledTimes(1);
 
       resolveReseed?.(true);
       await second;
-      expect(getShelterReseedTiming).toHaveBeenCalledTimes(2);
+      expect(readShelterReseedState).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -188,6 +198,7 @@ describe('bootstrapEvacuationDatabase', () => {
     expect(reseedEvacuationSheltersIfNeeded).toHaveBeenCalledTimes(1);
     expect(reseedEvacuationSheltersIfNeeded).toHaveBeenCalledWith(
       expect.objectContaining({ language: 'ja' }),
+      expect.objectContaining({ timing: 'blocking' }),
     );
   });
 
@@ -222,10 +233,12 @@ describe('bootstrapEvacuationDatabase', () => {
     expect(reseedEvacuationSheltersIfNeeded).toHaveBeenNthCalledWith(
       1,
       expect.objectContaining({ language: 'ja' }),
+      expect.objectContaining({ timing: 'blocking' }),
     );
     expect(reseedEvacuationSheltersIfNeeded).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({ language: 'en' }),
+      expect.objectContaining({ timing: 'blocking' }),
     );
   });
 

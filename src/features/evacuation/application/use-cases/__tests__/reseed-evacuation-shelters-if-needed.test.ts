@@ -2,7 +2,7 @@ import type { EvacuationShelter } from '../../../domain/evacuation-shelter';
 import type { EvacuationShelterRepository } from '../../../domain/evacuation-shelter-repository';
 import type { ShelterDatasetMetadata } from '../../../domain/shelter-dataset-metadata';
 import {
-  getShelterReseedTiming,
+  readShelterReseedState,
   reseedEvacuationSheltersIfNeeded,
 } from '../reseed-evacuation-shelters-if-needed';
 
@@ -60,14 +60,16 @@ function createDeps(
   };
 }
 
-describe('getShelterReseedTiming', () => {
+describe('readShelterReseedState', () => {
   const seeded = {
     repository: createRepository({ findAll: jest.fn().mockResolvedValue(mockShelters) }),
     getLastSeededLanguage: jest.fn().mockResolvedValue('ja'),
   };
 
   it('言語・シード版が同じで 24 時間未満なら none', async () => {
-    await expect(getShelterReseedTiming(createDeps(seeded))).resolves.toBe('none');
+    await expect(readShelterReseedState(createDeps(seeded))).resolves.toMatchObject({
+      timing: 'none',
+    });
   });
 
   it('24 時間経過だけなら background（保存済みのデータをそのまま表示できる）', async () => {
@@ -76,7 +78,7 @@ describe('getShelterReseedTiming', () => {
       getLastFetchedAt: jest.fn().mockResolvedValue(NOW - DAY_MS),
     });
 
-    await expect(getShelterReseedTiming(deps)).resolves.toBe('background');
+    await expect(readShelterReseedState(deps)).resolves.toMatchObject({ timing: 'background' });
   });
 
   it.each([
@@ -90,7 +92,7 @@ describe('getShelterReseedTiming', () => {
       ...overrides,
     });
 
-    await expect(getShelterReseedTiming(deps)).resolves.toBe('blocking');
+    await expect(readShelterReseedState(deps)).resolves.toMatchObject({ timing: 'blocking' });
   });
 });
 

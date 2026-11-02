@@ -27,9 +27,9 @@ function renderBootstrap() {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 
-  renderHook(() => useEvacuationDbBootstrap(), { wrapper });
+  const { unmount } = renderHook(() => useEvacuationDbBootstrap(), { wrapper });
 
-  return { invalidateQueries };
+  return { invalidateQueries, unmount };
 }
 
 describe('useEvacuationDbBootstrap', () => {
@@ -67,6 +67,24 @@ describe('useEvacuationDbBootstrap', () => {
     await waitFor(() => expect(bootstrapEvacuationDatabase).toHaveBeenCalled());
     await reseeded;
     await Promise.resolve();
+
+    expect(invalidateQueries).not.toHaveBeenCalled();
+  });
+
+  it('取り直しの完了前に言語が変わった・アンマウントされたときは invalidate しない', async () => {
+    let resolveReseeded: ((value: boolean) => void) | undefined;
+    const reseeded = new Promise<boolean>((resolve) => {
+      resolveReseeded = resolve;
+    });
+    jest.mocked(bootstrapEvacuationDatabase).mockResolvedValue({ reseeded });
+
+    const { invalidateQueries, unmount } = renderBootstrap();
+
+    await waitFor(() => expect(bootstrapEvacuationDatabase).toHaveBeenCalled());
+    unmount();
+    resolveReseeded?.(true);
+    await reseeded;
+    await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(invalidateQueries).not.toHaveBeenCalled();
   });
