@@ -15,6 +15,15 @@ export const TOURISM_PIN_RED = '#FF2D55';
 /** 避難所マーカーの色（安全色系の緑。観光ピンの赤と明確に区別する）。アイコンの tint にも使う。 */
 export const EVACUATION_MARKER_GREEN = '#0F8A4F';
 
+/** 観光ピン中心の濃い赤の円の色。 */
+const TOURISM_PIN_DOT_COLOR = '#9C0038';
+
+/** 観光ピンの頭（円）の直径。選択時の拡大表示（#749）で値を切り替えられるよう定数化する。 */
+export const TOURISM_PIN_HEAD_SIZE = 28;
+
+/** 観光ピン中心の濃い赤の円の直径。 */
+const TOURISM_PIN_DOT_SIZE = 14;
+
 /** マーカーを地図から浮かせる共通のドロップシャドウ（現在地ドット・避難ピンで共有）。 */
 const MARKER_SHADOW = {
   shadowColor: '#000000',
@@ -80,5 +89,43 @@ export const styles = StyleSheet.create({
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
     borderTopColor: EVACUATION_MARKER_GREEN,
+  },
+  // 観光ピン: 赤いしずく型（丸い頭＋下向きの先端）。避難所ピンと同じ構造（円の入れ子＋三角tip）で、
+  // transform は使わない（react-native-maps のカスタムマーカーはネイティブ側でスナップショットを
+  // 撮ってから表示するため、transform が撮り直し時に正しく反映されないことがある）。
+  // コンテナ下端＝先端になるよう頭の下に三角を置き、Marker 側で anchor={{x:0.5,y:1}} を指定して座標を指す。
+  tourismPin: {
+    alignItems: 'center',
+  },
+  tourismPinHead: {
+    width: TOURISM_PIN_HEAD_SIZE,
+    height: TOURISM_PIN_HEAD_SIZE,
+    borderRadius: TOURISM_PIN_HEAD_SIZE / 2,
+    backgroundColor: TOURISM_PIN_RED,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...MARKER_SHADOW,
+    // 三角の平らな上辺が円の下に重なって継ぎ目が欠けて見えないよう、三角より前面に固定する。
+    zIndex: 2,
+  },
+  // 頭の中の濃い赤の円。
+  tourismPinDot: {
+    width: TOURISM_PIN_DOT_SIZE,
+    height: TOURISM_PIN_DOT_SIZE,
+    borderRadius: TOURISM_PIN_DOT_SIZE / 2,
+    backgroundColor: TOURISM_PIN_DOT_COLOR,
+  },
+  // ピン先端の下向き三角（避難所ピンと同じ border トリック）。
+  tourismPinTip: {
+    width: 0,
+    height: 0,
+    marginTop: -4,
+    borderLeftWidth: 6,
+    borderRightWidth: 6,
+    borderTopWidth: 16,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: TOURISM_PIN_RED,
+    zIndex: 1,
   },
 });
