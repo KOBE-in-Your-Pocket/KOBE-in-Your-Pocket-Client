@@ -6,7 +6,7 @@ import { renderHook, waitFor } from '@testing-library/react-native';
 import path from 'path';
 
 import type { EvacuationShelter } from '../../domain/evacuation-shelter';
-import type { ShelterDataset } from '../../domain/shelter-dataset-metadata';
+import type { ShelterDataset, ShelterDatasetMetadata } from '../../domain/shelter-dataset-metadata';
 import { useEvacuationShelterDetail } from '../hooks/use-evacuation-shelter-detail';
 import { useEvacuationShelters } from '../hooks/use-evacuation-shelters';
 import {
@@ -23,6 +23,7 @@ import type { EvacuationDatabase } from '../../infrastructure/db/client';
 import { getEvacuationDatabase } from '../../infrastructure/db/client';
 import * as schema from '../../infrastructure/db/schema';
 import { createSqliteEvacuationShelterRepository } from '../../infrastructure/db/sqlite-evacuation-shelter-repository';
+import { getShelterDatasetMetadata } from '../../infrastructure/storage/shelter-dataset-metadata-storage';
 import {
   getLastSeededShelterLanguage,
   setLastSeededShelterLanguage,
@@ -65,6 +66,7 @@ jest.mock('../../infrastructure/storage/shelter-last-fetched-at-storage', () => 
 }));
 
 jest.mock('../../infrastructure/storage/shelter-dataset-metadata-storage', () => ({
+  getShelterDatasetMetadata: jest.fn(),
   setShelterDatasetMetadata: jest.fn(),
 }));
 
@@ -121,9 +123,21 @@ const seededSheltersEn: EvacuationShelter[] = [
   },
 ];
 
-/** 避難所一覧を API のデータセット封筒に包む。出典メタデータはこのテストの関心外。 */
-function datasetOf(shelters: EvacuationShelter[]): ShelterDataset<EvacuationShelter> {
-  return { shelters, metadata: null };
+const DATASET_METADATA: ShelterDatasetMetadata = {
+  source: '神戸市オープンデータ',
+  asOf: '2025-04-02',
+  updatedAt: '2026-09-29T15:13:20.984244Z',
+};
+
+/**
+ * 避難所一覧を API のデータセット封筒に包む。
+ * 24 時間経過の取り直しは updatedAt を比べる（#693）ため、メタデータも付ける。
+ */
+function datasetOf(
+  shelters: EvacuationShelter[],
+  metadata: ShelterDatasetMetadata = DATASET_METADATA,
+): ShelterDataset<EvacuationShelter> {
+  return { shelters, metadata };
 }
 
 function createInMemoryEvacuationDatabase(): {
@@ -164,6 +178,7 @@ describe('オフライン（DBのみ）避難所参照', () => {
     jest.mocked(setLastSeededShelterVersion).mockResolvedValue(undefined);
     jest.mocked(getShelterLastFetchedAt).mockImplementation(async () => Date.now());
     jest.mocked(setShelterLastFetchedAt).mockResolvedValue(undefined);
+    jest.mocked(getShelterDatasetMetadata).mockResolvedValue(null);
 
     const { db, close } = createInMemoryEvacuationDatabase();
     closeDatabase = close;
@@ -268,6 +283,20 @@ describe('オフライン（DBのみ）避難所参照', () => {
 
         await expect(getEvacuationSheltersFromLocalDb('ja')).resolves.toEqual(seededShelters);
         expect(setShelterLastFetchedAt).not.toHaveBeenCalled();
+      });
+
+      it('backend の updatedAt が保存済みと同じなら、取得しても DB を書き換えない（#693）', async () => {
+        jest.mocked(getShelterDatasetMetadata).mockResolvedValue(DATASET_METADATA);
+        jest
+          .mocked(fetchEvacuationShelterDataset)
+          .mockResolvedValue(datasetOf(refreshedShelters, DATASET_METADATA));
+
+        const { reseeded } = await bootstrapEvacuationDatabase('ja');
+        await expect(reseeded).resolves.toBe(false);
+
+        expect(fetchEvacuationShelterDataset).toHaveBeenCalledWith('ja');
+        await expect(getEvacuationSheltersFromLocalDb('ja')).resolves.toEqual(seededShelters);
+        expect(setShelterLastFetchedAt).toHaveBeenCalled();
       });
     });
 

@@ -43,3 +43,29 @@ export function isShelterDatasetMetadata(value: unknown): value is ShelterDatase
     candidate.updatedAt !== ''
   );
 }
+
+/** 秒の小数部・タイムゾーンを分けて取り出すための ISO 8601（日時＋タイムゾーン必須）の形。 */
+const ISO_DATE_TIME = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d+))?(Z|[+-]\d{2}:\d{2})$/;
+
+/**
+ * `updatedAt`（ISO 8601）をエポックマイクロ秒に変換する。解析できなければ null。
+ *
+ * backend は `2026-09-29T15:13:20.984244Z` のようにマイクロ秒まで返す。`Date.parse` は
+ * ミリ秒より細かい桁の扱いが JS エンジンによって異なりうるうえ、ミリ秒に丸めると
+ * 同じミリ秒内の更新を区別できないため、小数部は自前で読む。
+ */
+export function parseShelterDatasetUpdatedAt(value: string): number | null {
+  const match = ISO_DATE_TIME.exec(value);
+  if (match === null) {
+    return null;
+  }
+
+  const [, dateTime, fraction = '', zone] = match;
+  const epochMs = Date.parse(`${dateTime}${zone}`);
+  if (Number.isNaN(epochMs)) {
+    return null;
+  }
+
+  const micros = Number(fraction.padEnd(6, '0').slice(0, 6));
+  return epochMs * 1000 + micros;
+}
