@@ -30,6 +30,16 @@ const EVACUATION_ICON: { ios: SFSymbol; android: AndroidSymbol; web: AndroidSymb
 const MARKER_REDRAW_DELAYS_MS = [300, 800, 1500];
 
 /**
+ * マーカーの重なり順（zIndex）。大きいほど手前に描画される。
+ * 現在地ピンは選択中の観光・避難所ピンと重なっても常に最前面に見えるようにする。
+ */
+const MARKER_Z_INDEX = {
+  default: 0,
+  selected: 1,
+  currentLocation: 2,
+} as const;
+
+/**
  * mount直後、および `deps` が変わるたび（選択状態の切り替わりなど）に
  * {@link MARKER_REDRAW_DELAYS_MS} の間隔で markerRef の `redraw()` を呼ぶ。
  * サイズ変更直後のレイアウト確定前にスナップショットが撮られて見た目が崩れたまま固定される問題を防ぐ（#735, #749）。
@@ -73,7 +83,7 @@ function EvacuationMarker({
       onPress={() => onPress?.(marker)}
       anchor={{ x: 0.5, y: 1 }}
       tracksViewChanges={false}
-      zIndex={isSelected ? 1 : 0}
+      zIndex={isSelected ? MARKER_Z_INDEX.selected : MARKER_Z_INDEX.default}
     >
       <View testID="evacuation-pin" style={styles.evacuationPin}>
         <View style={[styles.evacuationPinHead, isSelected && styles.evacuationPinHeadSelected]}>
@@ -119,7 +129,7 @@ function TourismMarker({
       onPress={() => onPress?.(marker)}
       anchor={{ x: 0.5, y: 1 }}
       tracksViewChanges={false}
-      zIndex={isSelected ? 1 : 0}
+      zIndex={isSelected ? MARKER_Z_INDEX.selected : MARKER_Z_INDEX.default}
     >
       <View testID="tourism-pin" style={styles.tourismPin}>
         <View style={[styles.tourismPinHead, isSelected && styles.tourismPinHeadSelected]}>
@@ -174,9 +184,14 @@ export function Map({
         );
       })}
       {currentLocation ? (
-        <Marker coordinate={currentLocation} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={false}>
+        <Marker
+          coordinate={currentLocation}
+          anchor={{ x: 0.5, y: 0.5 }}
+          tracksViewChanges={false}
+          zIndex={MARKER_Z_INDEX.currentLocation}
+        >
           {/* Google/Apple マップ風の現在地ドット（白フチ + 青ドット） */}
-          <View style={styles.currentLocationOuter}>
+          <View testID="current-location-pin" style={styles.currentLocationOuter}>
             <View style={styles.currentLocationInner} />
           </View>
         </Marker>

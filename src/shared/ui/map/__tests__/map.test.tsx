@@ -211,6 +211,25 @@ describe('Map の選択中ピン拡大・手前表示（#749）', () => {
     expect(findMarkerZIndex(pinB)).toBe(0);
   });
 
+  it('現在地ピンは選択中のピンより常に手前（zIndex 最大）になる', () => {
+    const marker: MapMarker = { id: 'spot-a', coordinate: { latitude: 34.69, longitude: 135.19 } };
+
+    render(
+      <Map
+        currentLocation={{ latitude: 34.69, longitude: 135.19 }}
+        markers={[marker]}
+        selectedMarkerId="spot-a"
+      />,
+    );
+
+    const currentLocationPin = screen.getByTestId('current-location-pin');
+    const tourismPin = screen.getByTestId('tourism-pin');
+
+    expect(findMarkerZIndex(currentLocationPin)).toBeGreaterThan(
+      findMarkerZIndex(tourismPin) as number,
+    );
+  });
+
   it('selectedMarkerId に一致する避難所ピンだけ拡大する', () => {
     const markers = makeShelterMarkers(2);
 
