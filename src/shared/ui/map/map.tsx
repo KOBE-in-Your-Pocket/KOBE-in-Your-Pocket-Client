@@ -4,7 +4,13 @@ import { Platform, View } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 
 import { KOBE_INITIAL_REGION } from './kobe-initial-region';
-import { EVACUATION_MARKER_GREEN, ROUTE_STROKE_COLOR, styles } from './styles/map.styles';
+import {
+  EVACUATION_ICON_SIZE,
+  EVACUATION_ICON_SIZE_SELECTED,
+  EVACUATION_MARKER_GREEN,
+  ROUTE_STROKE_COLOR,
+  styles,
+} from './styles/map.styles';
 
 import type { MapMarker, MapProps } from './map.types';
 
@@ -23,30 +29,40 @@ const EVACUATION_ICON: { ios: SFSymbol; android: AndroidSymbol; web: AndroidSymb
  */
 const MARKER_REDRAW_DELAYS_MS = [300, 800, 1500];
 
-/** mount直後に {@link MARKER_REDRAW_DELAYS_MS} の間隔で markerRef の `redraw()` を呼ぶ。 */
-function useMarkerRedrawOnMount(markerRef: React.RefObject<ComponentRef<typeof Marker> | null>) {
+/**
+ * mount直後、および `deps` が変わるたび（選択状態の切り替わりなど）に
+ * {@link MARKER_REDRAW_DELAYS_MS} の間隔で markerRef の `redraw()` を呼ぶ。
+ * サイズ変更直後のレイアウト確定前にスナップショットが撮られて見た目が崩れたまま固定される問題を防ぐ（#735, #749）。
+ */
+function useMarkerRedrawOnChange(
+  markerRef: React.RefObject<ComponentRef<typeof Marker> | null>,
+  deps: readonly unknown[],
+) {
   useEffect(() => {
     const timers = MARKER_REDRAW_DELAYS_MS.map((delay) =>
       setTimeout(() => markerRef.current?.redraw(), delay),
     );
     return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, deps);
 }
 
 /**
  * 避難所ピン。緑のしずく型＋白い円＋走る人ピクトグラムで観光ピンと区別する。
  * 先端が座標を指すよう `anchor={{x:0.5,y:1}}`。
+ * 選択中（`isSelected`）は拡大し、他のピンより手前に表示する（#749）。
  */
 function EvacuationMarker({
   marker,
+  isSelected,
   onPress,
 }: {
   marker: MapMarker;
+  isSelected: boolean;
   onPress?: (marker: MapMarker) => void;
 }) {
   const markerRef = useRef<ComponentRef<typeof Marker>>(null);
-  useMarkerRedrawOnMount(markerRef);
+  useMarkerRedrawOnChange(markerRef, [isSelected]);
 
   return (
     <Marker
@@ -57,14 +73,19 @@ function EvacuationMarker({
       onPress={() => onPress?.(marker)}
       anchor={{ x: 0.5, y: 1 }}
       tracksViewChanges={false}
+      zIndex={isSelected ? 1 : 0}
     >
-      <View style={styles.evacuationPin}>
-        <View style={styles.evacuationPinHead}>
-          <View style={styles.evacuationPinCore}>
-            <SymbolView name={EVACUATION_ICON} tintColor={EVACUATION_MARKER_GREEN} size={18} />
+      <View testID="evacuation-pin" style={styles.evacuationPin}>
+        <View style={[styles.evacuationPinHead, isSelected && styles.evacuationPinHeadSelected]}>
+          <View style={[styles.evacuationPinCore, isSelected && styles.evacuationPinCoreSelected]}>
+            <SymbolView
+              name={EVACUATION_ICON}
+              tintColor={EVACUATION_MARKER_GREEN}
+              size={isSelected ? EVACUATION_ICON_SIZE_SELECTED : EVACUATION_ICON_SIZE}
+            />
           </View>
         </View>
-        <View style={styles.evacuationPinTip} />
+        <View style={[styles.evacuationPinTip, isSelected && styles.evacuationPinTipSelected]} />
       </View>
     </Marker>
   );
@@ -75,16 +96,19 @@ function EvacuationMarker({
  * `tracksViewChanges` はカスタムマーカーのスナップショット撮り直しコストを避けるため false にし、
  * mount 直後の複数回 `redraw()` でレイアウト確定前のスナップショット固定を防ぐ。
  * 先端が座標を指すよう `anchor={{x:0.5,y:1}}`。
+ * 選択中（`isSelected`）は拡大し、他のピンより手前に表示する（#749）。
  */
 function TourismMarker({
   marker,
+  isSelected,
   onPress,
 }: {
   marker: MapMarker;
+  isSelected: boolean;
   onPress?: (marker: MapMarker) => void;
 }) {
   const markerRef = useRef<ComponentRef<typeof Marker>>(null);
-  useMarkerRedrawOnMount(markerRef);
+  useMarkerRedrawOnChange(markerRef, [isSelected]);
 
   return (
     <Marker
@@ -95,12 +119,13 @@ function TourismMarker({
       onPress={() => onPress?.(marker)}
       anchor={{ x: 0.5, y: 1 }}
       tracksViewChanges={false}
+      zIndex={isSelected ? 1 : 0}
     >
       <View testID="tourism-pin" style={styles.tourismPin}>
-        <View style={styles.tourismPinHead}>
-          <View style={styles.tourismPinDot} />
+        <View style={[styles.tourismPinHead, isSelected && styles.tourismPinHeadSelected]}>
+          <View style={[styles.tourismPinDot, isSelected && styles.tourismPinDotSelected]} />
         </View>
-        <View style={styles.tourismPinTip} />
+        <View style={[styles.tourismPinTip, isSelected && styles.tourismPinTipSelected]} />
       </View>
     </Marker>
   );
@@ -118,6 +143,7 @@ export function Map({
   onMarkerPress,
   routeCoordinates,
   markerResyncKey,
+  selectedMarkerId,
 }: MapProps) {
   return (
     <MapView
@@ -130,10 +156,21 @@ export function Map({
       ) : null}
       {markers?.map((marker) => {
         const key = `${marker.id}:${markerResyncKey ?? 0}`;
+        const isSelected = marker.id === selectedMarkerId;
         return marker.variant === 'evacuation' ? (
-          <EvacuationMarker key={key} marker={marker} onPress={onMarkerPress} />
+          <EvacuationMarker
+            key={key}
+            marker={marker}
+            isSelected={isSelected}
+            onPress={onMarkerPress}
+          />
         ) : (
-          <TourismMarker key={key} marker={marker} onPress={onMarkerPress} />
+          <TourismMarker
+            key={key}
+            marker={marker}
+            isSelected={isSelected}
+            onPress={onMarkerPress}
+          />
         );
       })}
       {currentLocation ? (

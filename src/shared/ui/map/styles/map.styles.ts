@@ -24,6 +24,44 @@ export const TOURISM_PIN_HEAD_SIZE = 28;
 /** 観光ピン中心の濃い赤の円の直径。 */
 const TOURISM_PIN_DOT_SIZE = 14;
 
+/** 避難所ピンの頭（円）の直径。選択時の拡大表示（#749）で値を切り替えられるよう定数化する。 */
+const EVACUATION_PIN_HEAD_SIZE = 34;
+
+/** 避難所ピンの頭の中の白い円の直径。 */
+const EVACUATION_PIN_CORE_SIZE = 24;
+
+/** 避難所ピンの「走る人」ピクトグラムのサイズ（{@link SymbolView} の `size` に渡す）。 */
+export const EVACUATION_ICON_SIZE = 18;
+
+/** 観光ピン先端の三角（border トリック）の寸法。 */
+const TOURISM_PIN_TIP = { marginTop: -4, borderWidth: 6, borderTopWidth: 16 };
+
+/** 避難所ピン先端の三角（border トリック）の寸法。 */
+const EVACUATION_PIN_TIP = { marginTop: -7, borderWidth: 8, borderTopWidth: 14 };
+
+/**
+ * 選択中ピンの拡大倍率（#749）。`transform: scale` は Android でピンが切れるため使わず、
+ * 各ピンの width / height / borderRadius / border 幅をこの倍率で計算し直した専用スタイルに切り替える。
+ */
+const SELECTED_SCALE = 1.4;
+
+const scale = (value: number) => Math.round(value * SELECTED_SCALE);
+
+/** 選択中の観光ピンの頭（円）の直径。 */
+const TOURISM_PIN_HEAD_SIZE_SELECTED = scale(TOURISM_PIN_HEAD_SIZE);
+
+/** 選択中の観光ピン中心の円の直径。 */
+const TOURISM_PIN_DOT_SIZE_SELECTED = scale(TOURISM_PIN_DOT_SIZE);
+
+/** 選択中の避難所ピンの頭（円）の直径。 */
+const EVACUATION_PIN_HEAD_SIZE_SELECTED = scale(EVACUATION_PIN_HEAD_SIZE);
+
+/** 選択中の避難所ピンの頭の中の白い円の直径。 */
+const EVACUATION_PIN_CORE_SIZE_SELECTED = scale(EVACUATION_PIN_CORE_SIZE);
+
+/** 選択中の避難所ピンの「走る人」ピクトグラムのサイズ。 */
+export const EVACUATION_ICON_SIZE_SELECTED = scale(EVACUATION_ICON_SIZE);
+
 /** マーカーを地図から浮かせる共通のドロップシャドウ（現在地ドット・避難ピンで共有）。 */
 const MARKER_SHADOW = {
   shadowColor: '#000000',
@@ -59,9 +97,9 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   evacuationPinHead: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: EVACUATION_PIN_HEAD_SIZE,
+    height: EVACUATION_PIN_HEAD_SIZE,
+    borderRadius: EVACUATION_PIN_HEAD_SIZE / 2,
     backgroundColor: EVACUATION_MARKER_GREEN,
     borderWidth: 1.5,
     borderColor: '#FFFFFF',
@@ -69,26 +107,43 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     ...MARKER_SHADOW,
   },
+  // 選択中（#749）: width/height/borderRadius を拡大倍率で切り替える（transform は使わない）。
+  evacuationPinHeadSelected: {
+    width: EVACUATION_PIN_HEAD_SIZE_SELECTED,
+    height: EVACUATION_PIN_HEAD_SIZE_SELECTED,
+    borderRadius: EVACUATION_PIN_HEAD_SIZE_SELECTED / 2,
+  },
   // 頭の中の白い円。中に緑のピクトグラムを置く。
   evacuationPinCore: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: EVACUATION_PIN_CORE_SIZE,
+    height: EVACUATION_PIN_CORE_SIZE,
+    borderRadius: EVACUATION_PIN_CORE_SIZE / 2,
     backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  evacuationPinCoreSelected: {
+    width: EVACUATION_PIN_CORE_SIZE_SELECTED,
+    height: EVACUATION_PIN_CORE_SIZE_SELECTED,
+    borderRadius: EVACUATION_PIN_CORE_SIZE_SELECTED / 2,
   },
   // ピン先端の下向き三角（border トリックで作成）。頭に少し食い込ませてしずく型に見せる。
   evacuationPinTip: {
     width: 0,
     height: 0,
-    marginTop: -7,
-    borderLeftWidth: 8,
-    borderRightWidth: 8,
-    borderTopWidth: 14,
+    marginTop: EVACUATION_PIN_TIP.marginTop,
+    borderLeftWidth: EVACUATION_PIN_TIP.borderWidth,
+    borderRightWidth: EVACUATION_PIN_TIP.borderWidth,
+    borderTopWidth: EVACUATION_PIN_TIP.borderTopWidth,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
     borderTopColor: EVACUATION_MARKER_GREEN,
+  },
+  evacuationPinTipSelected: {
+    marginTop: scale(EVACUATION_PIN_TIP.marginTop),
+    borderLeftWidth: scale(EVACUATION_PIN_TIP.borderWidth),
+    borderRightWidth: scale(EVACUATION_PIN_TIP.borderWidth),
+    borderTopWidth: scale(EVACUATION_PIN_TIP.borderTopWidth),
   },
   // 観光ピン: 赤いしずく型（丸い頭＋下向きの先端）。避難所ピンと同じ構造（円の入れ子＋三角tip）で、
   // transform は使わない（react-native-maps のカスタムマーカーはネイティブ側でスナップショットを
@@ -108,6 +163,12 @@ export const styles = StyleSheet.create({
     // 三角の平らな上辺が円の下に重なって継ぎ目が欠けて見えないよう、三角より前面に固定する。
     zIndex: 2,
   },
+  // 選択中（#749）: width/height/borderRadius を拡大倍率で切り替える（transform は使わない）。
+  tourismPinHeadSelected: {
+    width: TOURISM_PIN_HEAD_SIZE_SELECTED,
+    height: TOURISM_PIN_HEAD_SIZE_SELECTED,
+    borderRadius: TOURISM_PIN_HEAD_SIZE_SELECTED / 2,
+  },
   // 頭の中の濃い赤の円。
   tourismPinDot: {
     width: TOURISM_PIN_DOT_SIZE,
@@ -115,17 +176,28 @@ export const styles = StyleSheet.create({
     borderRadius: TOURISM_PIN_DOT_SIZE / 2,
     backgroundColor: TOURISM_PIN_DOT_COLOR,
   },
+  tourismPinDotSelected: {
+    width: TOURISM_PIN_DOT_SIZE_SELECTED,
+    height: TOURISM_PIN_DOT_SIZE_SELECTED,
+    borderRadius: TOURISM_PIN_DOT_SIZE_SELECTED / 2,
+  },
   // ピン先端の下向き三角（避難所ピンと同じ border トリック）。
   tourismPinTip: {
     width: 0,
     height: 0,
-    marginTop: -4,
-    borderLeftWidth: 6,
-    borderRightWidth: 6,
-    borderTopWidth: 16,
+    marginTop: TOURISM_PIN_TIP.marginTop,
+    borderLeftWidth: TOURISM_PIN_TIP.borderWidth,
+    borderRightWidth: TOURISM_PIN_TIP.borderWidth,
+    borderTopWidth: TOURISM_PIN_TIP.borderTopWidth,
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
     borderTopColor: TOURISM_PIN_RED,
     zIndex: 1,
+  },
+  tourismPinTipSelected: {
+    marginTop: scale(TOURISM_PIN_TIP.marginTop),
+    borderLeftWidth: scale(TOURISM_PIN_TIP.borderWidth),
+    borderRightWidth: scale(TOURISM_PIN_TIP.borderWidth),
+    borderTopWidth: scale(TOURISM_PIN_TIP.borderTopWidth),
   },
 });
