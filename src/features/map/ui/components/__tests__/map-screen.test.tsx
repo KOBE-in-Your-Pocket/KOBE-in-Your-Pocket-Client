@@ -56,13 +56,16 @@ jest.mock('@/shared/ui', () => ({
     markers = [],
     onMarkerPress,
     markerResyncKey = 0,
+    selectedMarkerId,
   }: {
     markers?: MockMarker[];
     onMarkerPress?: (marker: MockMarker) => void;
     markerResyncKey?: number;
+    selectedMarkerId?: string;
   }) => (
     <MockView>
       <MockText testID="marker-resync-key">{markerResyncKey}</MockText>
+      <MockText testID="selected-marker-id">{selectedMarkerId ?? ''}</MockText>
       {markers.map((marker) => (
         <MockText
           key={marker.id}
@@ -192,10 +195,14 @@ describe('MapScreen のマーカー出し分け', () => {
     mockUseLocalSearchParams.mockReturnValue({ spotId: 'spot-1', requestedAt: '1' });
     const { rerender } = render(<MapScreen />);
     expect(screen.getByTestId('spot-card').props.children).toBe('spot-1');
+    // 「経路」ボタン経由の選択も、地図への強調表示用 selectedMarkerId に反映される（#750）。
+    expect(screen.getByTestId('selected-marker-id').props.children).toBe('spot-1');
 
     // ×ボタンでカードを閉じる。同じ遷移のパラメータのままでは再表示されない。
     fireEvent.press(screen.getByTestId('spot-card-close'));
     expect(screen.queryByTestId('spot-card')).toBeNull();
+    // カードを閉じると選択も解除され、ピンの強調表示も外れる（#750）。
+    expect(screen.getByTestId('selected-marker-id').props.children).toBe('');
     rerender(<MapScreen />);
     expect(screen.queryByTestId('spot-card')).toBeNull();
 
@@ -267,12 +274,16 @@ describe('MapScreen のマーカー出し分け', () => {
     // 観光モードでスポットを選択すると SpotCard が表示される。
     fireEvent.press(screen.getByTestId('marker-spot-1'));
     expect(screen.getByTestId('spot-card').props.children).toBe('spot-1');
+    // ピンタップによる選択も selectedMarkerId に反映される（#750）。
+    expect(screen.getByTestId('selected-marker-id').props.children).toBe('spot-1');
 
     // 避難モードへ切り替えると SpotCard は非表示になる。
     act(() => {
       useMapModeStore.setState({ mapMode: 'evacuation' });
     });
     expect(screen.queryByTestId('spot-card')).toBeNull();
+    // モード切替で選択も解除され、強調表示も外れる（#750）。
+    expect(screen.getByTestId('selected-marker-id').props.children).toBe('');
 
     // 観光モードへ戻しても、ユーザーが再選択していない SpotCard は表示されない（selectedSpot がリセット済み）。
     act(() => {
@@ -290,6 +301,8 @@ describe('MapScreen のマーカー出し分け', () => {
     fireEvent.press(screen.getByTestId('marker-shelter-1'));
 
     expect(screen.getByTestId('shelter-card').props.children).toBe('shelter-1');
+    // ピンタップによる選択も selectedMarkerId に反映される（#750）。
+    expect(screen.getByTestId('selected-marker-id').props.children).toBe('shelter-1');
   });
 
   it('避難所カードの詳細ボタンで避難所詳細画面へ遷移する', () => {
@@ -319,6 +332,8 @@ describe('MapScreen のマーカー出し分け', () => {
       useMapModeStore.setState({ mapMode: 'tourism' });
     });
     expect(screen.queryByTestId('shelter-card')).toBeNull();
+    // モード切替で選択も解除され、強調表示も外れる（#750）。
+    expect(screen.getByTestId('selected-marker-id').props.children).toBe('');
 
     // 避難モードへ戻しても、ユーザーが再選択していないカードは表示されない（selectedShelter がリセット済み）。
     act(() => {
@@ -353,6 +368,8 @@ describe('MapScreen のマーカー出し分け', () => {
     // ピンが消え、カード（と経路の起点）も残らない。
     expect(screen.queryByTestId('marker-shelter-1')).toBeNull();
     expect(screen.queryByTestId('shelter-card')).toBeNull();
+    // 圏外による自動解除でも強調表示（selectedMarkerId）が外れる（#750）。
+    expect(screen.getByTestId('selected-marker-id').props.children).toBe('');
   });
 
   it('避難所詳細の住所タップから同じ避難所へ再遷移すると、閉じた EvacuationShelterCard が再表示される（#678）', () => {
@@ -360,10 +377,14 @@ describe('MapScreen のマーカー出し分け', () => {
     mockUseLocalSearchParams.mockReturnValue({ shelterId: 'shelter-1', requestedAt: '1' });
     const { rerender } = render(<MapScreen />);
     expect(screen.getByTestId('shelter-card').props.children).toBe('shelter-1');
+    // 住所タップ経由の選択も、地図への強調表示用 selectedMarkerId に反映される（#750）。
+    expect(screen.getByTestId('selected-marker-id').props.children).toBe('shelter-1');
 
     // ×ボタンでカードを閉じる。同じ遷移のパラメータのままでは再表示されない。
     fireEvent.press(screen.getByTestId('shelter-card-close'));
     expect(screen.queryByTestId('shelter-card')).toBeNull();
+    // カードを閉じると選択も解除され、ピンの強調表示も外れる（#750）。
+    expect(screen.getByTestId('selected-marker-id').props.children).toBe('');
     rerender(<MapScreen />);
     expect(screen.queryByTestId('shelter-card')).toBeNull();
 
