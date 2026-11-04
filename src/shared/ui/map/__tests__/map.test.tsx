@@ -1,11 +1,11 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
 import { View as MockView } from 'react-native';
 
 import { Map } from '../map';
-import { TOURISM_PIN_RED } from '../styles/map.styles';
 
 import type { MapMarker } from '../map.types';
 import type { ReactNode } from 'react';
+import type { ReactTestInstance } from 'react-test-renderer';
 
 const mockRedraw = jest.fn();
 
@@ -18,11 +18,11 @@ jest.mock('react-native-maps', () => {
     default: ({ children }: { children?: ReactNode }) => <RNView>{children}</RNView>,
     Marker: fr(
       (
-        { children, pinColor }: { children?: ReactNode; pinColor?: string },
+        { children, onPress }: { children?: ReactNode; onPress?: () => void },
         ref: React.Ref<{ redraw: () => void }>,
       ) => {
         uih(ref, () => ({ redraw: mockRedraw }));
-        return <RNView testID={pinColor ? `pin:${pinColor}` : undefined}>{children}</RNView>;
+        return <RNView onPress={onPress}>{children}</RNView>;
       },
     ),
     Polyline: () => null,
@@ -114,8 +114,17 @@ describe('Map の避難所ピン詳細表示（#735 アイコン読込レース�
   });
 });
 
-describe('Map の観光ピン', () => {
-  it('iOS では観光ピンに固定色を渡し、ダークモードでもライトと同じ色にする', () => {
+describe('Map の観光ピン（#748 カスタムピン化）', () => {
+  beforeEach(() => {
+    mockRedraw.mockClear();
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('OS 標準ピンではなくカスタムの観光ピンで表示する', () => {
     render(
       <Map
         currentLocation={null}
@@ -123,6 +132,36 @@ describe('Map の観光ピン', () => {
       />,
     );
 
-    expect(screen.getByTestId(`pin:${TOURISM_PIN_RED}`)).toBeTruthy();
+    expect(screen.getByTestId('tourism-pin')).toBeTruthy();
+  });
+
+  it('ピンをタップすると onMarkerPress が呼ばれる', () => {
+    const marker: MapMarker = { id: 'spot-1', coordinate: { latitude: 34.69, longitude: 135.19 } };
+    const onMarkerPress = jest.fn();
+    render(<Map currentLocation={null} markers={[marker]} onMarkerPress={onMarkerPress} />);
+
+    fireEvent.press(screen.getByTestId('tourism-pin').parent as ReactTestInstance);
+
+    expect(onMarkerPress).toHaveBeenCalledWith(marker);
+  });
+
+  it('ピン表示直後に redraw() を複数回呼び、レイアウト確定前のスナップショット固定に備える', () => {
+    render(
+      <Map
+        currentLocation={null}
+        markers={[{ id: 'spot-1', coordinate: { latitude: 34.69, longitude: 135.19 } }]}
+      />,
+    );
+
+    expect(mockRedraw).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(300);
+    expect(mockRedraw).toHaveBeenCalledTimes(1);
+
+    jest.advanceTimersByTime(500);
+    expect(mockRedraw).toHaveBeenCalledTimes(2);
+
+    jest.advanceTimersByTime(700);
+    expect(mockRedraw).toHaveBeenCalledTimes(3);
   });
 });
