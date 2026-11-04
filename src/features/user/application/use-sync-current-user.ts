@@ -8,8 +8,13 @@ import { enqueueSessionWrite } from './session-operation';
 
 import type { PublicUser } from '../domain/public-user';
 
-/** 現在ユーザー取得クエリのキー名前空間。 */
+/** 現在ユーザー取得クエリのキー名前空間。全ユーザー分をまとめて捨てるときに使う。 */
 export const CURRENT_USER_QUERY_KEY = ['user', 'me'] as const;
+
+/** ユーザーごとの現在ユーザー取得クエリのキー。キャッシュを読み書きするときは必ずこれを使う。 */
+export function currentUserQueryKey(userId: string | null) {
+  return [...CURRENT_USER_QUERY_KEY, userId] as const;
+}
 
 /** サーバー側の変更を取りに行く間隔。頻繁に変わる情報ではないので長めに取る。 */
 const STALE_TIME_MS = 5 * 60 * 1000;
@@ -65,7 +70,7 @@ export function useSyncCurrentUser(deps: SyncCurrentUserDeps = defaultDeps): voi
   const { userGateway, persistedUserStore } = deps;
 
   const { data } = useQuery<PublicUser>({
-    queryKey: [...CURRENT_USER_QUERY_KEY, userId],
+    queryKey: currentUserQueryKey(userId),
     enabled: userId !== null,
     queryFn: () => userGateway.fetchCurrentUser(),
     staleTime: STALE_TIME_MS,
