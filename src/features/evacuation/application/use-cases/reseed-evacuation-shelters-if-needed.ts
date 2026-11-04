@@ -2,7 +2,11 @@ import type { SupportedLanguage } from '@/shared/lib/i18n';
 
 import type { EvacuationShelter } from '../../domain/evacuation-shelter';
 import type { EvacuationShelterRepository } from '../../domain/evacuation-shelter-repository';
-import type { ShelterDataset, ShelterDatasetMetadata } from '../../domain/shelter-dataset-metadata';
+import {
+  parseShelterDatasetUpdatedAt,
+  type ShelterDataset,
+  type ShelterDatasetMetadata,
+} from '../../domain/shelter-dataset-metadata';
 
 /** 前回の取得からこの時間が経過していれば、言語・シード版が同じでも取り直す。 */
 const REFETCH_INTERVAL_MS = 24 * 60 * 60 * 1000;
@@ -17,6 +21,8 @@ export type ReseedEvacuationSheltersDeps = {
   seedVersion: number;
   getLastSeededVersion: () => Promise<number | null>;
   setLastSeededVersion: (version: number) => Promise<void>;
+  /** 保存済みのメタデータ。24 時間経過の取り直しで、backend の updatedAt と比べる（#693）。 */
+  getDatasetMetadata: () => Promise<ShelterDatasetMetadata | null>;
   /** 出典・データ基準日の保存（#492）。取得できた場合のみ呼ばれる。 */
   setDatasetMetadata: (metadata: ShelterDatasetMetadata) => Promise<void>;
   /** 現在時刻（エポックミリ秒）。 */
@@ -85,6 +91,11 @@ export async function readShelterReseedState(
  *   （アプリ更新で保存する項目が増え、保存済みの行にその項目が入っていない）
  * - 前回の取得から 24 時間以上経過している（#692）
  *
+ * 24 時間経過だけが理由の取り直し（`background`）では、取得した `meta.updatedAt` が
+ * 保存済みの値より新しいときだけ DB を書き換える（#693、{@link isNewerDataset}）。
+ * 言語・シード版・空の DB が理由のとき（`blocking`）は、updatedAt に関係なく書き換える
+ * （updatedAt はデータセット全体の版で、言語や保存項目の違いは表さないため）。
+ *
  * 取得に失敗（オフライン等）しても DB に既存データがあれば、それをそのまま表示し続ける
  * ために例外を握りつぶす（避難所は防災情報のため、言語切り替えやアプリ更新時の一時的な
  * 通信断で一覧が丸ごと見られなくなるのは避けたい）。取得できなかった言語・シード版・取得日時は
@@ -111,6 +122,15 @@ export async function reseedEvacuationSheltersIfNeeded(
     throw error;
   }
 
+  if (
+    timing === 'background' &&
+    !isNewerDataset(dataset.metadata, await deps.getDatasetMetadata())
+  ) {
+    // 確認は済んだので、次の確認は 24 時間後でよい（記録しないと起動・復帰のたびに全件を取り直す）。
+    await deps.setLastFetchedAt(now);
+    return false;
+  }
+
   await deps.repository.replaceAll(dataset.shelters);
   await deps.setLastSeededLanguage(deps.language);
   await deps.setLastSeededVersion(deps.seedVersion);
@@ -123,4 +143,29 @@ export async function reseedEvacuationSheltersIfNeeded(
   }
 
   return true;
+}
+
+/**
+ * 取得したデータセットが保存済みのものより新しいか（#693）。
+ *
+ * 比べ方: 軽量なメタ情報 API は無いため、24 時間ごとの全件取得はそのまま行い、
+ * その応答の `meta.updatedAt` を保存済みの値と比べる（backend の変更が不要）。
+ * backend は data と meta を同じスナップショットから返し、updatedAt はシード更新時に
+ * 単調増加するよう更新される（Backend の GetShelterListService・V10 マイグレーション）ので、
+ * 応答の updatedAt をその data の版として扱える。
+ *
+ * - 取得した updatedAt が無い・解析できない: 新しいと言えないので既存データを残す（false）
+ * - 保存済みの updatedAt が無い・解析できない: 比べられないので backend の値を採る（true）
+ */
+function isNewerDataset(
+  fetched: ShelterDatasetMetadata | null,
+  stored: ShelterDatasetMetadata | null,
+): boolean {
+  const fetchedAt = fetched === null ? null : parseShelterDatasetUpdatedAt(fetched.updatedAt);
+  if (fetchedAt === null) {
+    return false;
+  }
+
+  const storedAt = stored === null ? null : parseShelterDatasetUpdatedAt(stored.updatedAt);
+  return storedAt === null || fetchedAt > storedAt;
 }

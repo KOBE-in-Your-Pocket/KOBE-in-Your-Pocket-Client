@@ -52,6 +52,7 @@ function createDeps(
     seedVersion: 1,
     getLastSeededVersion: jest.fn().mockResolvedValue(1),
     setLastSeededVersion: jest.fn().mockResolvedValue(undefined),
+    getDatasetMetadata: jest.fn().mockResolvedValue(null),
     setDatasetMetadata: jest.fn().mockResolvedValue(undefined),
     now: jest.fn().mockReturnValue(NOW),
     getLastFetchedAt: jest.fn().mockResolvedValue(NOW - HOUR_MS),
@@ -277,6 +278,115 @@ describe('reseedEvacuationSheltersIfNeeded', () => {
       await expect(reseedEvacuationSheltersIfNeeded(deps)).rejects.toThrow('db error');
 
       expect(deps.setLastFetchedAt).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('backend の meta.updatedAt との比較（#693）', () => {
+    const STORED_UPDATED_AT = '2026-09-29T15:13:20.984244Z';
+
+    function metadataAt(updatedAt: string): ShelterDatasetMetadata {
+      return { ...mockMetadata, updatedAt };
+    }
+
+    /** 24 時間経過だけが理由の取り直し（background）になる端末。 */
+    function createDueDeps(
+      fetchedMetadata: ShelterDatasetMetadata | null,
+      storedMetadata: ShelterDatasetMetadata | null = metadataAt(STORED_UPDATED_AT),
+      overrides: Partial<Parameters<typeof reseedEvacuationSheltersIfNeeded>[0]> = {},
+    ) {
+      return createDeps({
+        repository: createRepository({ findAll: jest.fn().mockResolvedValue(mockShelters) }),
+        getLastSeededLanguage: jest.fn().mockResolvedValue('ja'),
+        getLastFetchedAt: jest.fn().mockResolvedValue(NOW - DAY_MS),
+        fetchDataset: jest
+          .fn()
+          .mockResolvedValue({ shelters: mockShelters, metadata: fetchedMetadata }),
+        getDatasetMetadata: jest.fn().mockResolvedValue(storedMetadata),
+        ...overrides,
+      });
+    }
+
+    it.each([
+      ['1 マイクロ秒だけ新しい', '2026-09-29T15:13:20.984245Z'],
+      ['1 日新しい', '2026-09-30T15:13:20.984244Z'],
+      ['小数部なしの表記で新しい', '2026-09-29T15:13:21Z'],
+    ])(
+      'updatedAt が端末の値より新しい（%s）ときは取り直して保存する',
+      async (_label, updatedAt) => {
+        const fetched = metadataAt(updatedAt);
+        const deps = createDueDeps(fetched);
+
+        await expect(reseedEvacuationSheltersIfNeeded(deps)).resolves.toBe(true);
+
+        expect(deps.repository.replaceAll).toHaveBeenCalledWith(mockShelters);
+        expect(deps.setDatasetMetadata).toHaveBeenCalledWith(fetched);
+        expect(deps.setLastFetchedAt).toHaveBeenCalledWith(NOW);
+      },
+    );
+
+    it.each([
+      ['端末の値と同じ', STORED_UPDATED_AT],
+      ['同じ時刻を別のタイムゾーンで表記した', '2026-09-30T00:13:20.984244+09:00'],
+      ['端末の値より古い', '2026-09-28T15:13:20.984244Z'],
+    ])(
+      'updatedAt が%s場合は DB を書き換えず、次の確認を 24 時間後にする',
+      async (_label, updatedAt) => {
+        const deps = createDueDeps(metadataAt(updatedAt));
+
+        await expect(reseedEvacuationSheltersIfNeeded(deps)).resolves.toBe(false);
+
+        expect(deps.repository.replaceAll).not.toHaveBeenCalled();
+        expect(deps.setDatasetMetadata).not.toHaveBeenCalled();
+        expect(deps.setLastSeededLanguage).not.toHaveBeenCalled();
+        expect(deps.setLastFetchedAt).toHaveBeenCalledWith(NOW);
+      },
+    );
+
+    it.each([
+      ['meta が返らない', null],
+      ['updatedAt が解析できない', metadataAt('not-a-date')],
+      ['updatedAt にタイムゾーンが無い', metadataAt('2026-09-30T15:13:20')],
+    ])('%s場合（取得した updatedAt で比べられない）は既存データを残す', async (_label, fetched) => {
+      const deps = createDueDeps(fetched);
+
+      await expect(reseedEvacuationSheltersIfNeeded(deps)).resolves.toBe(false);
+
+      expect(deps.repository.replaceAll).not.toHaveBeenCalled();
+      expect(deps.setDatasetMetadata).not.toHaveBeenCalled();
+    });
+
+    it('取得に失敗したときは既存データを残し、比較もしない', async () => {
+      const deps = createDueDeps(metadataAt('2026-09-30T00:00:00Z'), undefined, {
+        fetchDataset: jest.fn().mockRejectedValue(new Error('network error')),
+      });
+
+      await expect(reseedEvacuationSheltersIfNeeded(deps)).resolves.toBe(false);
+
+      expect(deps.getDatasetMetadata).not.toHaveBeenCalled();
+      expect(deps.repository.replaceAll).not.toHaveBeenCalled();
+      expect(deps.setLastFetchedAt).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['端末に updatedAt が保存されていない', null],
+      ['端末に保存済みの updatedAt が解析できない', metadataAt('broken')],
+    ])('%sときは、比べられないので取り直す', async (_label, stored) => {
+      const deps = createDueDeps(metadataAt(STORED_UPDATED_AT), stored);
+
+      await expect(reseedEvacuationSheltersIfNeeded(deps)).resolves.toBe(true);
+
+      expect(deps.repository.replaceAll).toHaveBeenCalledWith(mockShelters);
+    });
+
+    it('言語が異なるとき（blocking）は updatedAt が同じでも取り直す', async () => {
+      const deps = createDueDeps(metadataAt(STORED_UPDATED_AT), undefined, {
+        getLastSeededLanguage: jest.fn().mockResolvedValue('en'),
+      });
+
+      await expect(reseedEvacuationSheltersIfNeeded(deps)).resolves.toBe(true);
+
+      expect(deps.repository.replaceAll).toHaveBeenCalledWith(mockShelters);
+      expect(deps.setLastSeededLanguage).toHaveBeenCalledWith('ja');
     });
   });
 

@@ -5,7 +5,10 @@ import { getEvacuationDatabase } from '../../infrastructure/db/client';
 import { runEvacuationMigrations } from '../../infrastructure/db/run-migrations';
 import { EVACUATION_SHELTERS_SEED_VERSION } from '../../infrastructure/db/schema';
 import { createSqliteEvacuationShelterRepository } from '../../infrastructure/db/sqlite-evacuation-shelter-repository';
-import { setShelterDatasetMetadata } from '../../infrastructure/storage/shelter-dataset-metadata-storage';
+import {
+  getShelterDatasetMetadata,
+  setShelterDatasetMetadata,
+} from '../../infrastructure/storage/shelter-dataset-metadata-storage';
 import {
   getLastSeededShelterLanguage,
   setLastSeededShelterLanguage,
@@ -57,6 +60,7 @@ async function doBootstrapEvacuationDatabase(
     seedVersion: EVACUATION_SHELTERS_SEED_VERSION,
     getLastSeededVersion: getLastSeededShelterVersion,
     setLastSeededVersion: setLastSeededShelterVersion,
+    getDatasetMetadata: getShelterDatasetMetadata,
     setDatasetMetadata: setShelterDatasetMetadata,
     now: Date.now,
     getLastFetchedAt: getShelterLastFetchedAt,

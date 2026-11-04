@@ -43,6 +43,7 @@ jest.mock('../../../infrastructure/storage/shelter-last-fetched-at-storage', () 
 }));
 
 jest.mock('../../../infrastructure/storage/shelter-dataset-metadata-storage', () => ({
+  getShelterDatasetMetadata: jest.fn(),
   setShelterDatasetMetadata: jest.fn(),
 }));
 
