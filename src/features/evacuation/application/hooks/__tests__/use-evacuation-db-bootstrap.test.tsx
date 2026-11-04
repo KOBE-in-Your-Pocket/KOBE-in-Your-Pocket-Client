@@ -1,15 +1,20 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook, waitFor } from '@testing-library/react-native';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
+import { AppState, type AppStateStatus } from 'react-native';
 
 import { useUiStore } from '@/shared/store';
 
-import { bootstrapEvacuationDatabase } from '../../use-cases/bootstrap-evacuation-database';
+import {
+  bootstrapEvacuationDatabase,
+  recheckEvacuationDatabase,
+} from '../../use-cases/bootstrap-evacuation-database';
 import { useEvacuationDbBootstrap } from '../use-evacuation-db-bootstrap';
 
 import type { PropsWithChildren } from 'react';
 
 jest.mock('../../use-cases/bootstrap-evacuation-database', () => ({
   bootstrapEvacuationDatabase: jest.fn(),
+  recheckEvacuationDatabase: jest.fn(),
 }));
 
 jest.mock('../../use-cases/local-evacuation-shelter-queries', () => ({
@@ -98,5 +103,54 @@ describe('useEvacuationDbBootstrap', () => {
     await waitFor(() => expect(consoleError).toHaveBeenCalled());
     expect(invalidateQueries).not.toHaveBeenCalled();
     consoleError.mockRestore();
+  });
+
+  describe('フォアグラウンドへの復帰', () => {
+    let emitAppState: (state: AppStateStatus) => void;
+    let removeSubscription: jest.Mock;
+
+    beforeEach(() => {
+      removeSubscription = jest.fn();
+      jest.spyOn(AppState, 'addEventListener').mockImplementation((_type, listener) => {
+        emitAppState = listener;
+        return { remove: removeSubscription };
+      });
+      jest
+        .mocked(bootstrapEvacuationDatabase)
+        .mockResolvedValue({ reseeded: Promise.resolve(false) });
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('active に戻ったら判定し直し、書き換わったら invalidate する', async () => {
+      jest.mocked(recheckEvacuationDatabase).mockResolvedValue({ reseeded: Promise.resolve(true) });
+
+      const { invalidateQueries } = renderBootstrap();
+
+      act(() => emitAppState('active'));
+
+      expect(recheckEvacuationDatabase).toHaveBeenCalledWith('ja');
+      await waitFor(() =>
+        expect(invalidateQueries).toHaveBeenCalledWith({ queryKey: ['evacuation', 'shelters'] }),
+      );
+    });
+
+    it('active 以外への変化では判定し直さない', () => {
+      renderBootstrap();
+
+      act(() => emitAppState('background'));
+
+      expect(recheckEvacuationDatabase).not.toHaveBeenCalled();
+    });
+
+    it('アンマウントで購読を解除する', () => {
+      const { unmount } = renderBootstrap();
+
+      unmount();
+
+      expect(removeSubscription).toHaveBeenCalledTimes(1);
+    });
   });
 });
