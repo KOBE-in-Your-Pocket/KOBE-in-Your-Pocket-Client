@@ -14,7 +14,7 @@ import {
   getSessionGeneration,
   isSessionGenerationCurrent,
 } from './session-operation';
-import { CURRENT_USER_QUERY_KEY } from './use-sync-current-user';
+import { currentUserQueryKey } from './use-sync-current-user';
 
 type UpdateProfileDeps = {
   persistedUserStore: PersistedUserStore;
@@ -109,18 +109,21 @@ async function applyUpdatedUser(
 /**
  * アカウント編集を保存する mutation。
  *
- * 成功後は `GET /api/v1/users/me` のキャッシュも保存後の値に揃える。古いキャッシュが残っていると、
+ * 完了後は `GET /api/v1/users/me` のキャッシュもストアの値に揃える。古いキャッシュが残っていると、
  * 再ログインや画面の再マウントで useSyncCurrentUser がそれをストアへ書き戻し、
  * 次の再取得（staleTime 経過後）まで変更前の表示名に戻って見えるため。
+ *
+ * 成功時だけでなく失敗時も揃える。表示名の保存後にアイコンのアップロードが失敗すると、
+ * ストアには新しい表示名が反映済みのまま mutation は失敗するため（performProfileUpdate 参照）。
  */
 export function useUpdateProfile() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (edits: ProfileEdits) => performProfileUpdate(edits),
-    onSuccess: () => {
+    onSettled: () => {
       const { currentUser } = useAuthStore.getState();
       if (currentUser !== null) {
-        queryClient.setQueryData([...CURRENT_USER_QUERY_KEY, currentUser.id], currentUser);
+        queryClient.setQueryData(currentUserQueryKey(currentUser.id), currentUser);
       }
     },
   });

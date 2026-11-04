@@ -5,7 +5,7 @@ import { renderHook, waitFor } from '@testing-library/react-native';
 import { useAuthStore } from '../../store/use-auth-store';
 import { resetSessionGenerationForTests } from '../session-operation';
 import { useSignOut } from '../use-sign-out';
-import { CURRENT_USER_QUERY_KEY, useSyncCurrentUser } from '../use-sync-current-user';
+import { currentUserQueryKey, useSyncCurrentUser } from '../use-sync-current-user';
 import { useUpdateProfile } from '../use-update-profile';
 
 import type { PropsWithChildren } from 'react';
@@ -35,11 +35,12 @@ jest.mock('../../infrastructure/storage/session-storage', () => ({
 
 const OLD_USER = { id: 'user-1', name: 'a1b2c3d4e5', iconUrl: '' };
 const RENAMED_USER = { id: 'user-1', name: '新しい名前', iconUrl: '' };
-const USER_KEY = [...CURRENT_USER_QUERY_KEY, 'user-1'];
+const USER_KEY = currentUserQueryKey('user-1');
 
 const userApi = jest.requireMock('../../infrastructure/api/user-api') as {
   fetchCurrentUser: jest.Mock;
   updateCurrentUser: jest.Mock;
+  uploadMyIcon: jest.Mock;
 };
 
 function createWrapper() {
@@ -87,6 +88,32 @@ describe('現在ユーザーのキャッシュ', () => {
     const { result } = renderHook(() => useUpdateProfile(), { wrapper });
     result.current.mutate({ name: '新しい名前', iconUrl: '' });
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    renderHook(() => useSyncCurrentUser(), { wrapper });
+
+    await waitFor(() => expect(useAuthStore.getState().currentUser).toEqual(RENAMED_USER));
+  });
+
+  it('表示名の保存後にアイコンのアップロードが失敗しても、キャッシュは新しい表示名になる', async () => {
+    userApi.uploadMyIcon.mockRejectedValue(new Error('upload failed'));
+    const { queryClient, wrapper } = createWrapper();
+    queryClient.setQueryData(USER_KEY, OLD_USER);
+    const { result } = renderHook(() => useUpdateProfile(), { wrapper });
+
+    result.current.mutate({ name: '新しい名前', iconUrl: '', newIconUri: 'file:///new-icon.jpg' });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(useAuthStore.getState().currentUser).toEqual(RENAMED_USER);
+    expect(queryClient.getQueryData(USER_KEY)).toEqual(RENAMED_USER);
+  });
+
+  it('アイコンのアップロード失敗後に同期 hook が再マウントされても、変更前の名前に戻らない', async () => {
+    userApi.uploadMyIcon.mockRejectedValue(new Error('upload failed'));
+    const { queryClient, wrapper } = createWrapper();
+    queryClient.setQueryData(USER_KEY, OLD_USER);
+    const { result } = renderHook(() => useUpdateProfile(), { wrapper });
+    result.current.mutate({ name: '新しい名前', iconUrl: '', newIconUri: 'file:///new-icon.jpg' });
+    await waitFor(() => expect(result.current.isError).toBe(true));
 
     renderHook(() => useSyncCurrentUser(), { wrapper });
 
