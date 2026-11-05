@@ -26,8 +26,13 @@ const EVACUATION_ICON: { ios: SFSymbol; android: AndroidSymbol; web: AndroidSymb
  * `tracksViewChanges={false}` は初回スナップショットをレイアウト確定前に撮ってしまうことがあり、
  * {@link SymbolView} のような非同期読込コンテンツに限らず、見た目が崩れたまま固定されることがある（#735）。
  * 複数回 `redraw()` を呼ぶことでタイミングに関係なく確実に反映させる。
+ *
+ * 選択状態の切り替え（#749）によるサイズ変更も、`redraw()` の呼び直しではなく、
+ * マーカー自体を key で作り直す（後述）ことでこの初回スナップショット処理に乗せている。
+ * 既存マーカーのサイズだけを変えて `redraw()` し直すと、ネイティブ側が古いビットマップを
+ * 完全に差し替えず、新旧の見た目が二重写しになって残ることがあったため（#749 追加修正）。
  */
-const MARKER_REDRAW_DELAYS_MS = [300, 800, 1500];
+const MOUNT_REDRAW_DELAYS_MS = [300, 800, 1500];
 
 /**
  * マーカーの重なり順（zIndex）。大きいほど手前に描画される。
@@ -39,22 +44,15 @@ const MARKER_Z_INDEX = {
   currentLocation: 2,
 } as const;
 
-/**
- * mount直後、および `deps` が変わるたび（選択状態の切り替わりなど）に
- * {@link MARKER_REDRAW_DELAYS_MS} の間隔で markerRef の `redraw()` を呼ぶ。
- * サイズ変更直後のレイアウト確定前にスナップショットが撮られて見た目が崩れたまま固定される問題を防ぐ（#735, #749）。
- */
-function useMarkerRedrawOnChange(
-  markerRef: React.RefObject<ComponentRef<typeof Marker> | null>,
-  deps: readonly unknown[],
-) {
+/** mount直後に {@link MOUNT_REDRAW_DELAYS_MS} の間隔で markerRef の `redraw()` を呼ぶ（#735）。 */
+function useMarkerRedrawOnMount(markerRef: React.RefObject<ComponentRef<typeof Marker> | null>) {
   useEffect(() => {
-    const timers = MARKER_REDRAW_DELAYS_MS.map((delay) =>
+    const timers = MOUNT_REDRAW_DELAYS_MS.map((delay) =>
       setTimeout(() => markerRef.current?.redraw(), delay),
     );
     return () => timers.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps);
+  }, []);
 }
 
 /**
@@ -72,7 +70,7 @@ function EvacuationMarker({
   onPress?: (marker: MapMarker) => void;
 }) {
   const markerRef = useRef<ComponentRef<typeof Marker>>(null);
-  useMarkerRedrawOnChange(markerRef, [isSelected]);
+  useMarkerRedrawOnMount(markerRef);
 
   return (
     <Marker
@@ -118,7 +116,7 @@ function TourismMarker({
   onPress?: (marker: MapMarker) => void;
 }) {
   const markerRef = useRef<ComponentRef<typeof Marker>>(null);
-  useMarkerRedrawOnChange(markerRef, [isSelected]);
+  useMarkerRedrawOnMount(markerRef);
 
   return (
     <Marker
@@ -165,8 +163,9 @@ export function Map({
         <Polyline coordinates={routeCoordinates} strokeColor={ROUTE_STROKE_COLOR} strokeWidth={4} />
       ) : null}
       {markers?.map((marker) => {
-        const key = `${marker.id}:${markerResyncKey ?? 0}`;
         const isSelected = marker.id === selectedMarkerId;
+        // 選択状態も key に含め、切り替わるたびにマーカーを作り直す（理由は MOUNT_REDRAW_DELAYS_MS 参照）。
+        const key = `${marker.id}:${markerResyncKey ?? 0}:${isSelected ? 1 : 0}`;
         return marker.variant === 'evacuation' ? (
           <EvacuationMarker
             key={key}

@@ -275,24 +275,24 @@ describe('Map の選択中ピン拡大・手前表示（#749）', () => {
     expect(head.width).toBe(TOURISM_PIN_HEAD_SIZE);
   });
 
-  it('選択状態が切り替わるたびに redraw() を複数回呼び、サイズ変更直後のスナップショット固定に備える', () => {
+  it('選択状態が切り替わるとマーカーを作り直し、新旧ビットマップの二重写しを防ぐ', () => {
+    // 既存マーカーのサイズだけを変えて redraw() し直すと、ネイティブ側で新旧の見た目が
+    // 二重写しになって残ることがあったため、選択状態ごとにマーカー自体を作り直す（key を変える）。
     const marker: MapMarker = { id: 'spot-a', coordinate: { latitude: 34.69, longitude: 135.19 } };
 
     const { rerender } = render(<Map currentLocation={null} markers={[marker]} />);
+    const unselectedPin = screen.getByTestId('tourism-pin');
     jest.advanceTimersByTime(1500);
     mockRedraw.mockClear();
 
     rerender(<Map currentLocation={null} markers={[marker]} selectedMarkerId="spot-a" />);
 
-    expect(mockRedraw).not.toHaveBeenCalled();
+    // key が変わるため、同じインスタンスの使い回しではなく新しいピンが生成される。
+    const selectedPin = screen.getByTestId('tourism-pin');
+    expect(selectedPin).not.toBe(unselectedPin);
 
+    // 新しいマーカーとして mount 直後の redraw() スケジュールが改めて走る。
     jest.advanceTimersByTime(300);
     expect(mockRedraw).toHaveBeenCalledTimes(1);
-
-    jest.advanceTimersByTime(500);
-    expect(mockRedraw).toHaveBeenCalledTimes(2);
-
-    jest.advanceTimersByTime(700);
-    expect(mockRedraw).toHaveBeenCalledTimes(3);
   });
 });
