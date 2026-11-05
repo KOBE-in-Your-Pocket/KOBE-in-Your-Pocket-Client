@@ -191,6 +191,9 @@ export function MapScreen() {
   // 経路の目的地は現在モードの選択地点（観光=スポット / 避難=避難所）。
   const routeDestination =
     mapMode === 'tourism' ? selectedSpot?.coordinates : selectedShelter?.coordinates;
+  // 地図上で強調表示するピンの id も同じ選択地点を使う（タップ・「経路」ボタン・住所タップのどの経路で
+  // 選択されても selectedSpot/selectedShelter に集約されるため、ここから渡すだけで #750 の強調表示に反映される）。
+  const selectedMarkerId = mapMode === 'tourism' ? selectedSpot?.id : selectedShelter?.id;
   const { data: route } = useRoute(coords, routeDestination);
 
   const selectedDistanceKm = useMemo(() => {
@@ -255,6 +258,7 @@ export function MapScreen() {
         onMarkerPress={handleMarkerPress}
         routeCoordinates={route?.coordinates}
         markerResyncKey={markerResyncKey}
+        selectedMarkerId={selectedMarkerId}
       />
 
       <MapModeToggle />
