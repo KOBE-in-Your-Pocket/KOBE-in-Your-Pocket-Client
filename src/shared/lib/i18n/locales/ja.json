@@ -39,6 +39,7 @@
     }
   },
   "settings": {
+    "menu": "メニュー",
     "language": "言語",
     "account": "アカウント",
     "signIn": "ログイン / 新規登録",
