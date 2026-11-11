@@ -313,6 +313,10 @@
       "tourism": "観光",
       "evacuation": "避難"
     },
+    "search": {
+      "placeholder": "観光スポットを検索",
+      "clear": "検索をクリア"
+    },
     "settings": {
       "open": "設定を開く"
     },
