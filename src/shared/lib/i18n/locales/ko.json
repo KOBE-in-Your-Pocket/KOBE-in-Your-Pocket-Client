@@ -183,6 +183,10 @@
       "history": "역사",
       "gourmet": "미식",
       "onsen": "온천"
+    },
+    "favorite": {
+      "add": "즐겨찾기에 추가",
+      "remove": "즐겨찾기에서 삭제"
     }
   },
   "evacuation": {
