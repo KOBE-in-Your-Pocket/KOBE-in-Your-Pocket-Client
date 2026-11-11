@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { Pressable as MockPressable, Text as MockText } from 'react-native';
 
 import { SpotFavoriteButton } from '../spot-favorite-button';
 
@@ -14,6 +15,16 @@ jest.mock('@/shared/store', () => ({
 
 jest.mock('@/features/user/application/use-current-user', () => ({
   useCurrentUser: () => mockCurrentUser(),
+}));
+
+// SignInModal は重い依存（Google ボタン・認証フック）を含むため、表示状態と閉じる操作だけ再現する。
+jest.mock('@/features/user', () => ({
+  SignInModal: ({ visible, onClose }: { visible: boolean; onClose: () => void }) =>
+    visible ? (
+      <MockPressable onPress={onClose}>
+        <MockText>sign-in-modal-visible</MockText>
+      </MockPressable>
+    ) : null,
 }));
 
 jest.mock('../../../application/use-favorites', () => ({
@@ -70,12 +81,33 @@ describe('SpotFavoriteButton', () => {
     expect(mockMutate).toHaveBeenCalledWith({ spotId: 'spot-a', next: false });
   });
 
-  it('未ログインなら押しても何もしない（ログインの案内は #796）', () => {
-    mockCurrentUser.mockReturnValue(null);
+  it('ログイン中に押してもログインのモーダルは開かない', () => {
     render(<SpotFavoriteButton spotId="spot-a" />);
 
     fireEvent.press(screen.getByRole('button'));
 
+    expect(screen.queryByText('sign-in-modal-visible')).toBeNull();
+  });
+
+  it('未ログインで押すとログインのモーダルを開き、お気に入りには追加しない', () => {
+    mockCurrentUser.mockReturnValue(null);
+    render(<SpotFavoriteButton spotId="spot-a" />);
+
+    expect(screen.queryByText('sign-in-modal-visible')).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: 'tourism.favorite.add' }));
+
+    expect(screen.getByText('sign-in-modal-visible')).toBeTruthy();
+    expect(mockMutate).not.toHaveBeenCalled();
+  });
+
+  it('ログインのモーダルを閉じると消え、お気に入りには追加しない', () => {
+    mockCurrentUser.mockReturnValue(null);
+    render(<SpotFavoriteButton spotId="spot-a" />);
+    fireEvent.press(screen.getByRole('button', { name: 'tourism.favorite.add' }));
+
+    fireEvent.press(screen.getByText('sign-in-modal-visible'));
+
+    expect(screen.queryByText('sign-in-modal-visible')).toBeNull();
     expect(mockMutate).not.toHaveBeenCalled();
   });
 
