@@ -183,6 +183,10 @@
       "history": "History",
       "gourmet": "Gourmet",
       "onsen": "Hot Spring"
+    },
+    "favorite": {
+      "add": "Add to favorites",
+      "remove": "Remove from favorites"
     }
   },
   "evacuation": {
