@@ -50,6 +50,10 @@ export const styles = StyleSheet.create({
     borderRadius: Spacing.two,
     borderWidth: 1,
   },
+  // 押下時のフィードバック。カードを少し薄く見せてタップ可能なことを伝える。
+  cardPressed: {
+    opacity: 0.6,
+  },
   iconWrapper: {
     width: 56,
     height: 56,
