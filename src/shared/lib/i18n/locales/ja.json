@@ -183,6 +183,10 @@
       "history": "歴史",
       "gourmet": "グルメ",
       "onsen": "温泉"
+    },
+    "favorite": {
+      "add": "お気に入りに追加",
+      "remove": "お気に入りから削除"
     }
   },
   "evacuation": {

@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen } from '@testing-library/react-native';
+import { router } from 'expo-router';
 import { Text as MockText, View as MockView } from 'react-native';
 
 import { SpotMannerSection } from '../spot-manner-section';
@@ -37,6 +38,10 @@ jest.mock('../../../application/use-spot-manners', () => ({
   useSpotManners: (spotId: string) => mockUseSpotManners(spotId),
 }));
 
+jest.mock('expo-router', () => ({
+  router: { push: jest.fn() },
+}));
+
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
 }));
@@ -67,6 +72,7 @@ jest.mock('@/shared/ui', () => ({
 describe('SpotMannerSection', () => {
   afterEach(() => {
     mockUseSpotManners.mockReset();
+    (router.push as jest.Mock).mockReset();
   });
 
   it('取得中は何も表示しない', () => {
@@ -124,5 +130,29 @@ describe('SpotMannerSection', () => {
 
     expect(screen.getByText(`pictogram:${mockManners[0].id}:56`)).toBeTruthy();
     expect(screen.getByText(`pictogram:${mockManners[1].id}:56`)).toBeTruthy();
+  });
+
+  it('各カードは押せる（accessibilityRole=button・マナー名の accessibilityLabel を持つ）', () => {
+    mockUseSpotManners.mockReturnValue({ data: mockManners, isPending: false, isError: false });
+
+    render(<SpotMannerSection spotId="nankinmachi" />);
+
+    const buttons = screen.getAllByRole('button');
+    expect(buttons).toHaveLength(mockManners.length);
+    expect(screen.getByLabelText(mockManners[0].title)).toBeTruthy();
+    expect(screen.getByLabelText(mockManners[1].title)).toBeTruthy();
+  });
+
+  it('カードをタップすると、そのマナーの id で詳細へ遷移する', () => {
+    mockUseSpotManners.mockReturnValue({ data: mockManners, isPending: false, isError: false });
+
+    render(<SpotMannerSection spotId="nankinmachi" />);
+
+    fireEvent.press(screen.getByLabelText(mockManners[0].title));
+
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/manner/[id]',
+      params: { id: mockManners[0].id },
+    });
   });
 });

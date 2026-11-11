@@ -17,4 +17,6 @@ export { SpotSearchEmptyNotice } from './ui/components/spot-search-empty-notice'
 export { SpotDetailScreen } from './ui/components/spot-detail-screen';
 export { ReviewList } from './ui/components/review-list';
 export { SpotList } from './ui/components/spot-list';
+export { SpotFavoriteButton } from './ui/components/spot-favorite-button';
+export type { SpotFavoriteButtonProps } from './ui/components/spot-favorite-button';
 export { TourismScreen } from './ui/components/tourism-screen';
