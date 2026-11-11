@@ -16,6 +16,21 @@ export function filterSpotsByGenre(spots: Spot[], genre: SelectedGenre): Spot[] 
   return spots.filter((spot) => spot.genre === genre);
 }
 
+// NFKC で全角英数・半角カタカナ等を正準形に統一してから小文字化し、表記の違いを吸収する。
+function normalizeForSearch(value: string): string {
+  return value.normalize('NFKC').toLowerCase().trim();
+}
+
+/**
+ * スポット一覧を名前の部分一致で絞り込む純粋関数。
+ * 大文字・小文字、全角・半角は区別しない。キーワードが空（空白のみ含む）なら全件を返す。
+ */
+export function filterSpotsByKeyword(spots: Spot[], keyword: string): Spot[] {
+  const normalizedKeyword = normalizeForSearch(keyword);
+  if (normalizedKeyword === '') return spots;
+  return spots.filter((spot) => normalizeForSearch(spot.name).includes(normalizedKeyword));
+}
+
 /**
  * 選択中ジャンルで絞り込んだ観光スポット一覧を返す application 層フック。
  *

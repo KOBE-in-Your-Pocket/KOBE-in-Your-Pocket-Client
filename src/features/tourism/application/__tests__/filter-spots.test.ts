@@ -1,11 +1,11 @@
-import { filterSpotsByGenre } from '../use-filtered-spots';
+import { filterSpotsByGenre, filterSpotsByKeyword } from '../use-filtered-spots';
 
 import type { Spot } from '../../domain/spot';
 
-const makeSpot = (id: string, genre: Spot['genre']): Spot => ({
+const makeSpot = (id: string, genre: Spot['genre'], name: string = id): Spot => ({
   id,
   genre,
-  name: id,
+  name,
   description: '',
   address: '',
   businessHours: '',
@@ -52,5 +52,52 @@ describe('filterSpotsByGenre', () => {
 
   it('空配列を渡すと空配列を返す', () => {
     expect(filterSpotsByGenre([], 'history')).toHaveLength(0);
+  });
+});
+
+describe('filterSpotsByKeyword', () => {
+  const KEYWORD_SPOTS: Spot[] = [
+    makeSpot('kobe-port-tower', 'landmark', '神戸ポートタワー'),
+    makeSpot('kitano-ijinkan', 'history', '北野異人館'),
+    makeSpot('nankinmachi', 'gourmet', '南京町'),
+  ];
+
+  it('名前の一部が一致するスポットだけを返す', () => {
+    const result = filterSpotsByKeyword(KEYWORD_SPOTS, 'ポート');
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('kobe-port-tower');
+  });
+
+  it('大文字・小文字が違っても一致する', () => {
+    const spots = [makeSpot('rokko', 'nature', 'Mount Rokko')];
+
+    expect(filterSpotsByKeyword(spots, 'rokko')).toHaveLength(1);
+    expect(filterSpotsByKeyword(spots, 'ROKKO')).toHaveLength(1);
+  });
+
+  it('全角・半角が違っても一致する', () => {
+    const spots = [makeSpot('rokko', 'nature', 'Mount Rokko')];
+
+    expect(filterSpotsByKeyword(spots, 'ＲＯＫＫＯ')).toHaveLength(1);
+  });
+
+  it('前後の空白は無視する', () => {
+    const result = filterSpotsByKeyword(KEYWORD_SPOTS, '  南京町  ');
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('nankinmachi');
+  });
+
+  it('キーワードが空のときは全件を返す', () => {
+    expect(filterSpotsByKeyword(KEYWORD_SPOTS, '')).toHaveLength(KEYWORD_SPOTS.length);
+  });
+
+  it('キーワードが空白だけのときは全件を返す', () => {
+    expect(filterSpotsByKeyword(KEYWORD_SPOTS, '   ')).toHaveLength(KEYWORD_SPOTS.length);
+  });
+
+  it('一致するスポットがない場合は空配列を返す', () => {
+    expect(filterSpotsByKeyword(KEYWORD_SPOTS, '存在しない')).toHaveLength(0);
   });
 });
