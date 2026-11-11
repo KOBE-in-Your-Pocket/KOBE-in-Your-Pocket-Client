@@ -108,14 +108,16 @@ describe('Map の避難所ピン詳細表示（#735 アイコン読込レース�
 
     expect(mockRedraw).not.toHaveBeenCalled();
 
+    // mount直後の redraw（自分自身分）と、マーカー集合の変化による redraw（全マーカー分）が
+    // 同じタイミングで走るため、1件のマーカーでも各タイミングで2回呼ばれる。
     jest.advanceTimersByTime(300);
-    expect(mockRedraw).toHaveBeenCalledTimes(1);
-
-    jest.advanceTimersByTime(500);
     expect(mockRedraw).toHaveBeenCalledTimes(2);
 
+    jest.advanceTimersByTime(500);
+    expect(mockRedraw).toHaveBeenCalledTimes(4);
+
     jest.advanceTimersByTime(700);
-    expect(mockRedraw).toHaveBeenCalledTimes(3);
+    expect(mockRedraw).toHaveBeenCalledTimes(6);
   });
 
   it('unmount後はタイマーが片付き、redraw() が呼ばれない', () => {
@@ -175,13 +177,13 @@ describe('Map の観光ピン（#748 カスタムピン化）', () => {
     expect(mockRedraw).not.toHaveBeenCalled();
 
     jest.advanceTimersByTime(300);
-    expect(mockRedraw).toHaveBeenCalledTimes(1);
-
-    jest.advanceTimersByTime(500);
     expect(mockRedraw).toHaveBeenCalledTimes(2);
 
+    jest.advanceTimersByTime(500);
+    expect(mockRedraw).toHaveBeenCalledTimes(4);
+
     jest.advanceTimersByTime(700);
-    expect(mockRedraw).toHaveBeenCalledTimes(3);
+    expect(mockRedraw).toHaveBeenCalledTimes(6);
   });
 });
 
@@ -294,5 +296,33 @@ describe('Map の選択中ピン拡大・手前表示（#749）', () => {
     // 新しいマーカーとして mount 直後の redraw() スケジュールが改めて走る。
     jest.advanceTimersByTime(300);
     expect(mockRedraw).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('マーカー集合の変化による既存マーカーの redraw（#787 の検索結果＋「経路」遷移で確認）', () => {
+  beforeEach(() => {
+    mockRedraw.mockClear();
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('新しいマーカーが追加されると、key が変わらない既存マーカーも redraw() し直す', () => {
+    const markerA: MapMarker = { id: 'spot-a', coordinate: { latitude: 34.69, longitude: 135.19 } };
+    const markerB: MapMarker = { id: 'spot-b', coordinate: { latitude: 34.7, longitude: 135.2 } };
+
+    const { rerender } = render(<Map currentLocation={null} markers={[markerA]} />);
+    jest.advanceTimersByTime(1500);
+    mockRedraw.mockClear();
+
+    rerender(<Map currentLocation={null} markers={[markerA, markerB]} />);
+
+    // markerA は key が変わらず mount し直されないが、マーカー集合が変化したことで
+    // markerA・markerB 双方の redraw() が改めてスケジュールされる
+    // （markerB は新規 mount 分と合わせて2回、markerA は1回で、計3回）。
+    jest.advanceTimersByTime(300);
+    expect(mockRedraw).toHaveBeenCalledTimes(3);
   });
 });

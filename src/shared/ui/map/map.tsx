@@ -1,5 +1,5 @@
 import { SymbolView, type AndroidSymbol, type SFSymbol } from 'expo-symbols';
-import { useEffect, useRef, type ComponentRef } from 'react';
+import { useCallback, useEffect, useRef, type ComponentRef } from 'react';
 import { Platform, View } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 
@@ -56,6 +56,27 @@ function useMarkerRedrawOnMount(markerRef: React.RefObject<ComponentRef<typeof M
 }
 
 /**
+ * 近くに新しいマーカーが増えたとき、自分はmountされ直さない既存マーカーも含めて
+ * 全マーカーを `redraw()` し直す。Android では近接位置へのマーカー追加で既存マーカーの
+ * スナップショットが無効化されるが、`tracksViewChanges=false` のため自動では描き直されず、
+ * ピンが消えたまま残ることがあるため（#787 の検索結果＋「経路」遷移で確認）。
+ */
+function useMarkerRedrawOnMarkersChange(
+  markerRefs: React.RefObject<Map<string, ComponentRef<typeof Marker>>>,
+  markerIdsKey: string,
+) {
+  useEffect(() => {
+    const timers = MOUNT_REDRAW_DELAYS_MS.map((delay) =>
+      setTimeout(() => {
+        markerRefs.current.forEach((ref) => ref.redraw());
+      }, delay),
+    );
+    return () => timers.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [markerIdsKey]);
+}
+
+/**
  * 避難所ピン。緑のしずく型＋白い円＋走る人ピクトグラムで観光ピンと区別する。
  * 先端が座標を指すよう `anchor={{x:0.5,y:1}}`。
  * 選択中（`isSelected`）は拡大し、他のピンより手前に表示する（#749）。
@@ -64,17 +85,28 @@ function EvacuationMarker({
   marker,
   isSelected,
   onPress,
+  registerRef,
 }: {
   marker: MapMarker;
   isSelected: boolean;
   onPress?: (marker: MapMarker) => void;
+  registerRef: (id: string, ref: ComponentRef<typeof Marker> | null) => void;
 }) {
   const markerRef = useRef<ComponentRef<typeof Marker>>(null);
   useMarkerRedrawOnMount(markerRef);
+  // ref callback をレンダーごとに作り直すと React がその都度 detach/attach 扱いにしてしまうため、
+  // marker.id 単位でメモ化して不要な registerRef 呼び出しを防ぐ。
+  const setMarkerRef = useCallback(
+    (instance: ComponentRef<typeof Marker> | null) => {
+      markerRef.current = instance;
+      registerRef(marker.id, instance);
+    },
+    [marker.id, registerRef],
+  );
 
   return (
     <Marker
-      ref={markerRef}
+      ref={setMarkerRef}
       coordinate={marker.coordinate}
       title={marker.title}
       description={marker.description}
@@ -110,17 +142,28 @@ function TourismMarker({
   marker,
   isSelected,
   onPress,
+  registerRef,
 }: {
   marker: MapMarker;
   isSelected: boolean;
   onPress?: (marker: MapMarker) => void;
+  registerRef: (id: string, ref: ComponentRef<typeof Marker> | null) => void;
 }) {
   const markerRef = useRef<ComponentRef<typeof Marker>>(null);
   useMarkerRedrawOnMount(markerRef);
+  // ref callback をレンダーごとに作り直すと React がその都度 detach/attach 扱いにしてしまうため、
+  // marker.id 単位でメモ化して不要な registerRef 呼び出しを防ぐ。
+  const setMarkerRef = useCallback(
+    (instance: ComponentRef<typeof Marker> | null) => {
+      markerRef.current = instance;
+      registerRef(marker.id, instance);
+    },
+    [marker.id, registerRef],
+  );
 
   return (
     <Marker
-      ref={markerRef}
+      ref={setMarkerRef}
       coordinate={marker.coordinate}
       title={marker.title}
       description={marker.description}
@@ -153,6 +196,20 @@ export function Map({
   markerResyncKey,
   selectedMarkerId,
 }: MapProps) {
+  const markerRefs = useRef(new globalThis.Map<string, ComponentRef<typeof Marker>>());
+  const registerMarkerRef = useCallback(
+    (id: string, instance: ComponentRef<typeof Marker> | null) => {
+      if (instance) {
+        markerRefs.current.set(id, instance);
+      } else {
+        markerRefs.current.delete(id);
+      }
+    },
+    [],
+  );
+  const markerIdsKey = markers?.map((marker) => marker.id).join(',') ?? '';
+  useMarkerRedrawOnMarkersChange(markerRefs, markerIdsKey);
+
   return (
     <MapView
       style={[styles.map, style]}
@@ -172,6 +229,7 @@ export function Map({
             marker={marker}
             isSelected={isSelected}
             onPress={onMarkerPress}
+            registerRef={registerMarkerRef}
           />
         ) : (
           <TourismMarker
@@ -179,6 +237,7 @@ export function Map({
             marker={marker}
             isSelected={isSelected}
             onPress={onMarkerPress}
+            registerRef={registerMarkerRef}
           />
         );
       })}
