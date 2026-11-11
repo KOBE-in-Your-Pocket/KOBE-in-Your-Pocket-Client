@@ -11,7 +11,7 @@ import {
 } from '@/features/evacuation';
 import type { EvacuationShelter } from '@/features/evacuation';
 import type { Spot } from '@/features/tourism';
-import { useSpots } from '@/features/tourism';
+import { SpotSearchBar, useSpots } from '@/features/tourism';
 import { confirmOpenDirections } from '@/shared/lib/directions';
 import { getDistanceKm, useCurrentLocation } from '@/shared/lib/geo';
 import { LocationServicesModal, Map, ThemedView } from '@/shared/ui';
@@ -260,6 +260,9 @@ export function MapScreen() {
         markerResyncKey={markerResyncKey}
         selectedMarkerId={selectedMarkerId}
       />
+
+      {/* 検索バーは観光モードのときだけ意味を持つため、このモードでのみ表示する（#786）。 */}
+      {mapMode === 'tourism' ? <SpotSearchBar /> : null}
 
       <MapModeToggle />
 
