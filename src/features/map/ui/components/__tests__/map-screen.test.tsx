@@ -9,7 +9,7 @@ import { MapScreen } from '../map-screen';
 // @/features/evacuation はこのファイルでモック化しているが、useMapModeStore と同様に
 // 実物の zustand ストア（同一インスタンス）を取得して直接 setState で操作する。
 import { useShelterRadiusStore } from '@/features/evacuation/store/use-shelter-radius-store';
-import { useSpotSearchStore } from '@/features/tourism/store/use-spot-search-store';
+import { useSpotSearchStore } from '@/features/tourism';
 
 import type { ReactNode } from 'react';
 
@@ -87,13 +87,13 @@ jest.mock('@/features/tourism', () => ({
   // 観光モードでのみ表示されることを検証できるよう、testID 付きスタブに差し替える。
   SpotSearchBar: () => <MockText testID="spot-search-bar">search</MockText>,
   // キーワード絞り込み本体は use-case 側で検証済みのため、実物をそのまま使う。
-  filterSpotsByKeyword: jest.requireActual<
-    typeof import('@/features/tourism/application/use-filtered-spots')
-  >('@/features/tourism/application/use-filtered-spots').filterSpotsByKeyword,
+  filterSpotsByKeyword:
+    jest.requireActual<typeof import('@/features/tourism')>('@/features/tourism')
+      .filterSpotsByKeyword,
   // useMapModeStore と同じ方針で、実物の zustand ストアをそのまま使う。
-  useSpotSearchStore: jest.requireActual<
-    typeof import('@/features/tourism/store/use-spot-search-store')
-  >('@/features/tourism/store/use-spot-search-store').useSpotSearchStore,
+  useSpotSearchStore:
+    jest.requireActual<typeof import('@/features/tourism')>('@/features/tourism')
+      .useSpotSearchStore,
 }));
 
 jest.mock('@/features/evacuation', () => ({
@@ -307,6 +307,32 @@ describe('MapScreen のマーカー出し分け', () => {
 
     expect(screen.queryByTestId('spot-card')).toBeNull();
     expect(screen.getByTestId('selected-marker-id').props.children).toBe('');
+  });
+
+  it('地図に検索キーワードが残っていても、一覧の「経路」から遷移したスポットはピン・カードを表示する（#787）', () => {
+    useSpotSearchStore.setState({ keyword: 'スポットA' });
+    mockUseLocalSearchParams.mockReturnValue({ spotId: 'spot-2', requestedAt: '1' });
+
+    render(<MapScreen />);
+
+    // キーワード「スポットA」には一致しないが、「経路」遷移で指定されたスポットなのでピン・カードとも維持する。
+    expect(screen.getByTestId('marker-spot-2')).toBeTruthy();
+    expect(screen.getByTestId('spot-card').props.children).toBe('spot-2');
+
+    // ピン留め中のスポット自身を再タップしても解除されない。
+    fireEvent.press(screen.getByTestId('marker-spot-2'));
+    expect(screen.getByTestId('spot-card').props.children).toBe('spot-2');
+
+    // 別のスポット（通常の検索結果内）をタップすると、ピン留めは引き継がれない。
+    fireEvent.press(screen.getByTestId('marker-spot-1'));
+    expect(screen.getByTestId('spot-card').props.children).toBe('spot-1');
+
+    act(() => {
+      useSpotSearchStore.setState({ keyword: 'スポットB' });
+    });
+
+    // ピン留めが外れた spot-1 は検索結果外なので選択解除される。
+    expect(screen.queryByTestId('spot-card')).toBeNull();
   });
 
   it('モード切替でピンが即座に切り替わる（再マウント不要）', () => {

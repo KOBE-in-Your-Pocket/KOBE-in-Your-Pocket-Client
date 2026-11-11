@@ -48,6 +48,9 @@ export function MapScreen() {
   const [selectedShelter, setSelectedShelter] = useState<EvacuationShelter | null>(null);
   const [appliedSpotRequest, setAppliedSpotRequest] = useState<string | undefined>(undefined);
   const [appliedShelterRequest, setAppliedShelterRequest] = useState<string | undefined>(undefined);
+  // 観光地一覧の「経路」から spotId 付きで遷移してきたスポットの id。検索キーワードに一致しなくても
+  // 選択を維持するため、#787 の検索結果による自動解除から除外する（pinnedShelterId と対称）。
+  const [pinnedSpotId, setPinnedSpotId] = useState<string | undefined>(undefined);
   // 住所タップ経由で選択された避難所の id。圏外でも選択を維持するため #594 の自動解除から除外する。
   const [pinnedShelterId, setPinnedShelterId] = useState<string | undefined>(undefined);
   const [showServicesModal, setShowServicesModal] = useState(false);
@@ -126,12 +129,17 @@ export function MapScreen() {
         variant: 'evacuation',
       }));
     }
-    return visibleSpots.map((spot) => ({
+    // 「経路」から遷移してきたスポットが検索結果に無くても、必ずピンを出す（#787、避難所と対称）。
+    const pinnedOutOfResults =
+      selectedSpot && !visibleSpots.some((spot) => spot.id === selectedSpot.id)
+        ? [selectedSpot]
+        : [];
+    return [...visibleSpots, ...pinnedOutOfResults].map((spot) => ({
       id: spot.id,
       coordinate: spot.coordinates,
       title: spot.name,
     }));
-  }, [mapMode, visibleSpots, visibleShelters, selectedShelter]);
+  }, [mapMode, visibleSpots, visibleShelters, selectedShelter, selectedSpot]);
 
   // 観光地リストの「経路」ボタンから spotId 付きで遷移してきたら、その地点を選択状態にする。
   // render 中に前回適用した遷移と比較して反映する（effect 内 setState を避ける公式パターン）。
@@ -146,6 +154,7 @@ export function MapScreen() {
     if (spot) {
       setAppliedSpotRequest(spotRequest);
       setSelectedSpot(spot);
+      setPinnedSpotId(spot.id);
     }
   }
 
@@ -178,6 +187,7 @@ export function MapScreen() {
   // モード切替時は前モードの選択を解除する（保持すると戻ったとき未操作のカードが再表示されるため）。
   if (mapMode !== 'tourism' && selectedSpot !== null) {
     setSelectedSpot(null);
+    setPinnedSpotId(undefined);
   }
   if (mapMode !== 'evacuation' && selectedShelter !== null) {
     setSelectedShelter(null);
@@ -203,9 +213,11 @@ export function MapScreen() {
 
   // 検索キーワードの入力で選択中のスポットが絞り込み結果から外れたら選択を解除する（#787）。
   // 地図にピンが無いスポットをカードが指し続ける不整合を防ぐ（#594 と同じ考え方）。
+  // ただし「経路」から遷移してきたスポット（pinnedSpotId）はキーワードに一致しなくても維持する。
   if (
     mapMode === 'tourism' &&
     selectedSpot !== null &&
+    selectedSpot.id !== pinnedSpotId &&
     !visibleSpots.some((spot) => spot.id === selectedSpot.id)
   ) {
     setSelectedSpot(null);
@@ -241,13 +253,20 @@ export function MapScreen() {
         return;
       }
       const spot = spots?.find((candidate) => candidate.id === marker.id);
-      if (spot) setSelectedSpot(spot);
+      if (spot) {
+        setSelectedSpot(spot);
+        // ピン留め中のスポット自身の再タップでは解除しない（解除すると検索結果外れ判定で即座に消えてしまう）。
+        if (marker.id !== pinnedSpotId) {
+          setPinnedSpotId(undefined);
+        }
+      }
     },
-    [mapMode, spots, shelters, pinnedShelterId],
+    [mapMode, spots, shelters, pinnedShelterId, pinnedSpotId],
   );
 
   const handleClearRoute = useCallback(() => {
     setSelectedSpot(null);
+    setPinnedSpotId(undefined);
   }, []);
 
   const handleClearShelter = useCallback(() => {
