@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react-native';
 
 import { addFavorite, fetchFavorites, removeFavorite } from '../../infrastructure/api/favorite-api';
-import { favoritesQueryKey } from '../use-favorites';
+import { favoritesQueryKey, useFavorites } from '../use-favorites';
 import { useToggleFavorite } from '../use-toggle-favorite';
 
 import type { Favorite } from '../../domain/favorite';
@@ -112,6 +112,35 @@ describe('useToggleFavorite', () => {
 
     await waitFor(() => expect(result.current.isError).toBe(true));
     expect(spotIds(queryClient)).toEqual(['spot-a']);
+  });
+
+  it('一覧の取得前に失敗したら、ほかの操作が途中でも一覧を取り直してサーバーの状態に戻す', async () => {
+    // 最初の取得は終わらせず、取り直したときだけサーバーの状態（空）を返す。
+    fetchFavoritesMock.mockReturnValueOnce(new Promise(() => {})).mockResolvedValue([]);
+    // 先に始める spot-b（一覧が未取得の時点で始まる）を失敗させ、あとの spot-c は終わらせない。
+    addFavoriteMock
+      .mockRejectedValueOnce(new Error('network'))
+      .mockReturnValueOnce(deferred().promise);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    const wrapper = ({ children }: PropsWithChildren) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(
+      () => ({
+        favorites: useFavorites(),
+        failing: useToggleFavorite(),
+        other: useToggleFavorite(),
+      }),
+      { wrapper },
+    );
+
+    act(() => result.current.failing.mutate({ spotId: 'spot-b', next: true }));
+    act(() => result.current.other.mutate({ spotId: 'spot-c', next: true }));
+
+    await waitFor(() => expect(result.current.failing.isError).toBe(true));
+    await waitFor(() => expect(spotIds(queryClient)).toEqual([]));
   });
 
   it('終わったら一覧を取り直してサーバーの状態に揃える', async () => {

@@ -56,6 +56,11 @@ export function useToggleFavorite() {
     },
     onError: (_error, _variables, context) => {
       if (!userId || !context) return;
+      if (context.previous === undefined) {
+        // 一覧が未取得だったときは setQueryData で戻せない（undefined を渡すと何もしない）ため、取り直す。
+        void queryClient.invalidateQueries({ queryKey });
+        return;
+      }
       queryClient.setQueryData<Favorite[]>(queryKey, context.previous);
     },
     onSettled: () => {
