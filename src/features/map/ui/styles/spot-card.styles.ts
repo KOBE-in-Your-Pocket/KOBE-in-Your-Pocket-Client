@@ -52,10 +52,17 @@ export const styles = StyleSheet.create({
     bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.28)',
   },
-  closeButton: {
+  // お気に入りマークと閉じるボタンを右上に並べる。どちらも 28pt の見た目を hitSlop で 44pt まで
+  // 広げているので（片側 8）、間隔を 16 にして押せる範囲が重ならないようにする。
+  topActions: {
     position: 'absolute',
     top: Spacing.two,
     right: Spacing.two,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  closeButton: {
     width: 28,
     height: 28,
     borderRadius: 14,

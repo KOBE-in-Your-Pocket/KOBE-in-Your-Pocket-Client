@@ -3,7 +3,7 @@ import { SymbolView } from 'expo-symbols';
 import { useTranslation } from 'react-i18next';
 import { Pressable, View } from 'react-native';
 
-import type { Spot } from '@/features/tourism';
+import { SpotFavoriteButton, type Spot } from '@/features/tourism';
 import { formatDistanceKm } from '@/shared/lib/geo';
 import { useTheme } from '@/shared/lib/theme';
 import { ThemedText, ThemedView } from '@/shared/ui';
@@ -26,6 +26,7 @@ type SpotCardProps = {
  * 地図のピン選択時に表示するスポット情報カード。
  *
  * 画像の上にカテゴリ・名称・評価を重ね、下段に距離・営業時間と詳細ボタンを並べる。
+ * 画像の右上には、お気に入りマーク（#792）と閉じるボタンを並べる。
  */
 export function SpotCard({ spot, distanceKm, onClose, onDetail, onNavigate }: SpotCardProps) {
   const { t } = useTranslation();
@@ -37,19 +38,24 @@ export function SpotCard({ spot, distanceKm, onClose, onDetail, onNavigate }: Sp
         <Image source={{ uri: spot.media.imageUrl }} style={styles.image} contentFit="cover" />
         <View style={styles.scrim} />
 
-        <Pressable
-          onPress={onClose}
-          hitSlop={8}
-          style={styles.closeButton}
-          accessibilityRole="button"
-          accessibilityLabel={t('map.spotCard.close')}
-        >
-          <SymbolView
-            tintColor="#FFFFFF"
-            name={{ ios: 'xmark', android: 'close', web: 'close' }}
-            size={14}
-          />
-        </Pressable>
+        {/* お気に入りマークは、ログインの導線が無いとき（機能フラグ無効・18 歳未満）は描画されず、
+            閉じるボタンだけが右上に残る。 */}
+        <View style={styles.topActions}>
+          <SpotFavoriteButton spotId={spot.id} variant="overlay" />
+          <Pressable
+            onPress={onClose}
+            hitSlop={8}
+            style={styles.closeButton}
+            accessibilityRole="button"
+            accessibilityLabel={t('map.spotCard.close')}
+          >
+            <SymbolView
+              tintColor="#FFFFFF"
+              name={{ ios: 'xmark', android: 'close', web: 'close' }}
+              size={14}
+            />
+          </Pressable>
+        </View>
 
         <View style={styles.imageContent}>
           <ThemedText style={styles.category}>{spot.category.label.toUpperCase()}</ThemedText>
