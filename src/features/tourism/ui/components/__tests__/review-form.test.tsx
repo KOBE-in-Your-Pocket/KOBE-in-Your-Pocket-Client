@@ -23,6 +23,9 @@ jest.mock('react-i18next', () => ({
 
 jest.mock('@/shared/config', () => ({
   Spacing: { half: 2, one: 4, two: 8, three: 16, four: 24, five: 32, six: 64 },
+  // @/features/user バレル経由で読み込まれる設定画面ヘッダーが Fonts.cursive を参照するため、
+  // モックにも含めておく（未定義だと StyleSheet 生成時にクラッシュする）。
+  Fonts: { cursive: 'CursiveFont' },
   // 投稿機能そのものの挙動を検証するため、v1 で OFF のフラグを ON にして描画する。
   // OFF のときに何も出さないことは *-user-content-disabled.test.tsx で検証する。
   IS_USER_CONTENT_ENABLED: true,

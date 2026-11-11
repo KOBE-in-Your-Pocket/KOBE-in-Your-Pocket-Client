@@ -39,6 +39,7 @@
     }
   },
   "settings": {
+    "menu": "Menu",
     "language": "Language",
     "account": "Account",
     "signIn": "Log in / Sign up",
