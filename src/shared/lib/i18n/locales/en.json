@@ -319,7 +319,8 @@
     },
     "search": {
       "placeholder": "Search tourist spots",
-      "clear": "Clear search"
+      "clear": "Clear search",
+      "noResults": "No spots found"
     },
     "settings": {
       "open": "Open settings"

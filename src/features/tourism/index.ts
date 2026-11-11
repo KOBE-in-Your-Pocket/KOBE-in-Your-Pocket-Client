@@ -13,6 +13,7 @@ export type { SelectedGenre } from './store/use-genre-filter-store';
 export { useSpotSearchStore } from './store/use-spot-search-store';
 export { GenreFilter } from './ui/components/genre-filter';
 export { SpotSearchBar } from './ui/components/spot-search-bar';
+export { SpotSearchEmptyNotice } from './ui/components/spot-search-empty-notice';
 export { SpotDetailScreen } from './ui/components/spot-detail-screen';
 export { ReviewList } from './ui/components/review-list';
 export { SpotList } from './ui/components/spot-list';
