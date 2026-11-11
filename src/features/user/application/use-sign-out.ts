@@ -1,6 +1,9 @@
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+// index 経由だと tourism の UI まで読み込み、tourism → user → tourism の循環になるため直接 import する。
+import { FAVORITES_QUERY_KEY } from '@/features/tourism/application/use-favorites';
+
 import type { AuthGateway, SessionStore } from '../domain/auth-ports';
 import { useAuthStore } from '../store/use-auth-store';
 import { defaultAuthGateway, defaultSessionStore } from './auth-deps';
@@ -56,6 +59,7 @@ export async function performSignOut(
  *
  * 現在ユーザーのキャッシュも捨てる。残すと同じユーザーで再ログインしたとき、
  * サインイン応答の最新の表示名を useSyncCurrentUser が古いキャッシュで上書きしてしまう。
+ * お気に入りのキャッシュも捨て、前のユーザーのお気に入りを端末に残さない（#790）。
  */
 export function useSignOut() {
   const queryClient = useQueryClient();
@@ -63,6 +67,7 @@ export function useSignOut() {
     mutationFn: () => performSignOut(),
     onSettled: () => {
       queryClient.removeQueries({ queryKey: CURRENT_USER_QUERY_KEY });
+      queryClient.removeQueries({ queryKey: FAVORITES_QUERY_KEY });
     },
   });
 }
