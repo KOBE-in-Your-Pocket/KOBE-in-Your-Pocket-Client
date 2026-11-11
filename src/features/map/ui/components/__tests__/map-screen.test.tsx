@@ -18,6 +18,8 @@ import type { ReactNode } from 'react';
 const mockSpots = [
   { id: 'spot-1', name: 'スポットA', coordinates: { latitude: 34.7, longitude: 135.2 } },
   { id: 'spot-2', name: 'スポットB', coordinates: { latitude: 34.68, longitude: 135.19 } },
+  // 検索キーワード「スポット」に一致しない別名のスポット（#787 の複数ピン検証用）。
+  { id: 'spot-3', name: 'テスト地点', coordinates: { latitude: 34.69, longitude: 135.21 } },
 ];
 const mockShelters = [
   {
@@ -367,6 +369,21 @@ describe('MapScreen のマーカー出し分け', () => {
     expect(screen.queryByTestId('marker-spot-2')).toBeNull();
     // スポットA は検索キーワードに一致するので、ピン留め解除後も表示され続けるはず。
     expect(screen.getByTestId('marker-spot-1')).toBeTruthy();
+  });
+
+  it('検索結果に複数ピンがあるとき、検索結果に含まれない別のスポットへ「経路」で遷移しても既存のピンは消えない（#787）', () => {
+    // 'スポット' は spot-1・spot-2 に一致するが、spot-3（テスト地点）には一致しない。
+    useSpotSearchStore.setState({ keyword: 'スポット' });
+    mockUseLocalSearchParams.mockReturnValue({ spotId: 'spot-3', requestedAt: '1' });
+
+    render(<MapScreen />);
+
+    // spot-3 は検索結果に含まれないが、「経路」で指定されたのでピン留めされ追加表示される。
+    expect(screen.getByTestId('marker-spot-3')).toBeTruthy();
+    expect(screen.getByTestId('spot-card').props.children).toBe('spot-3');
+    // 検索結果内の既存のピン（spot-1・spot-2）も消えずに残っているはず。
+    expect(screen.getByTestId('marker-spot-1')).toBeTruthy();
+    expect(screen.getByTestId('marker-spot-2')).toBeTruthy();
   });
 
   it('モード切替でピンが即座に切り替わる（再マウント不要）', () => {
