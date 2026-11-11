@@ -352,6 +352,23 @@ describe('MapScreen のマーカー出し分け', () => {
     expect(screen.queryByTestId('marker-spot-2')).toBeNull();
   });
 
+  it('ピン留め中のスポットのカードを×で閉じても、検索キーワードに一致する他のスポットのピンは残る（#787）', () => {
+    useSpotSearchStore.setState({ keyword: 'スポットA' });
+    mockUseLocalSearchParams.mockReturnValue({ spotId: 'spot-2', requestedAt: '1' });
+
+    render(<MapScreen />);
+    expect(screen.getByTestId('marker-spot-1')).toBeTruthy();
+    expect(screen.getByTestId('marker-spot-2')).toBeTruthy();
+    expect(screen.getByTestId('spot-card').props.children).toBe('spot-2');
+
+    fireEvent.press(screen.getByTestId('spot-card-close'));
+
+    expect(screen.queryByTestId('spot-card')).toBeNull();
+    expect(screen.queryByTestId('marker-spot-2')).toBeNull();
+    // スポットA は検索キーワードに一致するので、ピン留め解除後も表示され続けるはず。
+    expect(screen.getByTestId('marker-spot-1')).toBeTruthy();
+  });
+
   it('モード切替でピンが即座に切り替わる（再マウント不要）', () => {
     render(<MapScreen />);
     expect(screen.getByTestId('marker-spot-1')).toBeTruthy();
