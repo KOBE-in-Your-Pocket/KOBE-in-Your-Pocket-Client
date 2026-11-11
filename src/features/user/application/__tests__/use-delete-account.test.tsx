@@ -2,6 +2,7 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react-native';
 
+import { favoritesQueryKey } from '@/features/tourism/application/use-favorites';
 import { SPOTS_QUERY_KEY } from '@/features/tourism/application/use-spots';
 import { SPOT_REVIEWS_QUERY_KEY } from '@/features/tourism/application/use-spot-reviews';
 import { useBlockedAuthorStore } from '@/features/tourism/store/use-blocked-author-store';
@@ -193,5 +194,18 @@ describe('useDeleteAccount', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(invalidate).toHaveBeenCalledWith({ queryKey: SPOT_REVIEWS_QUERY_KEY });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: SPOTS_QUERY_KEY });
+  });
+
+  it('成功したら退会したユーザーのお気に入りのキャッシュを消す（#790）', async () => {
+    const { queryClient, wrapper } = createWrapper();
+    queryClient.setQueryData(favoritesQueryKey('user-1'), [
+      { spotId: 'spot-a', createdAt: '2026-11-01T00:00:00.000Z' },
+    ]);
+    const { result } = renderHook(() => useDeleteAccount(), { wrapper });
+
+    result.current.mutate();
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(queryClient.getQueryData(favoritesQueryKey('user-1'))).toBeUndefined();
   });
 });
