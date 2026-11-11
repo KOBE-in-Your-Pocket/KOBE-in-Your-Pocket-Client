@@ -83,6 +83,8 @@ jest.mock('@/shared/ui', () => ({
 
 jest.mock('@/features/tourism', () => ({
   useSpots: () => ({ data: mockSpots }),
+  // 観光モードでのみ表示されることを検証できるよう、testID 付きスタブに差し替える。
+  SpotSearchBar: () => <MockText testID="spot-search-bar">search</MockText>,
 }));
 
 jest.mock('@/features/evacuation', () => ({
@@ -244,6 +246,17 @@ describe('MapScreen のマーカー出し分け', () => {
     expect(screen.queryByTestId('marker-spot-1')).toBeNull();
     // 見た目は避難所ピン（evacuation）
     expect(screen.getByTestId('marker-shelter-1').props.children).toBe('evacuation');
+  });
+
+  it('tourism モードでは検索バーを表示し、evacuation モードでは表示しない（#786）', () => {
+    render(<MapScreen />);
+    expect(screen.getByTestId('spot-search-bar')).toBeTruthy();
+
+    act(() => {
+      useMapModeStore.setState({ mapMode: 'evacuation' });
+    });
+
+    expect(screen.queryByTestId('spot-search-bar')).toBeNull();
   });
 
   it('モード切替でピンが即座に切り替わる（再マウント不要）', () => {

@@ -313,6 +313,10 @@
       "tourism": "관광",
       "evacuation": "대피"
     },
+    "search": {
+      "placeholder": "관광 스팟 검색",
+      "clear": "검색 지우기"
+    },
     "settings": {
       "open": "설정 열기"
     },
