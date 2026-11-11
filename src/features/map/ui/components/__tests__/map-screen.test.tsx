@@ -335,6 +335,23 @@ describe('MapScreen のマーカー出し分け', () => {
     expect(screen.queryByTestId('spot-card')).toBeNull();
   });
 
+  it('「経路」遷移で表示を維持したスポットも、遷移後に検索キーワードを変更すると選択解除される（#787）', () => {
+    useSpotSearchStore.setState({ keyword: 'スポットA' });
+    mockUseLocalSearchParams.mockReturnValue({ spotId: 'spot-2', requestedAt: '1' });
+
+    render(<MapScreen />);
+    expect(screen.getByTestId('spot-card').props.children).toBe('spot-2');
+
+    // 遷移時点のキーワード（'スポットA'）に対するピン留めは、ユーザーが新たにキーワードを
+    // 変更した時点で解除され、通常の「検索結果から外れたら選択解除」に戻る。
+    act(() => {
+      useSpotSearchStore.setState({ keyword: 'A' });
+    });
+
+    expect(screen.queryByTestId('spot-card')).toBeNull();
+    expect(screen.queryByTestId('marker-spot-2')).toBeNull();
+  });
+
   it('モード切替でピンが即座に切り替わる（再マウント不要）', () => {
     render(<MapScreen />);
     expect(screen.getByTestId('marker-spot-1')).toBeTruthy();

@@ -166,6 +166,16 @@ export function MapScreen() {
     }
   }, [mapMode, spotRequest, appliedSpotRequest, setMapMode]);
 
+  // pinnedSpotId は「経路」遷移時点の検索キーワードに対する例外でしかないため、遷移後にユーザーが
+  // 検索キーワードを変更したらピン留めを解除し、通常の「検索結果から外れたら選択解除」に戻す。
+  const previousSearchKeywordRef = useRef(searchKeyword);
+  useEffect(() => {
+    if (searchKeyword !== previousSearchKeywordRef.current) {
+      previousSearchKeywordRef.current = searchKeyword;
+      setPinnedSpotId(undefined);
+    }
+  }, [searchKeyword]);
+
   // spotId と対称のパターンで shelterId を適用する（#678）。pinnedShelterId に記録し、圏外でも自動解除されないようにする。
   const shelterRequest = shelterId ? `${shelterId}:${requestedAt ?? ''}` : undefined;
   if (mapMode === 'evacuation' && shelterRequest && shelterRequest !== appliedShelterRequest) {
