@@ -3,7 +3,7 @@ export type { Review } from './domain/review';
 export { useSpots, SPOTS_QUERY_KEY } from './application/use-spots';
 export { useSpotDetail } from './application/use-spot-detail';
 export { useSpotReviews, SPOT_REVIEWS_QUERY_KEY } from './application/use-spot-reviews';
-export { useFilteredSpots } from './application/use-filtered-spots';
+export { useFilteredSpots, filterSpotsByKeyword } from './application/use-filtered-spots';
 export { useGenreFilterStore } from './store/use-genre-filter-store';
 export type { SelectedGenre } from './store/use-genre-filter-store';
 export { GenreFilter } from './ui/components/genre-filter';
