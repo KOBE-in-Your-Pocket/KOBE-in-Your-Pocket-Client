@@ -1,6 +1,7 @@
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { FAVORITES_QUERY_KEY } from '@/features/tourism/application/use-favorites';
 import { SPOTS_QUERY_KEY } from '@/features/tourism/application/use-spots';
 import { SPOT_REVIEWS_QUERY_KEY } from '@/features/tourism/application/use-spot-reviews';
 import { useBlockedAuthorStore } from '@/features/tourism/store/use-blocked-author-store';
@@ -62,7 +63,10 @@ export async function performDeleteAccount(
   }
 }
 
-/** 退会を実行する mutation。成功したらレビュー一覧・評価件数のキャッシュを全スポット分無効化する。 */
+/**
+ * 退会を実行する mutation。成功したらレビュー一覧・評価件数のキャッシュを全スポット分無効化し、
+ * 退会したユーザーのお気に入りのキャッシュを捨てる（#790）。
+ */
 export function useDeleteAccount() {
   const queryClient = useQueryClient();
 
@@ -71,6 +75,7 @@ export function useDeleteAccount() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: SPOT_REVIEWS_QUERY_KEY });
       void queryClient.invalidateQueries({ queryKey: SPOTS_QUERY_KEY });
+      queryClient.removeQueries({ queryKey: FAVORITES_QUERY_KEY });
     },
   });
 }
