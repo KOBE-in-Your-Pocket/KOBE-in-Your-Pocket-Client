@@ -313,6 +313,10 @@
       "tourism": "Tourism",
       "evacuation": "Evacuation"
     },
+    "search": {
+      "placeholder": "Search tourist spots",
+      "clear": "Clear search"
+    },
     "settings": {
       "open": "Open settings"
     },
