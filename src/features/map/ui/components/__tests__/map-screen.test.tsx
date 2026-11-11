@@ -88,6 +88,8 @@ jest.mock('@/features/tourism', () => ({
   useSpots: () => ({ data: mockSpots }),
   // 観光モードでのみ表示されることを検証できるよう、testID 付きスタブに差し替える。
   SpotSearchBar: () => <MockText testID="spot-search-bar">search</MockText>,
+  // 0件案内（#788）自体の表示条件は SpotSearchEmptyNotice 自身のテストで検証済みのため、ここでは描画しない。
+  SpotSearchEmptyNotice: () => null,
   // キーワード絞り込み本体は use-case 側で検証済みのため、実物をそのまま使う。
   filterSpotsByKeyword:
     jest.requireActual<typeof import('@/features/tourism')>('@/features/tourism')
