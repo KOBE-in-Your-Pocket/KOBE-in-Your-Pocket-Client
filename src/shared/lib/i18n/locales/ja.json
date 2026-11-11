@@ -315,7 +315,8 @@
     },
     "search": {
       "placeholder": "観光スポットを検索",
-      "clear": "検索をクリア"
+      "clear": "検索をクリア",
+      "noResults": "見つかりませんでした"
     },
     "settings": {
       "open": "設定を開く"

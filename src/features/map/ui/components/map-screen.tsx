@@ -14,6 +14,7 @@ import type { Spot } from '@/features/tourism';
 import {
   filterSpotsByKeyword,
   SpotSearchBar,
+  SpotSearchEmptyNotice,
   useSpotSearchStore,
   useSpots,
 } from '@/features/tourism';
@@ -314,7 +315,12 @@ export function MapScreen() {
       />
 
       {/* 検索バーは観光モードのときだけ意味を持つため、このモードでのみ表示する（#786）。 */}
-      {mapMode === 'tourism' ? <SpotSearchBar /> : null}
+      {mapMode === 'tourism' ? (
+        <>
+          <SpotSearchBar />
+          <SpotSearchEmptyNotice />
+        </>
+      ) : null}
 
       <MapModeToggle />
 

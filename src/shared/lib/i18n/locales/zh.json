@@ -315,7 +315,8 @@
     },
     "search": {
       "placeholder": "搜索观光景点",
-      "clear": "清除搜索"
+      "clear": "清除搜索",
+      "noResults": "未找到相关景点"
     },
     "settings": {
       "open": "打开设置"
