@@ -1,5 +1,6 @@
+import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { useSpotManners } from '../../application/use-spot-manners';
 
@@ -19,16 +20,23 @@ function SpotMannerItem({ manner }: { manner: MannerItem }) {
 
   return (
     <View style={styles.cell}>
-      <ThemedView
-        style={[
-          styles.card,
-          { backgroundColor: KIND_CARD_BACKGROUND_SUBTLE[manner.kind], borderColor: accent },
-        ]}
+      <Pressable
+        onPress={() => router.push({ pathname: '/manner/[id]', params: { id: manner.id } })}
+        style={({ pressed }) => pressed && styles.cardPressed}
+        accessibilityRole="button"
+        accessibilityLabel={manner.title}
       >
-        <View style={[styles.iconWrapper, { backgroundColor: theme.backgroundElement }]}>
-          <MannerPictogram manner={manner} size={56} />
-        </View>
-      </ThemedView>
+        <ThemedView
+          style={[
+            styles.card,
+            { backgroundColor: KIND_CARD_BACKGROUND_SUBTLE[manner.kind], borderColor: accent },
+          ]}
+        >
+          <View style={[styles.iconWrapper, { backgroundColor: theme.backgroundElement }]}>
+            <MannerPictogram manner={manner} size={56} />
+          </View>
+        </ThemedView>
+      </Pressable>
     </View>
   );
 }
