@@ -1,5 +1,6 @@
 export type { Spot, SpotCoordinates, SpotGenre } from './domain/spot';
 export type { Review } from './domain/review';
+export type { Favorite } from './domain/favorite';
 export { useSpots, SPOTS_QUERY_KEY } from './application/use-spots';
 export { useSpotDetail } from './application/use-spot-detail';
 export { useSpotReviews, SPOT_REVIEWS_QUERY_KEY } from './application/use-spot-reviews';
