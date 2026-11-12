@@ -1,6 +1,9 @@
+import { apiFetch } from '@/shared/lib/api';
+
 import type { Weather } from '../../domain/weather';
 
-import { MOCK_WEATHER_PATTERN, createMockWeather } from './mock-weather';
-
-// 実 API への切り替えは #781
-export const fetchWeather = async (): Promise<Weather> => createMockWeather(MOCK_WEATHER_PATTERN);
+// まだ一度も取得できていないとき backend は 204 を返すので null にする
+export async function fetchWeather(): Promise<Weather | null> {
+  const weather = await apiFetch<Weather | undefined>('/api/v1/weather');
+  return weather ?? null;
+}
