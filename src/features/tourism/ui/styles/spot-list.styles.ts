@@ -55,10 +55,17 @@ export const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  distanceBadge: {
+  // 距離のバッジとお気に入りマークを右上に並べる。バッジは押せる部品ではないので、
+  // マークの押せる範囲（hitSlop）が少しかかってもよいとして、間隔は 8 にする。
+  topRight: {
     position: 'absolute',
     top: Spacing.two,
     right: Spacing.two,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  distanceBadge: {
     backgroundColor: 'rgba(0, 0, 0, 0.65)',
     borderRadius: Spacing.three,
     paddingHorizontal: Spacing.two,

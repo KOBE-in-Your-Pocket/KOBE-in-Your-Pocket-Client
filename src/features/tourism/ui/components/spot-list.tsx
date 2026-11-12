@@ -13,6 +13,7 @@ import type { Spot } from '../../domain/spot';
 import { RATING_STAR_COLOR, styles } from '../../ui/styles/spot-list.styles';
 
 import { GenreFilter } from './genre-filter';
+import { SpotFavoriteButton } from './spot-favorite-button';
 
 import { Spacing } from '@/shared/config';
 import { formatDistanceKm, getDistanceKm, useCurrentLocation } from '@/shared/lib/geo';
@@ -37,13 +38,18 @@ function SpotListItem({ spot }: { spot: SpotWithDistance }) {
         <View style={styles.cardInner}>
           <View style={styles.imageWrapper}>
             <Image source={{ uri: spot.media.imageUrl }} style={styles.image} contentFit="cover" />
-            {spot.distanceKm !== null ? (
-              <View style={styles.distanceBadge}>
-                <ThemedText style={styles.distanceText}>
-                  {formatDistanceKm(spot.distanceKm)}
-                </ThemedText>
-              </View>
-            ) : null}
+            {/* 距離とお気に入りマークを右上に並べる。マークは行の Pressable の中にあるが、
+                内側の Pressable がタップを受け取るので、押しても詳細へは移らない（#793）。 */}
+            <View style={styles.topRight}>
+              {spot.distanceKm !== null ? (
+                <View style={styles.distanceBadge}>
+                  <ThemedText style={styles.distanceText}>
+                    {formatDistanceKm(spot.distanceKm)}
+                  </ThemedText>
+                </View>
+              ) : null}
+              <SpotFavoriteButton spotId={spot.id} variant="overlay" />
+            </View>
           </View>
 
           <View style={styles.content}>
