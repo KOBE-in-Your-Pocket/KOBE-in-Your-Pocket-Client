@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { Pressable as MockPressable, Text as MockText } from 'react-native';
 
 import type { Spot } from '../../../domain/spot';
@@ -119,12 +119,31 @@ describe('SpotList', () => {
     expect(mockPush).not.toHaveBeenCalled();
   });
 
+  it('行・お気に入り・経路を入れ子にせず、それぞれ独立したボタンとして置く', () => {
+    // Pressable の中に置いたボタンには VoiceOver・TalkBack で移動できないため。
+    render(<SpotList />);
+
+    const row = screen.getByLabelText('神戸ポートタワー');
+
+    expect(within(row).queryByTestId('favorite-spot-a')).toBeNull();
+    expect(within(row).queryByLabelText('tourism.spotList.routeButton')).toBeNull();
+    // within は行そのものも含めて探すので、見つかるボタンは行だけのはず。
+    expect(within(row).queryAllByRole('button')).toEqual([row]);
+  });
+
   it('現在地があるときは、距離のバッジとお気に入りマークの両方を表示する', () => {
     mockCoords.mockReturnValue({ latitude: 34.69, longitude: 135.19 });
     render(<SpotList />);
 
-    expect(screen.getAllByText('1.2km')).toHaveLength(2);
+    expect(screen.getAllByText('1.2km', { includeHiddenElements: true })).toHaveLength(2);
     expect(screen.getByText('spot-a:overlay')).toBeTruthy();
+  });
+
+  it('距離のバッジは読み上げでは単独の要素にしない（今までどおり行の一部として扱う）', () => {
+    mockCoords.mockReturnValue({ latitude: 34.69, longitude: 135.19 });
+    render(<SpotList />);
+
+    expect(screen.queryByText('1.2km')).toBeNull();
   });
 
   it('行を押すとそのスポットの詳細へ移る', () => {

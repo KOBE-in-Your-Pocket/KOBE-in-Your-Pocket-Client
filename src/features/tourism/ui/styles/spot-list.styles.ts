@@ -55,7 +55,7 @@ export const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  // 距離のバッジとお気に入りマークを右上に並べる。バッジは押せる部品ではないので、
+  // 距離のバッジとお気に入りマークを画像の右上に重ねる。バッジは押せる部品ではないので、
   // マークの押せる範囲（hitSlop）が少しかかってもよいとして、間隔は 8 にする。
   topRight: {
     position: 'absolute',
@@ -79,6 +79,16 @@ export const styles = StyleSheet.create({
   content: {
     padding: Spacing.three,
     gap: Spacing.two,
+  },
+  // 経路ボタンを行の Pressable の外へ出したため、行側は下の余白をなくし、
+  // その分を routeRow で補う（営業時間と経路ボタンの間は今までどおり 8 + 4）。
+  contentPressable: {
+    paddingBottom: 0,
+  },
+  routeRow: {
+    paddingTop: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    paddingBottom: Spacing.three,
   },
   metaRow: {
     flexDirection: 'row',
