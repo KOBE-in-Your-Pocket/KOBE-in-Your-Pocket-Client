@@ -88,8 +88,9 @@ function SpotListItem({ spot }: { spot: SpotWithDistance }) {
             <Pressable
               style={styles.routeButton}
               // requestedAt は押下ごとに変わる値。同じスポットへの再遷移でも地図側でカードを再表示させる。
+              // push だと (tabs) が積み上がり地図が二重になる（#802）ため、navigate で既存の (tabs) に戻す。
               onPress={() =>
-                router.push({
+                router.navigate({
                   pathname: '/map',
                   params: { spotId: spot.id, requestedAt: String(Date.now()) },
                 })
