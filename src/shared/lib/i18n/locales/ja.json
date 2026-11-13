@@ -379,9 +379,9 @@
     "kind": {
       "noRain": "晴れ",
       "rainSoon": "曇り",
-      "lightRain": "弱い雨",
+      "lightRain": "小雨",
       "rain": "雨",
-      "heavyRain": "強い雨"
+      "heavyRain": "大雨"
     }
   }
 }
