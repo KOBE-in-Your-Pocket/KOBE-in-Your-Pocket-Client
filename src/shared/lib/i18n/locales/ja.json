@@ -373,5 +373,15 @@
       "evacuationData": "避難所データ",
       "evacuationDataDescription": "避難所の情報は公的機関が公開するデータをもとにしています。出典とデータ基準日は避難タブに表示しています。"
     }
+  },
+  "weather": {
+    "accessibilityLabel": "天気：{{kind}}",
+    "kind": {
+      "noRain": "雨なし",
+      "rainSoon": "まもなく雨",
+      "lightRain": "弱い雨",
+      "rain": "雨",
+      "heavyRain": "強い雨"
+    }
   }
 }

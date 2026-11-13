@@ -91,6 +91,7 @@ jest.mock('@/features/tourism', () => ({
   useSpots: () => ({ data: mockSpots }),
   // 観光モードでのみ表示されることを検証できるよう、testID 付きスタブに差し替える。
   SpotSearchBar: () => <MockText testID="spot-search-bar">search</MockText>,
+  SEARCH_BAR_HEIGHT: 52,
   // 0件案内（#788）自体の表示条件は SpotSearchEmptyNotice 自身のテストで検証済みのため、ここでは描画しない。
   SpotSearchEmptyNotice: () => null,
   // キーワード絞り込み本体は use-case 側で検証済みのため、実物をそのまま使う。
@@ -101,6 +102,14 @@ jest.mock('@/features/tourism', () => ({
   useSpotSearchStore:
     jest.requireActual<typeof import('@/features/tourism')>('@/features/tourism')
       .useSpotSearchStore,
+}));
+
+// 天気マーク（#783）の見た目は WeatherMark 自身のテストで検証済みのため、置かれる位置（topOffset）だけ見る。
+jest.mock('@/features/weather', () => ({
+  WEATHER_MARK_HEIGHT: 40,
+  WeatherMark: ({ topOffset = 0 }: { topOffset?: number }) => (
+    <MockText testID="weather-mark">{topOffset}</MockText>
+  ),
 }));
 
 jest.mock('@/features/evacuation', () => ({
@@ -289,6 +298,18 @@ describe('MapScreen のマーカー出し分け', () => {
     });
 
     expect(screen.queryByTestId('spot-search-bar')).toBeNull();
+  });
+
+  it('天気マークは tourism モードでは検索バーの下、evacuation モードでは上端に置く（#783）', () => {
+    render(<MapScreen />);
+    // SEARCH_BAR_HEIGHT（52）+ Spacing.two（8）だけ下げる
+    expect(screen.getByTestId('weather-mark').props.children).toBe(60);
+
+    act(() => {
+      useMapModeStore.setState({ mapMode: 'evacuation' });
+    });
+
+    expect(screen.getByTestId('weather-mark').props.children).toBe(0);
   });
 
   it('検索キーワードに一致する観光スポットのピンだけを表示する（#787）', () => {
