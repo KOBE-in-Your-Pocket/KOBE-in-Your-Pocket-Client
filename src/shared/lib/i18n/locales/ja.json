@@ -377,8 +377,8 @@
   "weather": {
     "accessibilityLabel": "天気：{{kind}}",
     "kind": {
-      "noRain": "雨なし",
-      "rainSoon": "まもなく雨",
+      "noRain": "晴れ",
+      "rainSoon": "曇り",
       "lightRain": "弱い雨",
       "rain": "雨",
       "heavyRain": "強い雨"

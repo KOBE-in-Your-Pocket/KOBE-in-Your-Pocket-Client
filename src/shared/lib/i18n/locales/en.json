@@ -377,8 +377,8 @@
   "weather": {
     "accessibilityLabel": "Weather: {{kind}}",
     "kind": {
-      "noRain": "No rain",
-      "rainSoon": "Rain soon",
+      "noRain": "Sunny",
+      "rainSoon": "Cloudy",
       "lightRain": "Light rain",
       "rain": "Rain",
       "heavyRain": "Heavy rain"

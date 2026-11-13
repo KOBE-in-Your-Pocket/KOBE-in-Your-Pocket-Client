@@ -1,6 +1,7 @@
 import { parseWeatherTime, type Weather } from './weather';
 
-// 天気マークの種類。API から晴れ・曇りはわからないため「晴れ」は持たない
+// 天気マークの種類。API から晴れ・曇りはわからないため、判定は降水強度だけで行う。
+// 画面では noRain を「晴れ」、rainSoon を「曇り」として出す（#783）
 export type WeatherMarkKind = 'noRain' | 'rainSoon' | 'lightRain' | 'rain' | 'heavyRain';
 
 // 区切りの値（mm/h）。気象庁の雨の強さの呼び方を目安にしている

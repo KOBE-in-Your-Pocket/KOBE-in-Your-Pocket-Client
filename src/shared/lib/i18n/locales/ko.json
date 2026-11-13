@@ -377,8 +377,8 @@
   "weather": {
     "accessibilityLabel": "날씨: {{kind}}",
     "kind": {
-      "noRain": "비 없음",
-      "rainSoon": "곧 비",
+      "noRain": "맑음",
+      "rainSoon": "흐림",
       "lightRain": "약한 비",
       "rain": "비",
       "heavyRain": "강한 비"

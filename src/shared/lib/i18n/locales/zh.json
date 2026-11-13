@@ -377,8 +377,8 @@
   "weather": {
     "accessibilityLabel": "天气：{{kind}}",
     "kind": {
-      "noRain": "无雨",
-      "rainSoon": "即将下雨",
+      "noRain": "晴",
+      "rainSoon": "多云",
       "lightRain": "小雨",
       "rain": "雨",
       "heavyRain": "大雨"
