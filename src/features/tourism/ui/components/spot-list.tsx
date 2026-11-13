@@ -13,6 +13,7 @@ import type { Spot } from '../../domain/spot';
 import { RATING_STAR_COLOR, styles } from '../../ui/styles/spot-list.styles';
 
 import { GenreFilter } from './genre-filter';
+import { SpotFavoriteButton } from './spot-favorite-button';
 
 import { Spacing } from '@/shared/config';
 import { formatDistanceKm, getDistanceKm, useCurrentLocation } from '@/shared/lib/geo';
@@ -27,26 +28,22 @@ function SpotListItem({ spot }: { spot: SpotWithDistance }) {
   const theme = useTheme();
   const { t } = useTranslation();
 
+  // 詳細へ移る行・経路・お気に入りの 3 つを、入れ子にせず兄弟として並べる（#793）。
+  // Pressable はアクセシビリティ上 1 つの要素として子をまとめるため、入れ子にすると
+  // VoiceOver・TalkBack で中のボタンに移動できなくなる。
   return (
-    <Pressable
-      onPress={() => router.push({ pathname: '/tourism/[id]', params: { id: spot.id } })}
-      accessibilityRole="button"
-      accessibilityLabel={spot.name}
-    >
-      <ThemedView style={styles.card}>
-        <View style={styles.cardInner}>
+    <ThemedView style={styles.card}>
+      <View style={styles.cardInner}>
+        <Pressable
+          onPress={() => router.push({ pathname: '/tourism/[id]', params: { id: spot.id } })}
+          accessibilityRole="button"
+          accessibilityLabel={spot.name}
+        >
           <View style={styles.imageWrapper}>
             <Image source={{ uri: spot.media.imageUrl }} style={styles.image} contentFit="cover" />
-            {spot.distanceKm !== null ? (
-              <View style={styles.distanceBadge}>
-                <ThemedText style={styles.distanceText}>
-                  {formatDistanceKm(spot.distanceKm)}
-                </ThemedText>
-              </View>
-            ) : null}
           </View>
 
-          <View style={styles.content}>
+          <View style={[styles.content, styles.contentPressable]}>
             <View style={styles.metaRow}>
               <ThemedText style={styles.category}>{spot.category.label}</ThemedText>
               {spot.rating ? (
@@ -84,36 +81,57 @@ function SpotListItem({ spot }: { spot: SpotWithDistance }) {
                 {spot.businessHours}
               </ThemedText>
             </View>
-
-            <Pressable
-              style={styles.routeButton}
-              // requestedAt は押下ごとに変わる値。同じスポットへの再遷移でも地図側でカードを再表示させる。
-              onPress={() =>
-                router.push({
-                  pathname: '/map',
-                  params: { spotId: spot.id, requestedAt: String(Date.now()) },
-                })
-              }
-              accessibilityRole="button"
-              accessibilityLabel={t('tourism.spotList.routeButton')}
-            >
-              <SymbolView
-                tintColor="#FFFFFF"
-                name={{
-                  ios: 'arrow.triangle.turn.up.right.diamond.fill',
-                  android: 'directions',
-                  web: 'directions',
-                }}
-                size={16}
-              />
-              <ThemedText style={styles.routeButtonText}>
-                {t('tourism.spotList.routeButton')}
-              </ThemedText>
-            </Pressable>
           </View>
+        </Pressable>
+
+        <View style={styles.routeRow}>
+          <Pressable
+            style={styles.routeButton}
+            // requestedAt は押下ごとに変わる値。同じスポットへの再遷移でも地図側でカードを再表示させる。
+            onPress={() =>
+              router.push({
+                pathname: '/map',
+                params: { spotId: spot.id, requestedAt: String(Date.now()) },
+              })
+            }
+            accessibilityRole="button"
+            accessibilityLabel={t('tourism.spotList.routeButton')}
+          >
+            <SymbolView
+              tintColor="#FFFFFF"
+              name={{
+                ios: 'arrow.triangle.turn.up.right.diamond.fill',
+                android: 'directions',
+                web: 'directions',
+              }}
+              size={16}
+            />
+            <ThemedText style={styles.routeButtonText}>
+              {t('tourism.spotList.routeButton')}
+            </ThemedText>
+          </Pressable>
         </View>
-      </ThemedView>
-    </Pressable>
+
+        {/* 画像の右上に、距離とお気に入りマークを重ねる。box-none で、マーク以外を押したときは
+            下の行（詳細へ移る）にタップを通す。 */}
+        <View style={styles.topRight} pointerEvents="box-none">
+          {spot.distanceKm !== null ? (
+            // 距離は今までどおり行の一部として扱い、タップも読み上げも単独では拾わない。
+            <View
+              style={styles.distanceBadge}
+              pointerEvents="none"
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+            >
+              <ThemedText style={styles.distanceText}>
+                {formatDistanceKm(spot.distanceKm)}
+              </ThemedText>
+            </View>
+          ) : null}
+          <SpotFavoriteButton spotId={spot.id} variant="overlay" />
+        </View>
+      </View>
+    </ThemedView>
   );
 }
 
