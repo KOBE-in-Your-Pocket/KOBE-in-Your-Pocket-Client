@@ -1,4 +1,6 @@
 import { render, screen } from '@testing-library/react-native';
+import type { ReactNode } from 'react';
+import { Text as MockText, type StyleProp, type TextStyle } from 'react-native';
 
 import { useWeather } from '../../../application/use-weather';
 import type { Weather } from '../../../domain/weather';
@@ -18,6 +20,13 @@ jest.mock('react-i18next', () => ({
     t: (key: string, options?: Record<string, string>) =>
       options ? `${key}:${JSON.stringify(options)}` : key,
   }),
+}));
+
+// @/shared/ui をそのまま読むと地図のネイティブモジュールまで読み込まれるため、ThemedText だけ差し替える。
+jest.mock('@/shared/ui', () => ({
+  ThemedText: ({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) => (
+    <MockText style={style}>{children}</MockText>
+  ),
 }));
 
 const mockUseWeather = jest.mocked(useWeather);
@@ -46,12 +55,12 @@ describe('WeatherMark', () => {
     ['lightRain', buildWeather(1)],
     ['rain', buildWeather(5)],
     ['heavyRain', buildWeather(20)],
-  ] as const)('%s のアイコンを出し、種類の名前は読み上げにだけ入れる', (kind, weather) => {
+  ] as const)('%s のマークと文言を出す', (kind, weather) => {
     mockWeather(weather);
     render(<WeatherMark />);
 
     expect(screen.getByTestId(`weather-mark-icon-${kind}`)).toBeTruthy();
-    expect(screen.queryByText(`weather.kind.${kind}`)).toBeNull();
+    expect(screen.getByText(`weather.kind.${kind}`)).toBeTruthy();
     expect(screen.getByTestId('weather-mark').props.accessibilityLabel).toBe(
       `weather.accessibilityLabel:${JSON.stringify({ kind: `weather.kind.${kind}` })}`,
     );
