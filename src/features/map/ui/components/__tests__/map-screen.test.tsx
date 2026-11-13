@@ -59,15 +59,18 @@ jest.mock('@/shared/ui', () => ({
     markers = [],
     onMarkerPress,
     markerResyncKey = 0,
+    mapRemountKey = 0,
     selectedMarkerId,
   }: {
     markers?: MockMarker[];
     onMarkerPress?: (marker: MockMarker) => void;
     markerResyncKey?: number;
+    mapRemountKey?: number;
     selectedMarkerId?: string;
   }) => (
     <MockView>
       <MockText testID="marker-resync-key">{markerResyncKey}</MockText>
+      <MockText testID="map-remount-key">{mapRemountKey}</MockText>
       <MockText testID="selected-marker-id">{selectedMarkerId ?? ''}</MockText>
       {markers.map((marker) => (
         <MockText
@@ -237,6 +240,20 @@ describe('MapScreen のマーカー出し分け', () => {
 
     expect(screen.getByTestId('spot-card').props.children).toBe('spot-1');
     expect(useMapModeStore.getState().mapMode).toBe('tourism');
+  });
+
+  it('避難モードのまま観光スポットへ遷移してきてモードが切り替わったとき、mapRemountKey を増やして地図全体を作り直させる（#802）', () => {
+    useMapModeStore.setState({ mapMode: 'evacuation' });
+    mockUseLocalSearchParams.mockReturnValue({ spotId: 'spot-1', requestedAt: '1' });
+
+    render(<MapScreen />);
+
+    expect(screen.getByTestId('map-remount-key').props.children).toBe(1);
+    // markerResyncKey（#740 専用）は増やさない。詳細画面から戻る操作以外でカメラ位置が
+    // リセットされてしまわないよう、MapView の再生成とは別の state にしているため。
+    expect(screen.getByTestId('marker-resync-key').props.children).toBe(0);
+    expect(screen.getByTestId('marker-spot-1')).toBeTruthy();
+    expect(screen.queryByTestId('marker-shelter-1')).toBeNull();
   });
 
   it('tourism モードでは観光スポットのピンを表示する', () => {
@@ -718,6 +735,8 @@ describe('MapScreen のマーカー出し分け', () => {
       // 詳細画面から戻って再フォーカスされると、マーカーの再同期キーが変わる。
       act(() => mockLatestFocusEffect?.());
       expect(screen.getByTestId('marker-resync-key').props.children).toBe(1);
+      // MapView 自体は作り直さない（カメラ位置を保持するため #802 用の key とは別にしている）。
+      expect(screen.getByTestId('map-remount-key').props.children).toBe(0);
 
       // フラグは一度使うと消費されるので、続けて再フォーカスしても増えない。
       act(() => mockLatestFocusEffect?.());

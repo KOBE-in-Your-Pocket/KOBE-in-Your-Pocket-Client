@@ -90,6 +90,13 @@ export function MapScreen() {
     }, []),
   );
 
+  // markerResyncKey とは別に持つ、Map 内の MapView 自体の React key（#802）。増やすと地図全体が
+  // ネイティブごと作り直される。観光一覧/避難所一覧からの遷移で mapMode が切り替わる瞬間だけ発火する
+  // （頻度の低い操作に限定する。MapView は initialRegion しか持たないため、作り直すたびにカメラ位置が
+  // 初期表示に戻ってしまい、markerResyncKey（#740、詳細画面から戻るたびに発火）と共用すると
+  // そちらの操作でも毎回カメラ位置がリセットされてしまうため、意図的に別の state にしている）。
+  const [mapRemountKey, setMapRemountKey] = useState(0);
+
   const handleOpenRadiusModal = useCallback(() => {
     setIsRadiusModalOpen(true);
   }, []);
@@ -163,6 +170,9 @@ export function MapScreen() {
   // 更新なので render 中ではなく effect で行う（render 中だと React が警告を出す）。
   useEffect(() => {
     if (mapMode !== 'tourism' && spotRequest && spotRequest !== appliedSpotRequest) {
+      // 観光一覧からの遷移で mapMode が切り替わる瞬間、地図全体を作り直させる（#802）。
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 地図全体の強制再作成が目的の意図的な呼び出し
+      setMapRemountKey((key) => key + 1);
       setMapMode('tourism');
     }
   }, [mapMode, spotRequest, appliedSpotRequest, setMapMode]);
@@ -191,6 +201,9 @@ export function MapScreen() {
   // 観光モードのまま残っていても選択できるよう避難モードへ切り替える（spotId と同じ理由で effect 内で行う）。
   useEffect(() => {
     if (mapMode !== 'evacuation' && shelterRequest && shelterRequest !== appliedShelterRequest) {
+      // 避難所一覧からの遷移で mapMode が切り替わる瞬間、地図全体を作り直させる（#802）。
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 地図全体の強制再作成が目的の意図的な呼び出し
+      setMapRemountKey((key) => key + 1);
       setMapMode('evacuation');
     }
   }, [mapMode, shelterRequest, appliedShelterRequest, setMapMode]);
@@ -311,6 +324,7 @@ export function MapScreen() {
         onMarkerPress={handleMarkerPress}
         routeCoordinates={route?.coordinates}
         markerResyncKey={markerResyncKey}
+        mapRemountKey={mapRemountKey}
         selectedMarkerId={selectedMarkerId}
       />
 

@@ -194,6 +194,7 @@ export function Map({
   onMarkerPress,
   routeCoordinates,
   markerResyncKey,
+  mapRemountKey,
   selectedMarkerId,
 }: MapProps) {
   const markerRefs = useRef(new globalThis.Map<string, ComponentRef<typeof Marker>>());
@@ -212,6 +213,7 @@ export function Map({
 
   return (
     <MapView
+      key={mapRemountKey}
       style={[styles.map, style]}
       provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
       initialRegion={KOBE_INITIAL_REGION}
