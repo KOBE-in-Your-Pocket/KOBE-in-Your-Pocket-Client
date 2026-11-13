@@ -11,13 +11,16 @@ import {
 } from '@/features/evacuation';
 import type { EvacuationShelter } from '@/features/evacuation';
 import type { Spot } from '@/features/tourism';
+import { WEATHER_MARK_HEIGHT, WeatherMark } from '@/features/weather';
 import {
   filterSpotsByKeyword,
+  SEARCH_BAR_HEIGHT,
   SpotSearchBar,
   SpotSearchEmptyNotice,
   useSpotSearchStore,
   useSpots,
 } from '@/features/tourism';
+import { Spacing } from '@/shared/config';
 import { confirmOpenDirections } from '@/shared/lib/directions';
 import { getDistanceKm, useCurrentLocation } from '@/shared/lib/geo';
 import { LocationServicesModal, Map, ThemedView } from '@/shared/ui';
@@ -328,13 +331,18 @@ export function MapScreen() {
         selectedMarkerId={selectedMarkerId}
       />
 
-      {/* 検索バーは観光モードのときだけ意味を持つため、このモードでのみ表示する（#786）。 */}
+      {/* 検索バーは観光モードのときだけ意味を持つため、このモードでのみ表示する（#786）。
+          天気マーク（#783）は検索バーの直下に置き、0 件の案内はさらにその下へずらして重ならないようにする。
+          避難モードでは検索バーが無いので、天気マークは左上（右上の設定ボタンの反対側）に置く。 */}
       {mapMode === 'tourism' ? (
         <>
           <SpotSearchBar />
-          <SpotSearchEmptyNotice />
+          <WeatherMark topOffset={SEARCH_BAR_HEIGHT + Spacing.two} />
+          <SpotSearchEmptyNotice topOffset={WEATHER_MARK_HEIGHT + Spacing.two} />
         </>
-      ) : null}
+      ) : (
+        <WeatherMark />
+      )}
 
       <MapModeToggle />
 

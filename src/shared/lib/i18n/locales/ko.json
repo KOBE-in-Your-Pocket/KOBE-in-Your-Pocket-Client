@@ -373,5 +373,15 @@
       "evacuationData": "대피소 데이터",
       "evacuationDataDescription": "대피소 정보는 공공기관이 공개한 데이터를 기반으로 합니다. 출처와 데이터 기준일은 대피 탭에 표시됩니다."
     }
+  },
+  "weather": {
+    "accessibilityLabel": "날씨: {{kind}}",
+    "kind": {
+      "noRain": "맑음",
+      "rainSoon": "흐림",
+      "lightRain": "약한 비",
+      "rain": "비",
+      "heavyRain": "강한 비"
+    }
   }
 }

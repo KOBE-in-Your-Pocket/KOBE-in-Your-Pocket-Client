@@ -13,10 +13,15 @@ import { Spacing } from '@/shared/config';
 import { useTheme } from '@/shared/lib/theme';
 import { ThemedText } from '@/shared/ui';
 
+export type SpotSearchEmptyNoticeProps = {
+  /** 検索バー直下から、さらに下げる量（検索バーとの間に別の要素を挟むとき用）。 */
+  topOffset?: number;
+};
+
 /**
  * 検索キーワードに一致するスポットが0件のとき、検索バー直下に案内を表示する（#788）。
  */
-export function SpotSearchEmptyNotice() {
+export function SpotSearchEmptyNotice({ topOffset = 0 }: SpotSearchEmptyNoticeProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -40,7 +45,7 @@ export function SpotSearchEmptyNotice() {
       style={[
         styles.container,
         {
-          top: insets.top + Spacing.three + SEARCH_BAR_HEIGHT + Spacing.two,
+          top: insets.top + Spacing.three + SEARCH_BAR_HEIGHT + Spacing.two + topOffset,
           backgroundColor: theme.backgroundElement,
         },
       ]}

@@ -373,5 +373,15 @@
       "evacuationData": "避难所数据",
       "evacuationDataDescription": "避难所信息基于公共机构公开的数据。出处与数据基准日显示在避难标签页中。"
     }
+  },
+  "weather": {
+    "accessibilityLabel": "天气：{{kind}}",
+    "kind": {
+      "noRain": "晴",
+      "rainSoon": "多云",
+      "lightRain": "小雨",
+      "rain": "雨",
+      "heavyRain": "大雨"
+    }
   }
 }
