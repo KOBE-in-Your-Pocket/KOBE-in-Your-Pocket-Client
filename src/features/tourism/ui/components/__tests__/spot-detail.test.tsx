@@ -13,6 +13,9 @@ import { SpotDetailContent } from '../spot-detail';
 import { SMALL_TEXT_LINE_HEIGHT } from '@/shared/config';
 import { useAgeRestrictionStore } from '@/shared/store';
 
+import { FAVORITE_ICON_SIZE } from '../../styles/spot-detail.styles';
+import { touchHitSlop } from '../../styles/favorite-button.styles';
+
 import { useBlockedAuthorStore } from '../../../store/use-blocked-author-store';
 import { useReportedReviewStore } from '../../../store/use-reported-review-store';
 
@@ -177,7 +180,9 @@ jest.mock('@/shared/config', () => ({
 }));
 
 jest.mock('@/shared/ui', () => ({
-  ThemedText: ({ children }: { children: ReactNode }) => <MockText>{children}</MockText>,
+  ThemedText: ({ children, ...rest }: { children: ReactNode }) => (
+    <MockText {...rest}>{children}</MockText>
+  ),
   ThemedView: ({ children }: { children: ReactNode }) => <MockView>{children}</MockView>,
   // 確認ダイアログは表示状態とボタン操作だけ再現する（Alert / Compose の描画は共通ダイアログ側のテストで検証）。
   DestructiveConfirmDialog: ({
@@ -421,6 +426,28 @@ describe('SpotDetailContent', () => {
       fireEvent.press(screen.getByTestId(`favorite-${mockSpot.id}`));
 
       expect(mockFavoritePress).toHaveBeenCalledWith(mockSpot.id);
+    });
+
+    it('長いカテゴリ名でもお気に入りマークを画面外に押し出さないよう、カテゴリ側だけを縮める', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      const categoryNode = screen.getByTestId('spot-category');
+      expect(StyleSheet.flatten(categoryNode.props.style).flexShrink).toBe(1);
+      expect(categoryNode.props.numberOfLines).toBe(1);
+
+      const trailing = StyleSheet.flatten(screen.getByTestId('spot-meta-trailing').props.style);
+      expect(trailing.flexShrink).toBe(0);
+    });
+
+    it('hitSlopが親Viewの境界で切れないよう余白を確保しつつ、負のマージンで見た目は変えない', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      const trailing = StyleSheet.flatten(screen.getByTestId('spot-meta-trailing').props.style);
+      const expectedSlop = touchHitSlop(FAVORITE_ICON_SIZE);
+
+      expect(expectedSlop).toBeGreaterThan(0);
+      expect(trailing.padding).toBe(expectedSlop);
+      expect(trailing.margin).toBe(-expectedSlop);
     });
   });
 

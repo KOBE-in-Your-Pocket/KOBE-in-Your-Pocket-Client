@@ -526,8 +526,10 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
 
         <View style={styles.body}>
           <View style={styles.metaRow}>
-            <ThemedText style={styles.category}>{spot.category.label}</ThemedText>
-            <View style={styles.metaTrailing}>
+            <ThemedText style={styles.category} numberOfLines={1} testID="spot-category">
+              {spot.category.label}
+            </ThemedText>
+            <View style={styles.metaTrailing} testID="spot-meta-trailing">
               {spot.rating ? (
                 <View style={styles.ratingRow}>
                   <SymbolView
