@@ -1,4 +1,4 @@
-import { CREDIT_ATTRIBUTIONS, ROUTING_ATTRIBUTIONS } from '../attributions';
+import { CREDIT_ATTRIBUTIONS, getWeatherAttribution, ROUTING_ATTRIBUTIONS } from '../attributions';
 
 describe('帰属表示', () => {
   it('経路表示には ORS と OpenStreetMap のクレジットを含む（ODbL 要件）', () => {
@@ -20,5 +20,19 @@ describe('帰属表示', () => {
     for (const attribution of CREDIT_ATTRIBUTIONS) {
       expect(attribution.url).toMatch(/^https:\/\//);
     }
+  });
+
+  // 文言とリンク先は Yahoo! が決めたものから選ぶ必要がある（https://developer.yahoo.co.jp/attribution/ ）
+  it.each([
+    ['ja', 'Webサービス by Yahoo! JAPAN'],
+    ['ja-JP', 'Webサービス by Yahoo! JAPAN'],
+    ['en', 'Web Services by Yahoo! JAPAN'],
+    ['ko', 'Web Services by Yahoo! JAPAN'],
+    ['zh', 'Web Services by Yahoo! JAPAN'],
+  ])('天気のクレジットは %s で「%s」になる', (language, label) => {
+    expect(getWeatherAttribution(language)).toEqual({
+      label,
+      url: 'https://developer.yahoo.co.jp/sitemap/',
+    });
   });
 });

@@ -371,7 +371,9 @@
       "mapAndRouting": "地图与路线",
       "mapAndRoutingDescription": "步行路线通过 OpenRouteService 使用 OpenStreetMap 的数据。",
       "evacuationData": "避难所数据",
-      "evacuationDataDescription": "避难所信息基于公共机构公开的数据。出处与数据基准日显示在避难标签页中。"
+      "evacuationDataDescription": "避难所信息基于公共机构公开的数据。出处与数据基准日显示在避难标签页中。",
+      "weather": "天气",
+      "weatherDescription": "天气标识基于 Yahoo! JAPAN 开发者网络气象信息 API 的数据。"
     }
   },
   "weather": {

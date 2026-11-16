@@ -371,7 +371,9 @@
       "mapAndRouting": "지도 및 경로",
       "mapAndRoutingDescription": "도보 경로는 OpenRouteService를 통해 OpenStreetMap 데이터를 이용합니다.",
       "evacuationData": "대피소 데이터",
-      "evacuationDataDescription": "대피소 정보는 공공기관이 공개한 데이터를 기반으로 합니다. 출처와 데이터 기준일은 대피 탭에 표시됩니다."
+      "evacuationDataDescription": "대피소 정보는 공공기관이 공개한 데이터를 기반으로 합니다. 출처와 데이터 기준일은 대피 탭에 표시됩니다.",
+      "weather": "날씨",
+      "weatherDescription": "날씨 마크는 Yahoo! JAPAN 디벨로퍼 네트워크의 기상 정보 API 데이터를 기반으로 합니다."
     }
   },
   "weather": {

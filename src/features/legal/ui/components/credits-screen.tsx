@@ -5,7 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { CREDIT_ATTRIBUTIONS, type Attribution } from '../../domain/attributions';
+import {
+  CREDIT_ATTRIBUTIONS,
+  getWeatherAttribution,
+  type Attribution,
+} from '../../domain/attributions';
 
 import { MaxContentWidth, Spacing } from '@/shared/config';
 import { useTheme } from '@/shared/lib/theme';
@@ -51,9 +55,10 @@ function AttributionLink({ attribution }: { attribution: Attribution }) {
  * 経路データは OpenRouteService 経由の OpenStreetMap 由来であり、ODbL が成果物への
  * 帰属表示を求めるため、アプリ内に恒久的な表示場所を用意する。地図画面にも経路表示中の
  * 帰属表示を出しているが、こちらは経路の有無に関わらず参照できる。
+ * 天気は Yahoo! デベロッパーネットワークの API を使っており、そのクレジットも載せる（#782）。
  */
 export function CreditsScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   return (
     <ThemedView style={styles.container}>
@@ -98,6 +103,15 @@ export function CreditsScreen() {
           <ThemedText type="small" themeColor="textSecondary">
             {t('legal.credits.evacuationDataDescription')}
           </ThemedText>
+
+          {/* Yahoo! のクレジット配置ルールで「下部に配置」と決められているため、最後に置く（#782）。 */}
+          <ThemedText type="smallBold" themeColor="textSecondary" style={styles.sectionSpacing}>
+            {t('legal.credits.weather')}
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {t('legal.credits.weatherDescription')}
+          </ThemedText>
+          <AttributionLink attribution={getWeatherAttribution(i18n.language)} />
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
