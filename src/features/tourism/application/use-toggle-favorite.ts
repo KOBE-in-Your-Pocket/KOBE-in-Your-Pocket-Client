@@ -20,12 +20,21 @@ type ToggleFavoriteContext = {
 
 const TOGGLE_FAVORITE_MUTATION_KEY = [...FAVORITES_QUERY_KEY, 'toggle'] as const;
 
+/** お気に入りの追加・削除を、押した順に 1 つずつ送るための scope。 */
+const TOGGLE_FAVORITE_SCOPE = { id: 'tourism-favorites-toggle' };
+
 /**
  * お気に入りを追加・削除する（#790）。
  *
  * 押したらすぐ一覧のキャッシュを書き換え（楽観的更新）、失敗したら元に戻す。
  * 「反転して」ではなく押したあとの状態 `next` を受け取るのは、連打したときに
- * 古い状態から反転して結果が逆になるのを防ぐため（API は冪等なので最後の操作が勝つ）。
+ * 古い状態から反転して結果が逆になるのを防ぐため。
+ *
+ * 通信は同じ `scope` で 1 つずつ、押した順に送る（#797）。同時に送ると、PUT の途中で送った DELETE が
+ * 先に処理されることがあり、最後に押したのと違う状態がサーバーに残るため（API が冪等でも、順番は保証されない）。
+ * 楽観的更新（onMutate）は順番待ちの間もすぐ走るので、押した直後の見た目は変わらない。
+ * scope をスポットごとにしないのは、このフックが spotId を引数に取らないため。
+ * 別のスポットの操作も順番待ちになるが、見た目はすぐ変わるので困らない。
  *
  * 未ログイン時は API を呼ばずに失敗する。ログインの案内はボタン側で出す（#796）。
  */
@@ -36,6 +45,7 @@ export function useToggleFavorite() {
 
   return useMutation<void, Error, ToggleFavoriteVariables, ToggleFavoriteContext>({
     mutationKey: TOGGLE_FAVORITE_MUTATION_KEY,
+    scope: TOGGLE_FAVORITE_SCOPE,
     mutationFn: async ({ spotId, next }) => {
       if (!userId) {
         throw new Error('未ログインのためお気に入りを変更できません');
@@ -54,18 +64,25 @@ export function useToggleFavorite() {
       });
       return { previous };
     },
-    onError: (_error, _variables, context) => {
+    onError: (_error, { spotId }, context) => {
       if (!userId || !context) return;
       if (context.previous === undefined) {
         // 一覧が未取得だったときは setQueryData で戻せない（undefined を渡すと何もしない）ため、取り直す。
         void queryClient.invalidateQueries({ queryKey });
         return;
       }
-      queryClient.setQueryData<Favorite[]>(queryKey, context.previous);
+      // 失敗したスポットの分だけ、押す前の状態に戻す。一覧全体を押す前に戻すと、
+      // あとから押してまだ順番待ちのほかのスポットの見た目まで消えてしまうため。
+      // 戻した 1 件は末尾に置くが、表示するときは createdAt で並べ直すので順番は崩れない。
+      const before = context.previous.find((favorite) => favorite.spotId === spotId);
+      queryClient.setQueryData<Favorite[]>(queryKey, (old = []) => {
+        const others = old.filter((favorite) => favorite.spotId !== spotId);
+        return before ? [...others, before] : others;
+      });
     },
     onSettled: () => {
       if (!userId) return;
-      // ほかのスポットの操作がまだ途中なら取り直さない。途中で取り直すと、
+      // ほかのスポットの操作がまだ途中なら取り直さない（順番待ちの操作も途中として数える）。途中で取り直すと、
       // まだ終わっていない操作の見た目が一瞬元に戻ってちらつくため。最後の 1 件が終わったときに揃える。
       if (queryClient.isMutating({ mutationKey: TOGGLE_FAVORITE_MUTATION_KEY }) === 1) {
         void queryClient.invalidateQueries({ queryKey });
