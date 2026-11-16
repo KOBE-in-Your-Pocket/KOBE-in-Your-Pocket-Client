@@ -30,3 +30,15 @@ export function parseWeatherTime(value: string): number | null {
 
   return epochMs + Number(fraction.padEnd(3, '0').slice(0, 3));
 }
+
+// fetchedAt がこれより古いときは、backend が取得に失敗して前回のデータを返しているとみなす（#812）
+export const WEATHER_OUTDATED_THRESHOLD_MS = 30 * 60 * 1000;
+
+// 天気のデータが古すぎて表示に使えないか（fetchedAt が読めないときも、新しさを確かめられないため古いとみなす）
+export function isWeatherOutdated(weather: Weather, nowMs: number): boolean {
+  const fetchedAtMs = parseWeatherTime(weather.fetchedAt);
+  if (fetchedAtMs === null) {
+    return true;
+  }
+  return nowMs - fetchedAtMs > WEATHER_OUTDATED_THRESHOLD_MS;
+}

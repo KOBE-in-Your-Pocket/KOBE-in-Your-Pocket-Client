@@ -382,6 +382,7 @@
       "lightRain": "Light rain",
       "rain": "Rain",
       "heavyRain": "Heavy rain"
-    }
+    },
+    "unavailable": "Couldn't get the weather"
   }
 }

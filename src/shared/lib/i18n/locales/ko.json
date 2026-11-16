@@ -382,6 +382,7 @@
       "lightRain": "약한 비",
       "rain": "비",
       "heavyRain": "강한 비"
-    }
+    },
+    "unavailable": "날씨를 가져오지 못했습니다"
   }
 }
