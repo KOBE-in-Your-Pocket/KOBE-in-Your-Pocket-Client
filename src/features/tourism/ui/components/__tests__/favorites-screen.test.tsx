@@ -51,11 +51,8 @@ jest.mock('@/shared/lib/geo', () => ({
   formatDistanceKm: (km: number) => `${km}km`,
 }));
 
-jest.mock('@/features/user/application/use-current-user', () => ({
-  useCurrentUser: () => mockCurrentUser(),
-}));
-
 jest.mock('@/features/user', () => ({
+  useCurrentUser: () => mockCurrentUser(),
   SignInModal: ({ visible }: { visible: boolean; children?: ReactNode }) =>
     visible ? <MockText>sign-in-modal</MockText> : null,
 }));

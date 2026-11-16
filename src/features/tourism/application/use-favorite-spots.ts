@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react';
 
-import { useCurrentUser } from '@/features/user/application/use-current-user';
+import { useCurrentUser } from '@/features/user';
 
 import { joinFavoriteSpots } from '../domain/favorite';
 

@@ -20,6 +20,12 @@ jest.mock('../../infrastructure/api/spot-api', () => ({
   fetchSpots: jest.fn(),
 }));
 
+jest.mock('@/features/user', () => ({
+  useCurrentUser: () => mockCurrentUser(),
+}));
+
+// 中で使う useFavorites は user の内部ファイルから読む（user 側が useFavorites を
+// 読むため、公開 API にすると循環する）ので、こちらも同じユーザーを返す。
 jest.mock('@/features/user/application/use-current-user', () => ({
   useCurrentUser: () => mockCurrentUser(),
 }));

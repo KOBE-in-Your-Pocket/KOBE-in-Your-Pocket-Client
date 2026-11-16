@@ -5,8 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { SignInModal } from '@/features/user';
-import { useCurrentUser } from '@/features/user/application/use-current-user';
+import { SignInModal, useCurrentUser } from '@/features/user';
 import { Spacing } from '@/shared/config';
 import { ThemedText, ThemedView } from '@/shared/ui';
 
