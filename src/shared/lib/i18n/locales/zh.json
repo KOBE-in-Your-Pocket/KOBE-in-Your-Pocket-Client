@@ -382,6 +382,7 @@
       "lightRain": "小雨",
       "rain": "雨",
       "heavyRain": "大雨"
-    }
+    },
+    "unavailable": "无法获取天气"
   }
 }
