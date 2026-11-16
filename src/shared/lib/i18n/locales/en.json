@@ -382,7 +382,9 @@
       "mapAndRouting": "Maps and routing",
       "mapAndRoutingDescription": "Walking routes use OpenStreetMap data via OpenRouteService.",
       "evacuationData": "Evacuation shelter data",
-      "evacuationDataDescription": "Shelter information is based on data published by public authorities. The source and the date it reflects are shown on the Evacuation tab."
+      "evacuationDataDescription": "Shelter information is based on data published by public authorities. The source and the date it reflects are shown on the Evacuation tab.",
+      "weather": "Weather",
+      "weatherDescription": "The weather mark is based on data from the Yahoo! JAPAN Developer Network weather API."
     }
   },
   "weather": {
@@ -393,6 +395,7 @@
       "lightRain": "Light rain",
       "rain": "Rain",
       "heavyRain": "Heavy rain"
-    }
+    },
+    "unavailable": "Couldn't get the weather"
   }
 }

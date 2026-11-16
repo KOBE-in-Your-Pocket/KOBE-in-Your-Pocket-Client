@@ -28,6 +28,13 @@ export const styles = StyleSheet.create({
     width: ICON_SIZE,
     height: ICON_SIZE,
   },
+  // 取得できなかったときはアイコンが無いので、左右の余白をそろえる
+  unavailableContainer: {
+    paddingLeft: Spacing.three,
+  },
+  unavailableLabel: {
+    fontSize: 13,
+  },
   label: {
     fontSize: 14,
     fontWeight: '600',

@@ -22,3 +22,19 @@ export const CREDIT_ATTRIBUTIONS: readonly Attribution[] = [
   ...ROUTING_ATTRIBUTIONS,
   { label: 'Google Maps', url: 'https://www.google.com/intl/ja/help/terms_maps/' },
 ] as const;
+
+/**
+ * 天気（降水強度）の提供元 Yahoo! デベロッパーネットワークのクレジット（#782）。
+ *
+ * API を利用するアプリはクレジットの表示が必須で、文言とリンク先は決められたものから選ぶ
+ * （https://developer.yahoo.co.jp/attribution/ ）。日本語では「Webサービス by Yahoo! JAPAN」、
+ * それ以外の言語では「Web Services by Yahoo! JAPAN」のテキストリンクを使う。
+ */
+const YAHOO_ATTRIBUTION_URL = 'https://developer.yahoo.co.jp/sitemap/';
+
+export function getWeatherAttribution(language: string): Attribution {
+  const label = language.startsWith('ja')
+    ? 'Webサービス by Yahoo! JAPAN'
+    : 'Web Services by Yahoo! JAPAN';
+  return { label, url: YAHOO_ATTRIBUTION_URL };
+}
