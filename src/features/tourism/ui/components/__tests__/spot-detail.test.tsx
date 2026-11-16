@@ -40,6 +40,7 @@ const mockUpdateReviewAsync = jest.fn();
 const mockDeleteReviewAsync = jest.fn();
 const mockReportReviewAsync = jest.fn();
 const mockBlockReviewAuthorAsync = jest.fn();
+const mockFavoritePress = jest.fn();
 
 jest.mock('../../../application/use-spot-reviews', () => ({
   useSpotReviews: (spotId: string, currentUser: unknown) => mockUseSpotReviews(spotId, currentUser),
@@ -89,6 +90,20 @@ jest.mock('../report-review-modal', () => ({
 
 jest.mock('@/features/manner', () => ({
   SpotMannerSection: (props: { spotId: string }) => mockSpotMannerSection(props),
+}));
+
+// 押したときの追加・削除や未ログイン時の案内は spot-favorite-button.test.tsx で確認済み。
+// ここでは、詳細画面にどのスポットのマークをどの見た目で置いているかだけを確かめる。
+jest.mock('../spot-favorite-button', () => ({
+  SpotFavoriteButton: ({ spotId, variant }: { spotId: string; variant?: string }) => (
+    <MockPressable
+      testID={`favorite-${spotId}`}
+      accessibilityRole="button"
+      onPress={() => mockFavoritePress(spotId)}
+    >
+      <MockText>{`${spotId}:${variant}`}</MockText>
+    </MockPressable>
+  ),
 }));
 
 jest.mock('@/features/user', () => ({
@@ -246,6 +261,7 @@ describe('SpotDetailContent', () => {
     mockDeleteReviewAsync.mockReset();
     mockReportReviewAsync.mockReset();
     mockBlockReviewAuthorAsync.mockReset();
+    mockFavoritePress.mockClear();
     useReportedReviewStore.setState({ reportedReviewIds: {} });
     useBlockedAuthorStore.setState({ blockedAuthorIds: {} });
     mockUseSpotReviews.mockReturnValue({ data: [], isPending: false });
@@ -389,6 +405,22 @@ describe('SpotDetailContent', () => {
       const row = screen.getByTestId('spot-address-row');
       expect(row.props.accessibilityRole).toBe('button');
       expect(row.props.accessibilityLabel).toContain(mockSpot.address);
+    });
+  });
+
+  describe('お気に入りマーク（#794）', () => {
+    it('カテゴリと同じ行の右端に、そのスポットのお気に入りマークを地の上の見た目で表示する', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      expect(screen.getByText(`${mockSpot.id}:plain`)).toBeTruthy();
+    });
+
+    it('お気に入りマークを押すとそのスポットの処理が呼ばれる', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      fireEvent.press(screen.getByTestId(`favorite-${mockSpot.id}`));
+
+      expect(mockFavoritePress).toHaveBeenCalledWith(mockSpot.id);
     });
   });
 

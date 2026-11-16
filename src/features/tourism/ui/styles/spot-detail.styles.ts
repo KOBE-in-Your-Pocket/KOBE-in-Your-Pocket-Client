@@ -6,6 +6,8 @@ export const CATEGORY_COLOR = '#C67B4A';
 export const RATING_STAR_COLOR = '#F5A623';
 /** 経路案内ボタンの背景色（各コンテンツ・ピンカードで共通の紫）。 */
 export const ROUTE_BUTTON_COLOR = '#8B5CF6';
+/** お気に入りマークのアイコンサイズ（#794）。地の上に単独で置くため既定の 16 より大きくする。 */
+export const FAVORITE_ICON_SIZE = 24;
 
 export const styles = StyleSheet.create({
   container: {
@@ -56,6 +58,11 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  metaTrailing: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
   },
   category: {
     color: CATEGORY_COLOR,

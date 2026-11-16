@@ -31,11 +31,12 @@ import { useReportedReviewIds } from '../../store/use-reported-review-store';
 import type { ReviewEdit } from '../../store/use-review-store';
 
 import { ACTIVE_STAR_COLOR, INACTIVE_STAR_COLOR } from '../styles/review-form.styles';
-import { RATING_STAR_COLOR, styles } from '../styles/spot-detail.styles';
+import { FAVORITE_ICON_SIZE, RATING_STAR_COLOR, styles } from '../styles/spot-detail.styles';
 
 import { ReviewForm } from './review-form';
 import { ReportReviewModal } from './report-review-modal';
 import { ReviewLanguageFilter, type ReviewLangFilter } from './review-language-filter';
+import { SpotFavoriteButton } from './spot-favorite-button';
 
 import { SpotMannerSection } from '@/features/manner';
 import { SignInModal, useCurrentUser, UserAvatar } from '@/features/user';
@@ -526,16 +527,19 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
         <View style={styles.body}>
           <View style={styles.metaRow}>
             <ThemedText style={styles.category}>{spot.category.label}</ThemedText>
-            {spot.rating ? (
-              <View style={styles.ratingRow}>
-                <SymbolView
-                  tintColor={RATING_STAR_COLOR}
-                  name={{ ios: 'star.fill', android: 'star', web: 'star' }}
-                  size={14}
-                />
-                <ThemedText type="smallBold">{spot.rating.value.toFixed(1)}</ThemedText>
-              </View>
-            ) : null}
+            <View style={styles.metaTrailing}>
+              {spot.rating ? (
+                <View style={styles.ratingRow}>
+                  <SymbolView
+                    tintColor={RATING_STAR_COLOR}
+                    name={{ ios: 'star.fill', android: 'star', web: 'star' }}
+                    size={14}
+                  />
+                  <ThemedText type="smallBold">{spot.rating.value.toFixed(1)}</ThemedText>
+                </View>
+              ) : null}
+              <SpotFavoriteButton spotId={spot.id} variant="plain" size={FAVORITE_ICON_SIZE} />
+            </View>
           </View>
 
           <ThemedText type="subtitle" style={styles.name}>
