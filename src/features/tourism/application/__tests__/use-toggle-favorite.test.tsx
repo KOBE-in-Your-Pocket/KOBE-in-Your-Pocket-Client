@@ -166,7 +166,7 @@ describe('useToggleFavorite', () => {
 
     act(() => a.current.mutate({ spotId: 'spot-b', next: true }));
     act(() => b.current.mutate({ spotId: 'spot-c', next: true }));
-    await waitFor(() => expect(addFavoriteMock).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(addFavoriteMock).toHaveBeenCalledTimes(1));
 
     await act(async () => first.resolve());
     await waitFor(() => expect(a.current.isSuccess).toBe(true));
@@ -176,6 +176,33 @@ describe('useToggleFavorite', () => {
     await act(async () => second.resolve());
     await waitFor(() => expect(b.current.isSuccess).toBe(true));
     expect(invalidate).toHaveBeenCalledWith({ queryKey: KEY });
+  });
+
+  it('同じスポットを続けて押すと、見た目はすぐ変え、通信は前の操作が終わってから送る', async () => {
+    const put = deferred();
+    addFavoriteMock.mockReturnValue(put.promise);
+    removeFavoriteMock.mockResolvedValue(undefined);
+    // 取り直したときは、最後に押した状態（spot-b は解除）を返す。
+    fetchFavoritesMock.mockResolvedValue(INITIAL);
+    const { queryClient, wrapper } = createWrapper();
+    const { result } = renderHook(() => useToggleFavorite(), { wrapper });
+
+    act(() => result.current.mutate({ spotId: 'spot-b', next: true }));
+    await waitFor(() => expect(addFavoriteMock).toHaveBeenCalledWith('spot-b'));
+    act(() => result.current.mutate({ spotId: 'spot-b', next: false }));
+
+    // 解除の見た目はすぐ反映するが、PUT が終わるまで DELETE は送らない。
+    await waitFor(() => expect(spotIds(queryClient)).toEqual(['spot-a']));
+    expect(removeFavoriteMock).not.toHaveBeenCalled();
+
+    await act(async () => put.resolve());
+
+    await waitFor(() => expect(removeFavoriteMock).toHaveBeenCalledWith('spot-b'));
+    expect(addFavoriteMock.mock.invocationCallOrder[0]).toBeLessThan(
+      removeFavoriteMock.mock.invocationCallOrder[0],
+    );
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(spotIds(queryClient)).toEqual(['spot-a']);
   });
 
   it('未ログインなら API を呼ばずに失敗する', async () => {
