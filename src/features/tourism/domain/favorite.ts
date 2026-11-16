@@ -25,3 +25,24 @@ export type FavoriteRepository = {
   addFavorite(spotId: string): Promise<void>;
   removeFavorite(spotId: string): Promise<void>;
 };
+
+/**
+ * お気に入りに、表示に使うスポットの情報を引き当てる（#795）。
+ *
+ * - スポット一覧に無い ID（非公開・削除済みなど）は表示しないので捨てる。
+ * - 並びは登録日時（`createdAt`）の新しい順。API も新しい順で返すが、楽観的更新で
+ *   足した分とずれても困らないよう、ここで並べ直す。
+ */
+export function joinFavoriteSpots<TSpot extends { id: string }>(
+  favorites: readonly Favorite[],
+  spots: readonly TSpot[],
+): TSpot[] {
+  const spotsById = new Map(spots.map((spot) => [spot.id, spot]));
+
+  return [...favorites]
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .flatMap((favorite) => {
+      const spot = spotsById.get(favorite.spotId);
+      return spot ? [spot] : [];
+    });
+}

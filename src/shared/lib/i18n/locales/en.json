@@ -47,6 +47,7 @@
     "signOut": "Sign out",
     "signInError": "Sign-in failed. Please try again later.",
     "editAccount": "Edit account",
+    "favorites": "Favorites",
     "accountEdit": {
       "title": "Edit Account",
       "back": "Back",
@@ -187,7 +188,17 @@
     },
     "favorite": {
       "add": "Add to favorites",
-      "remove": "Remove from favorites"
+      "remove": "Remove from favorites",
+      "list": {
+        "title": "Favorites",
+        "empty": "No favorites yet",
+        "emptyHint": "Tap ♡ on a tourist spot to add it here.",
+        "browseSpots": "Browse tourist spots",
+        "signInPrompt": "Sign in to see your favorites.",
+        "signIn": "Sign in / Sign up",
+        "loadError": "Could not load your favorites.",
+        "retry": "Retry"
+      }
     }
   },
   "evacuation": {

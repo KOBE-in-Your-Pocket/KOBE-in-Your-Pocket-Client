@@ -47,6 +47,7 @@
     "signOut": "退出登录",
     "signInError": "登录失败，请稍后重试。",
     "editAccount": "编辑账户",
+    "favorites": "收藏",
     "accountEdit": {
       "title": "编辑账户",
       "back": "返回",
@@ -187,7 +188,17 @@
     },
     "favorite": {
       "add": "添加到收藏",
-      "remove": "从收藏中移除"
+      "remove": "从收藏中移除",
+      "list": {
+        "title": "收藏",
+        "empty": "还没有收藏",
+        "emptyHint": "点击景点上的 ♡，即可添加到这里。",
+        "browseSpots": "查找景点",
+        "signInPrompt": "请登录以查看收藏。",
+        "signIn": "登录 / 注册",
+        "loadError": "无法加载收藏。",
+        "retry": "重试"
+      }
     }
   },
   "evacuation": {

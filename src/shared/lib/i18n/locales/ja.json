@@ -47,6 +47,7 @@
     "signOut": "ログアウト",
     "signInError": "サインインに失敗しました。時間をおいて再度お試しください。",
     "editAccount": "アカウントを編集",
+    "favorites": "お気に入り",
     "accountEdit": {
       "title": "アカウント編集",
       "back": "戻る",
@@ -187,7 +188,17 @@
     },
     "favorite": {
       "add": "お気に入りに追加",
-      "remove": "お気に入りから削除"
+      "remove": "お気に入りから削除",
+      "list": {
+        "title": "お気に入り",
+        "empty": "お気に入りはまだありません",
+        "emptyHint": "観光スポットの ♡ を押すと、ここに追加されます。",
+        "browseSpots": "観光スポットを探す",
+        "signInPrompt": "お気に入りを見るにはログインしてください。",
+        "signIn": "ログイン / 新規登録",
+        "loadError": "お気に入りを読み込めませんでした。",
+        "retry": "再試行"
+      }
     }
   },
   "evacuation": {
