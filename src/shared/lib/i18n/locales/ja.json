@@ -371,7 +371,9 @@
       "mapAndRouting": "地図・経路",
       "mapAndRoutingDescription": "徒歩経路は OpenRouteService 経由で OpenStreetMap のデータを利用しています。",
       "evacuationData": "避難所データ",
-      "evacuationDataDescription": "避難所の情報は公的機関が公開するデータをもとにしています。出典とデータ基準日は避難タブに表示しています。"
+      "evacuationDataDescription": "避難所の情報は公的機関が公開するデータをもとにしています。出典とデータ基準日は避難タブに表示しています。",
+      "weather": "天気",
+      "weatherDescription": "天気マークは、Yahoo! デベロッパーネットワークの気象情報 API のデータをもとにしています。"
     }
   },
   "weather": {
