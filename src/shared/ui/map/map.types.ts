@@ -42,6 +42,8 @@ export type MapProps = {
   routeCoordinates?: MapCoordinate[];
   /** マーカーを強制的に作り直すためのキー。値が変わるたびに各マーカーの React key が変わり、ネイティブ側のマーカーが再生成される（#740）。 */
   markerResyncKey?: number;
+  /** MapView 自体を強制的に作り直すためのキー。値が変わると地図全体がネイティブごと再生成される（#802）。頻度の低いモード切替時のみ使うこと（カメラ位置が初期表示に戻るため）。 */
+  mapRemountKey?: number;
   /** 選択中のマーカーの id。一致するピンを拡大し、他のピンより手前に表示する（#749）。未指定時はどのピンも選択状態にしない。 */
   selectedMarkerId?: string;
 };

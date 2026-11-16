@@ -373,5 +373,15 @@
       "evacuationData": "Evacuation shelter data",
       "evacuationDataDescription": "Shelter information is based on data published by public authorities. The source and the date it reflects are shown on the Evacuation tab."
     }
+  },
+  "weather": {
+    "accessibilityLabel": "Weather: {{kind}}",
+    "kind": {
+      "noRain": "Sunny",
+      "rainSoon": "Cloudy",
+      "lightRain": "Light rain",
+      "rain": "Rain",
+      "heavyRain": "Heavy rain"
+    }
   }
 }

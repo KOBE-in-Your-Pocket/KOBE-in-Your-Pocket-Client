@@ -5,6 +5,7 @@ import type { Spot } from '../../../domain/spot';
 import { SpotList } from '../spot-list';
 
 const mockPush = jest.fn();
+const mockNavigate = jest.fn();
 const mockFavoritePress = jest.fn();
 const mockCoords = jest.fn<{ latitude: number; longitude: number } | null, []>(() => null);
 
@@ -13,7 +14,10 @@ jest.mock('react-i18next', () => ({
 }));
 
 jest.mock('expo-router', () => ({
-  router: { push: (...args: unknown[]) => mockPush(...args) },
+  router: {
+    push: (...args: unknown[]) => mockPush(...args),
+    navigate: (...args: unknown[]) => mockNavigate(...args),
+  },
 }));
 
 jest.mock('expo-symbols', () => ({
@@ -99,6 +103,7 @@ jest.mock('../spot-favorite-button', () => ({
 describe('SpotList', () => {
   beforeEach(() => {
     mockPush.mockClear();
+    mockNavigate.mockClear();
     mockFavoritePress.mockClear();
     mockCoords.mockReturnValue(null);
   });
@@ -162,8 +167,8 @@ describe('SpotList', () => {
 
     fireEvent.press(screen.getAllByLabelText('tourism.spotList.routeButton')[0]);
 
-    expect(mockPush).toHaveBeenCalledTimes(1);
-    expect(mockPush).toHaveBeenCalledWith({
+    expect(mockNavigate).toHaveBeenCalledTimes(1);
+    expect(mockNavigate).toHaveBeenCalledWith({
       pathname: '/map',
       params: { spotId: 'spot-a', requestedAt: expect.any(String) },
     });

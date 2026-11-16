@@ -59,15 +59,18 @@ jest.mock('@/shared/ui', () => ({
     markers = [],
     onMarkerPress,
     markerResyncKey = 0,
+    mapRemountKey = 0,
     selectedMarkerId,
   }: {
     markers?: MockMarker[];
     onMarkerPress?: (marker: MockMarker) => void;
     markerResyncKey?: number;
+    mapRemountKey?: number;
     selectedMarkerId?: string;
   }) => (
     <MockView>
       <MockText testID="marker-resync-key">{markerResyncKey}</MockText>
+      <MockText testID="map-remount-key">{mapRemountKey}</MockText>
       <MockText testID="selected-marker-id">{selectedMarkerId ?? ''}</MockText>
       {markers.map((marker) => (
         <MockText
@@ -88,6 +91,7 @@ jest.mock('@/features/tourism', () => ({
   useSpots: () => ({ data: mockSpots }),
   // 観光モードでのみ表示されることを検証できるよう、testID 付きスタブに差し替える。
   SpotSearchBar: () => <MockText testID="spot-search-bar">search</MockText>,
+  SEARCH_BAR_HEIGHT: 52,
   // 0件案内（#788）自体の表示条件は SpotSearchEmptyNotice 自身のテストで検証済みのため、ここでは描画しない。
   SpotSearchEmptyNotice: () => null,
   // キーワード絞り込み本体は use-case 側で検証済みのため、実物をそのまま使う。
@@ -98,6 +102,14 @@ jest.mock('@/features/tourism', () => ({
   useSpotSearchStore:
     jest.requireActual<typeof import('@/features/tourism')>('@/features/tourism')
       .useSpotSearchStore,
+}));
+
+// 天気マーク（#783）の見た目は WeatherMark 自身のテストで検証済みのため、置かれる位置（topOffset）だけ見る。
+jest.mock('@/features/weather', () => ({
+  WEATHER_MARK_HEIGHT: 40,
+  WeatherMark: ({ topOffset = 0 }: { topOffset?: number }) => (
+    <MockText testID="weather-mark">{topOffset}</MockText>
+  ),
 }));
 
 jest.mock('@/features/evacuation', () => ({
@@ -239,6 +251,20 @@ describe('MapScreen のマーカー出し分け', () => {
     expect(useMapModeStore.getState().mapMode).toBe('tourism');
   });
 
+  it('避難モードのまま観光スポットへ遷移してきてモードが切り替わったとき、mapRemountKey を増やして地図全体を作り直させる（#802）', () => {
+    useMapModeStore.setState({ mapMode: 'evacuation' });
+    mockUseLocalSearchParams.mockReturnValue({ spotId: 'spot-1', requestedAt: '1' });
+
+    render(<MapScreen />);
+
+    expect(screen.getByTestId('map-remount-key').props.children).toBe(1);
+    // markerResyncKey（#740 専用）は増やさない。詳細画面から戻る操作以外でカメラ位置が
+    // リセットされてしまわないよう、MapView の再生成とは別の state にしているため。
+    expect(screen.getByTestId('marker-resync-key').props.children).toBe(0);
+    expect(screen.getByTestId('marker-spot-1')).toBeTruthy();
+    expect(screen.queryByTestId('marker-shelter-1')).toBeNull();
+  });
+
   it('tourism モードでは観光スポットのピンを表示する', () => {
     render(<MapScreen />);
 
@@ -272,6 +298,18 @@ describe('MapScreen のマーカー出し分け', () => {
     });
 
     expect(screen.queryByTestId('spot-search-bar')).toBeNull();
+  });
+
+  it('天気マークは tourism モードでは検索バーの下、evacuation モードでは上端に置く（#783）', () => {
+    render(<MapScreen />);
+    // SEARCH_BAR_HEIGHT（52）+ Spacing.two（8）だけ下げる
+    expect(screen.getByTestId('weather-mark').props.children).toBe(60);
+
+    act(() => {
+      useMapModeStore.setState({ mapMode: 'evacuation' });
+    });
+
+    expect(screen.getByTestId('weather-mark').props.children).toBe(0);
   });
 
   it('検索キーワードに一致する観光スポットのピンだけを表示する（#787）', () => {
@@ -718,6 +756,8 @@ describe('MapScreen のマーカー出し分け', () => {
       // 詳細画面から戻って再フォーカスされると、マーカーの再同期キーが変わる。
       act(() => mockLatestFocusEffect?.());
       expect(screen.getByTestId('marker-resync-key').props.children).toBe(1);
+      // MapView 自体は作り直さない（カメラ位置を保持するため #802 用の key とは別にしている）。
+      expect(screen.getByTestId('map-remount-key').props.children).toBe(0);
 
       // フラグは一度使うと消費されるので、続けて再フォーカスしても増えない。
       act(() => mockLatestFocusEffect?.());
