@@ -18,7 +18,8 @@ import { UserAvatar } from './user-avatar';
 /**
  * 設定画面のアカウント欄。
  * 未ログイン時はサインインモーダル（Google / メール + パスワード）を開くボタン、
- * ログイン中はアカウント行（タップでアカウント編集画面へ遷移）とログアウトボタンを表示する。
+ * ログイン中はアカウント行（タップでアカウント編集画面へ遷移）・お気に入り一覧への行（#795）・
+ * ログアウトボタンを表示する。
  *
  * {@link IS_USER_CONTENT_ENABLED} が false のときは欄ごと非表示（#306）。
  * サインインが担うのはレビュー投稿だけであり、投稿を止めるときはアカウント作成の
@@ -84,6 +85,32 @@ export function AccountSection() {
               <ThemedText type="default" style={styles.userName} numberOfLines={1}>
                 {currentUser.name}
               </ThemedText>
+            </View>
+            <SymbolView
+              name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}
+              tintColor={theme.textSecondary}
+              size={16}
+            />
+          </Pressable>
+          {/* tourism を import せず、パスで開くだけにする（tourism ⇄ user の依存を一方向に保つ、#775）。 */}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('settings.favorites')}
+            disabled={deleteAccount.isPending}
+            onPress={() => router.push('/favorites')}
+            style={({ pressed }) => [
+              styles.row,
+              { backgroundColor: theme.backgroundElement },
+              pressed && styles.pressed,
+            ]}
+          >
+            <View style={styles.userInfo}>
+              <SymbolView
+                name={{ ios: 'heart', android: 'favorite_border', web: 'favorite_border' }}
+                tintColor={theme.textSecondary}
+                size={18}
+              />
+              <ThemedText type="default">{t('settings.favorites')}</ThemedText>
             </View>
             <SymbolView
               name={{ ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' }}

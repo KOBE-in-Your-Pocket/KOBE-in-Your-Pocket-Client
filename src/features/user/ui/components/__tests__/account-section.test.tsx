@@ -135,6 +135,21 @@ describe('AccountSection', () => {
     expect(router.push).toHaveBeenCalledWith('/settings/account-edit');
   });
 
+  it('ログイン済み時は「お気に入り」の行からお気に入り一覧へ遷移できる', () => {
+    mockCurrentUser = USER;
+    render(<AccountSection />);
+
+    fireEvent.press(screen.getByLabelText('settings.favorites'));
+
+    expect(router.push).toHaveBeenCalledWith('/favorites');
+  });
+
+  it('未ログイン時は「お気に入り」の行を表示しない', () => {
+    render(<AccountSection />);
+
+    expect(screen.queryByLabelText('settings.favorites')).toBeNull();
+  });
+
   it('ログイン済み時はログアウトをタップで signOut を実行する', () => {
     mockCurrentUser = USER;
     render(<AccountSection />);
@@ -187,13 +202,14 @@ describe('AccountSection', () => {
     expect(screen.getByText('settings.deletingAccount')).toBeTruthy();
   });
 
-  it('退会処理中はログアウト・アカウント編集も押せない', () => {
+  it('退会処理中はログアウト・アカウント編集・お気に入りも押せない', () => {
     mockCurrentUser = USER;
     mockDeleteAccount.isPending = true;
     render(<AccountSection />);
 
     expect(screen.getByRole('button', { name: 'settings.signOut' })).toBeDisabled();
     expect(screen.getByLabelText('settings.editAccount')).toBeDisabled();
+    expect(screen.getByLabelText('settings.favorites')).toBeDisabled();
   });
 
   it('確認ダイアログで「削除」を選ぶと退会処理を実行する', async () => {
