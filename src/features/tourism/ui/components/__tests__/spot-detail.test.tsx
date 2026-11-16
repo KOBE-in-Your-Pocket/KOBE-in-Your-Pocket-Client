@@ -13,6 +13,9 @@ import { SpotDetailContent } from '../spot-detail';
 import { SMALL_TEXT_LINE_HEIGHT } from '@/shared/config';
 import { useAgeRestrictionStore } from '@/shared/store';
 
+import { FAVORITE_ICON_SIZE } from '../../styles/spot-detail.styles';
+import { touchHitSlop } from '../../styles/favorite-button.styles';
+
 import { useBlockedAuthorStore } from '../../../store/use-blocked-author-store';
 import { useReportedReviewStore } from '../../../store/use-reported-review-store';
 
@@ -40,6 +43,7 @@ const mockUpdateReviewAsync = jest.fn();
 const mockDeleteReviewAsync = jest.fn();
 const mockReportReviewAsync = jest.fn();
 const mockBlockReviewAuthorAsync = jest.fn();
+const mockFavoritePress = jest.fn();
 
 jest.mock('../../../application/use-spot-reviews', () => ({
   useSpotReviews: (spotId: string, currentUser: unknown) => mockUseSpotReviews(spotId, currentUser),
@@ -89,6 +93,20 @@ jest.mock('../report-review-modal', () => ({
 
 jest.mock('@/features/manner', () => ({
   SpotMannerSection: (props: { spotId: string }) => mockSpotMannerSection(props),
+}));
+
+// 押したときの追加・削除や未ログイン時の案内は spot-favorite-button.test.tsx で確認済み。
+// ここでは、詳細画面にどのスポットのマークをどの見た目で置いているかだけを確かめる。
+jest.mock('../spot-favorite-button', () => ({
+  SpotFavoriteButton: ({ spotId, variant }: { spotId: string; variant?: string }) => (
+    <MockPressable
+      testID={`favorite-${spotId}`}
+      accessibilityRole="button"
+      onPress={() => mockFavoritePress(spotId)}
+    >
+      <MockText>{`${spotId}:${variant}`}</MockText>
+    </MockPressable>
+  ),
 }));
 
 jest.mock('@/features/user', () => ({
@@ -162,7 +180,9 @@ jest.mock('@/shared/config', () => ({
 }));
 
 jest.mock('@/shared/ui', () => ({
-  ThemedText: ({ children }: { children: ReactNode }) => <MockText>{children}</MockText>,
+  ThemedText: ({ children, ...rest }: { children: ReactNode }) => (
+    <MockText {...rest}>{children}</MockText>
+  ),
   ThemedView: ({ children }: { children: ReactNode }) => <MockView>{children}</MockView>,
   // 確認ダイアログは表示状態とボタン操作だけ再現する（Alert / Compose の描画は共通ダイアログ側のテストで検証）。
   DestructiveConfirmDialog: ({
@@ -246,6 +266,7 @@ describe('SpotDetailContent', () => {
     mockDeleteReviewAsync.mockReset();
     mockReportReviewAsync.mockReset();
     mockBlockReviewAuthorAsync.mockReset();
+    mockFavoritePress.mockClear();
     useReportedReviewStore.setState({ reportedReviewIds: {} });
     useBlockedAuthorStore.setState({ blockedAuthorIds: {} });
     mockUseSpotReviews.mockReturnValue({ data: [], isPending: false });
@@ -389,6 +410,44 @@ describe('SpotDetailContent', () => {
       const row = screen.getByTestId('spot-address-row');
       expect(row.props.accessibilityRole).toBe('button');
       expect(row.props.accessibilityLabel).toContain(mockSpot.address);
+    });
+  });
+
+  describe('お気に入りマーク（#794）', () => {
+    it('カテゴリと同じ行の右端に、そのスポットのお気に入りマークを地の上の見た目で表示する', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      expect(screen.getByText(`${mockSpot.id}:plain`)).toBeTruthy();
+    });
+
+    it('お気に入りマークを押すとそのスポットの処理が呼ばれる', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      fireEvent.press(screen.getByTestId(`favorite-${mockSpot.id}`));
+
+      expect(mockFavoritePress).toHaveBeenCalledWith(mockSpot.id);
+    });
+
+    it('長いカテゴリ名でもお気に入りマークを画面外に押し出さないよう、カテゴリ側だけを縮める', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      const categoryNode = screen.getByTestId('spot-category');
+      expect(StyleSheet.flatten(categoryNode.props.style).flexShrink).toBe(1);
+      expect(categoryNode.props.numberOfLines).toBe(1);
+
+      const trailing = StyleSheet.flatten(screen.getByTestId('spot-meta-trailing').props.style);
+      expect(trailing.flexShrink).toBe(0);
+    });
+
+    it('hitSlopが親Viewの境界で切れないよう余白を確保しつつ、負のマージンで見た目は変えない', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      const trailing = StyleSheet.flatten(screen.getByTestId('spot-meta-trailing').props.style);
+      const expectedSlop = touchHitSlop(FAVORITE_ICON_SIZE);
+
+      expect(expectedSlop).toBeGreaterThan(0);
+      expect(trailing.padding).toBe(expectedSlop);
+      expect(trailing.margin).toBe(-expectedSlop);
     });
   });
 
