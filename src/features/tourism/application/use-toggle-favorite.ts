@@ -64,14 +64,21 @@ export function useToggleFavorite() {
       });
       return { previous };
     },
-    onError: (_error, _variables, context) => {
+    onError: (_error, { spotId }, context) => {
       if (!userId || !context) return;
       if (context.previous === undefined) {
         // 一覧が未取得だったときは setQueryData で戻せない（undefined を渡すと何もしない）ため、取り直す。
         void queryClient.invalidateQueries({ queryKey });
         return;
       }
-      queryClient.setQueryData<Favorite[]>(queryKey, context.previous);
+      // 失敗したスポットの分だけ、押す前の状態に戻す。一覧全体を押す前に戻すと、
+      // あとから押してまだ順番待ちのほかのスポットの見た目まで消えてしまうため。
+      // 戻した 1 件は末尾に置くが、表示するときは createdAt で並べ直すので順番は崩れない。
+      const before = context.previous.find((favorite) => favorite.spotId === spotId);
+      queryClient.setQueryData<Favorite[]>(queryKey, (old = []) => {
+        const others = old.filter((favorite) => favorite.spotId !== spotId);
+        return before ? [...others, before] : others;
+      });
     },
     onSettled: () => {
       if (!userId) return;
