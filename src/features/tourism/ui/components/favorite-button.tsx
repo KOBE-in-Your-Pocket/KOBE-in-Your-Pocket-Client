@@ -1,4 +1,4 @@
-import { SymbolView } from 'expo-symbols';
+import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import { Pressable } from 'react-native';
 
@@ -25,14 +25,12 @@ export type FavoriteButtonProps = {
 
 const DEFAULT_ICON_SIZE = 16;
 
-// Android・web は Material Symbols。favorite と favorite_border の形がフォントによって
-// 同じに見えても状態がわかるよう、色でも区別する。
-const FILLED_HEART = { ios: 'heart.fill', android: 'favorite', web: 'favorite' } as const;
-const OUTLINED_HEART = {
-  ios: 'heart',
-  android: 'favorite_border',
-  web: 'favorite_border',
-} as const;
+// お気に入り済み＝塗りつぶし、未登録＝枠線のハート。白いシルエットを tintColor で着色する。
+// iOS の SF Symbols（heart.fill / heart）では塗りつぶせるが、Android・web が使う
+// Material Symbols の静的フォントは favorite と favorite_border を同じ枠線グリフとして描くため
+// 塗りつぶせない（#824）。全プラットフォームで確実に塗りつぶしを出すため PNG を使う。
+const FILLED_HEART = require('@/assets/images/favorites/heart-filled.png');
+const OUTLINED_HEART = require('@/assets/images/favorites/heart-outline.png');
 
 /**
  * お気に入りマーク（#791）。見た目と押したときの反応だけを持ち、状態は呼び出し側が渡す。
@@ -65,10 +63,12 @@ export function FavoriteButton({
       accessibilityRole="button"
       accessibilityLabel={t(isFavorite ? 'tourism.favorite.remove' : 'tourism.favorite.add')}
     >
-      <SymbolView
-        name={isFavorite ? FILLED_HEART : OUTLINED_HEART}
+      <Image
+        testID="favorite-icon"
+        source={isFavorite ? FILLED_HEART : OUTLINED_HEART}
         tintColor={isFavorite ? FAVORITE_ACTIVE_COLOR : inactiveColor}
-        size={size}
+        style={{ width: size, height: size }}
+        contentFit="contain"
       />
     </Pressable>
   );

@@ -43,8 +43,6 @@ jest.mock('@/shared/lib/theme', () => ({
   useTheme: () => ({ textSecondary: '#60646C' }),
 }));
 
-jest.mock('expo-symbols', () => ({ SymbolView: () => null }));
-
 // jest.mock ファクトリから参照するため mock プレフィックスを付ける（out-of-scope 変数制約）。
 const mockUserContentEnabled = jest.fn();
 const mockIsAdult = jest.fn();
