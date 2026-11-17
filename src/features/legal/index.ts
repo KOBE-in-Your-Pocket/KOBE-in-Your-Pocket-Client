@@ -8,6 +8,7 @@ export {
   privacyPolicyUrl,
 } from './domain/privacy-policy';
 export { SUPPORT_CONTACT_URL } from './domain/support-contact';
+export { AboutScreen } from './ui/components/about-screen';
 export { AboutSection } from './ui/components/about-section';
 export { CreditsScreen } from './ui/components/credits-screen';
 export { PrivacyConsentGate } from './ui/components/privacy-consent-gate';
