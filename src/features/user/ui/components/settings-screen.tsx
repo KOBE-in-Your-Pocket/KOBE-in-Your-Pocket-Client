@@ -1,9 +1,9 @@
+import { router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { useTranslation } from 'react-i18next';
 import { PixelRatio, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AboutSection } from '@/features/legal';
 import { BottomTabInset, Fonts, MaxContentWidth, Spacing } from '@/shared/config';
 import { useTheme } from '@/shared/lib/theme';
 import { ThemedText, ThemedView } from '@/shared/ui';
@@ -15,8 +15,8 @@ import { LanguageSelector } from './language-selector';
  * 設定画面のヘッダー。
  *
  * 一覧画面（マナー）・ホーム画面と同じ装飾タイトル（中央寄せ・上下区切り線）に揃え、
- * 右端にハンバーガーメニューのボタンを重ねる。押下時の遷移（「このアプリについて」画面）は
- * 別タスクで対応するため、ここでは表示とアクセシビリティ属性のみを用意する。
+ * 右端にハンバーガーメニューのボタンを重ねる。押下すると「このアプリについて」画面
+ * （`/settings/about`）へ遷移する（#771）。
  */
 function SettingsHeader() {
   const { t } = useTranslation();
@@ -35,6 +35,7 @@ function SettingsHeader() {
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={t('settings.menu')}
+          onPress={() => router.push('/settings/about')}
         >
           <SymbolView
             tintColor={theme.text}
@@ -55,7 +56,6 @@ export function SettingsScreen() {
           <SettingsHeader />
           <LanguageSelector />
           <AccountSection />
-          <AboutSection />
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
