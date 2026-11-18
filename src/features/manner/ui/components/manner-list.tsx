@@ -59,36 +59,29 @@ function ListHeader({ onOpenFilter }: { onOpenFilter: () => void }) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
 
-  // 一覧画面・ホーム画面と同じ装飾タイトル（中央寄せ・上下区切り線）に、絞り込みボタンを右端に重ねる。
+  // 装飾タイトルは置かず、絞り込みボタンだけを右上に置く（どの画面かは下のタブで分かる）。
   return (
     <View style={[styles.header, { paddingTop: insets.top + Spacing.four + Spacing.one }]}>
-      <View style={styles.titleRow}>
-        <View style={[styles.divider, { backgroundColor: theme.textSecondary }]} />
-        <ThemedText type="title" style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
-          {t('manner.list.title')}
-        </ThemedText>
-        <View style={[styles.divider, { backgroundColor: theme.textSecondary }]} />
-        <View style={styles.filterButtonWrap}>
-          <Pressable
-            style={[styles.filterButton, { backgroundColor: theme.backgroundElement }]}
-            onPress={onOpenFilter}
-            accessibilityRole="button"
-            accessibilityLabel={t('manner.filter.title')}
-          >
-            <SymbolView
-              tintColor={theme.text}
-              name={{
-                ios: 'line.3.horizontal.decrease',
-                android: 'filter_list',
-                web: 'filter_list',
-              }}
-              size={16}
-            />
-            <ThemedText type="smallBold" style={styles.filterButtonText}>
-              {t('manner.filter.title')}
-            </ThemedText>
-          </Pressable>
-        </View>
+      <View style={styles.filterRow}>
+        <Pressable
+          style={[styles.filterButton, { backgroundColor: theme.backgroundElement }]}
+          onPress={onOpenFilter}
+          accessibilityRole="button"
+          accessibilityLabel={t('manner.filter.title')}
+        >
+          <SymbolView
+            tintColor={theme.text}
+            name={{
+              ios: 'line.3.horizontal.decrease',
+              android: 'filter_list',
+              web: 'filter_list',
+            }}
+            size={16}
+          />
+          <ThemedText type="smallBold" style={styles.filterButtonText}>
+            {t('manner.filter.title')}
+          </ThemedText>
+        </Pressable>
       </View>
     </View>
   );
