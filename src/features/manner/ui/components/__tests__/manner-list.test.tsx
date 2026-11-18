@@ -106,12 +106,13 @@ describe('MannerList', () => {
     expect(screen.getByText('manner.list.loadError')).toBeTruthy();
   });
 
-  it('取得成功時はヘッダーと各カードのタイトルを表示する', () => {
+  it('取得成功時は絞り込みボタンと各カードのタイトルを表示し、画面タイトルは出さない', () => {
     mockUseFilteredManners.mockReturnValue({ data: mockManners, isPending: false, isError: false });
 
     render(<MannerList />);
 
-    expect(screen.getByText('manner.list.title')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'manner.filter.title' })).toBeTruthy();
+    expect(screen.queryByText('manner.list.title')).toBeNull();
     expect(screen.getByText(mockManners[0].title)).toBeTruthy();
     expect(screen.getByText(mockManners[1].title)).toBeTruthy();
   });
