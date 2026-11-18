@@ -46,8 +46,9 @@ export function SettingsScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <ScrollView contentContainerStyle={styles.content}>
           <SettingsHeader />
-          <LanguageSelector />
+          {/* 親PBI のタイトル「メイン＝アカウント＋言語」に合わせ、アカウント情報を上・言語選択を下に並べる（#828）。 */}
           <AccountSection />
+          <LanguageSelector />
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
