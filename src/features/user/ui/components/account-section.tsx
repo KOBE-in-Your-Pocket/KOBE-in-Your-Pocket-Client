@@ -122,7 +122,11 @@ export function AccountSection() {
             accessibilityRole="button"
             disabled={signOut.isPending || deleteAccount.isPending}
             onPress={() => signOut.mutate()}
-            style={[styles.row, { backgroundColor: theme.backgroundElement }]}
+            style={({ pressed }) => [
+              styles.row,
+              { backgroundColor: theme.backgroundElement },
+              pressed && styles.pressed,
+            ]}
           >
             <ThemedText type="default" themeColor="textSecondary">
               {t('settings.signOut')}
@@ -132,7 +136,11 @@ export function AccountSection() {
             accessibilityRole="button"
             disabled={deleteAccount.isPending}
             onPress={() => setDeleteConfirmVisible(true)}
-            style={[styles.row, { backgroundColor: theme.backgroundElement }]}
+            style={({ pressed }) => [
+              styles.row,
+              { backgroundColor: theme.backgroundElement },
+              pressed && styles.pressed,
+            ]}
           >
             <ThemedText type="default" style={styles.deleteAccountText}>
               {t('settings.deleteAccount')}
@@ -156,7 +164,11 @@ export function AccountSection() {
           <Pressable
             accessibilityRole="button"
             onPress={() => setSignInVisible(true)}
-            style={[styles.row, { backgroundColor: theme.backgroundElement }]}
+            style={({ pressed }) => [
+              styles.row,
+              { backgroundColor: theme.backgroundElement },
+              pressed && styles.pressed,
+            ]}
           >
             <ThemedText type="default">{t('settings.signIn')}</ThemedText>
           </Pressable>
@@ -193,6 +205,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: Spacing.two,
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.two,

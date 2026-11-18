@@ -36,11 +36,12 @@ export function LanguageSelector() {
               accessibilityRole="radio"
               accessibilityState={{ selected }}
               onPress={() => handleSelect(code)}
-              style={[
+              style={({ pressed }) => [
                 styles.option,
                 {
                   backgroundColor: selected ? theme.backgroundSelected : theme.backgroundElement,
                 },
+                pressed && styles.pressed,
               ]}
             >
               <ThemedText type="default">{LANGUAGE_AUTONYMS[code]}</ThemedText>
@@ -69,8 +70,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: Spacing.two,
     paddingVertical: Spacing.three,
     paddingHorizontal: Spacing.three,
     borderRadius: Spacing.two,
+  },
+  // 他画面のリスト行（legal の LegalRow・クレジット画面）と同じ押下フィードバック。
+  pressed: {
+    opacity: 0.85,
   },
 });
