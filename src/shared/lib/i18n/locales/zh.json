@@ -281,7 +281,6 @@
   },
   "manner": {
     "list": {
-      "title": "礼仪",
       "loadError": "无法加载礼仪信息。",
       "empty": "未找到礼仪信息。"
     },
