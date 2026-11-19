@@ -43,6 +43,7 @@ const mockShelters = [
 const mockUseCurrentLocation = jest.fn();
 const mockFilterShelters = jest.fn();
 const mockUseLocalSearchParams = jest.fn();
+const mockRecordSpotView = jest.fn();
 // useFocusEffect に渡された最新の effect を保持する。実際のフォーカス復帰を再現するため、
 // テストから直接呼び出して「他画面から戻ってきた」を模擬する（#740）。
 let mockLatestFocusEffect: (() => void) | undefined;
@@ -89,6 +90,8 @@ jest.mock('@/shared/ui', () => ({
 
 jest.mock('@/features/tourism', () => ({
   useSpots: () => ({ data: mockSpots }),
+  // 閲覧の記録そのものは tourism 側のテストで確認済み。ここでは呼ばれ方だけ見る。
+  useRecordSpotView: () => mockRecordSpotView,
   // 観光モードでのみ表示されることを検証できるよう、testID 付きスタブに差し替える。
   SpotSearchBar: () => <MockText testID="spot-search-bar">search</MockText>,
   SEARCH_BAR_HEIGHT: 52,
@@ -189,9 +192,20 @@ jest.mock('../map-settings-button', () => ({
 }));
 // SpotCard は選択状態の可視化に使うため、表示中は spot の id を出すスタブにする。
 jest.mock('../spot-card', () => ({
-  SpotCard: ({ spot, onClose }: { spot: { id: string }; onClose: () => void }) => (
+  SpotCard: ({
+    spot,
+    onClose,
+    onDetail,
+  }: {
+    spot: { id: string };
+    onClose: () => void;
+    onDetail: () => void;
+  }) => (
     <MockView>
       <MockText testID="spot-card">{spot.id}</MockText>
+      <MockText testID="spot-card-detail" onPress={onDetail}>
+        detail
+      </MockText>
       <MockText testID="spot-card-close" onPress={onClose}>
         close
       </MockText>
@@ -483,6 +497,40 @@ describe('MapScreen のマーカー出し分け', () => {
     expect(screen.getByTestId('shelter-card').props.children).toBe('shelter-1');
     // ピンタップによる選択も selectedMarkerId に反映される（#750）。
     expect(screen.getByTestId('selected-marker-id').props.children).toBe('shelter-1');
+  });
+
+  it('スポットカードの詳細ボタンで観光詳細へ移り、そのスポットの閲覧を 1 回数える（#835）', () => {
+    render(<MapScreen />);
+    fireEvent.press(screen.getByTestId('marker-spot-1'));
+
+    // カード（スタブ）の onDetail を発火させる。
+    fireEvent.press(screen.getByTestId('spot-card-detail'));
+
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/tourism/[id]',
+      params: { id: 'spot-1' },
+    });
+    expect(mockRecordSpotView).toHaveBeenCalledTimes(1);
+    expect(mockRecordSpotView).toHaveBeenCalledWith('spot-1');
+  });
+
+  it('ピンを押してスポットカードを出しただけでは閲覧を数えない', () => {
+    render(<MapScreen />);
+    fireEvent.press(screen.getByTestId('marker-spot-1'));
+
+    expect(screen.getByTestId('spot-card').props.children).toBe('spot-1');
+    expect(mockRecordSpotView).not.toHaveBeenCalled();
+  });
+
+  it('詳細から戻って画面が再表示されても、閲覧は数え直さない', () => {
+    render(<MapScreen />);
+    fireEvent.press(screen.getByTestId('marker-spot-1'));
+    fireEvent.press(screen.getByTestId('spot-card-detail'));
+
+    // 詳細画面から戻ったときの再フォーカス（#740）を模擬する。
+    act(() => mockLatestFocusEffect?.());
+
+    expect(mockRecordSpotView).toHaveBeenCalledTimes(1);
   });
 
   it('避難所カードの詳細ボタンで避難所詳細画面へ遷移する', () => {

@@ -17,6 +17,7 @@ import {
   SEARCH_BAR_HEIGHT,
   SpotSearchBar,
   SpotSearchEmptyNotice,
+  useRecordSpotView,
   useSpotSearchStore,
   useSpots,
 } from '@/features/tourism';
@@ -301,11 +302,15 @@ export function MapScreen() {
     setPinnedShelterId(undefined);
   }, []);
 
+  const recordSpotView = useRecordSpotView();
+
+  // スポットカードの「詳細」から移るときに閲覧を 1 回数える（#835）。詳細から戻ったときは数えない。
   const handleOpenDetail = useCallback(() => {
     if (!selectedSpot) return;
     pendingMarkerResync.current = true;
+    recordSpotView(selectedSpot.id);
     router.push({ pathname: '/tourism/[id]', params: { id: selectedSpot.id } });
-  }, [selectedSpot]);
+  }, [selectedSpot, recordSpotView]);
 
   const handleOpenShelterDetail = useCallback(() => {
     if (!selectedShelter) return;

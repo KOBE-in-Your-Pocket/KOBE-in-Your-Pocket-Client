@@ -7,6 +7,7 @@ import { Pressable, View } from 'react-native';
 import type { Spot } from '../../domain/spot';
 
 import { RATING_STAR_COLOR, styles } from '../../ui/styles/spot-list.styles';
+import { useRecordSpotView } from '../hooks/use-record-spot-view';
 
 import { SpotFavoriteButton } from './spot-favorite-button';
 
@@ -27,6 +28,13 @@ export type SpotWithDistance = Spot & {
 export function SpotListItem({ spot }: { spot: SpotWithDistance }) {
   const theme = useTheme();
   const { t } = useTranslation();
+  const recordSpotView = useRecordSpotView();
+
+  // カードから詳細へ移るときに閲覧を 1 回数える（#835）。詳細から戻ったときは押されないので数えない。
+  const handleOpenDetail = () => {
+    recordSpotView(spot.id);
+    router.push({ pathname: '/tourism/[id]', params: { id: spot.id } });
+  };
 
   // 詳細へ移る行・経路・お気に入りの 3 つを、入れ子にせず兄弟として並べる（#793）。
   // Pressable はアクセシビリティ上 1 つの要素として子をまとめるため、入れ子にすると
@@ -35,7 +43,7 @@ export function SpotListItem({ spot }: { spot: SpotWithDistance }) {
     <ThemedView style={styles.card}>
       <View style={styles.cardInner}>
         <Pressable
-          onPress={() => router.push({ pathname: '/tourism/[id]', params: { id: spot.id } })}
+          onPress={handleOpenDetail}
           accessibilityRole="button"
           accessibilityLabel={spot.name}
         >
