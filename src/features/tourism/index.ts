@@ -7,6 +7,7 @@ export { useSpotReviews, SPOT_REVIEWS_QUERY_KEY } from './application/use-spot-r
 export { useFilteredSpots, filterSpotsByKeyword } from './application/use-filtered-spots';
 export { useFavorites, useIsFavorite, FAVORITES_QUERY_KEY } from './application/use-favorites';
 export { useToggleFavorite } from './application/use-toggle-favorite';
+export { useRecordSpotView } from './application/use-record-spot-view';
 export type { ToggleFavoriteVariables } from './application/use-toggle-favorite';
 export { useGenreFilterStore } from './store/use-genre-filter-store';
 export type { SelectedGenre } from './store/use-genre-filter-store';
