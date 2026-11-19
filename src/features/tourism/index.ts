@@ -1,12 +1,16 @@
 export type { Spot, SpotCoordinates, SpotGenre } from './domain/spot';
 export type { Review } from './domain/review';
 export type { Favorite } from './domain/favorite';
+export type { SpotViewRepository } from './domain/spot-view';
 export { useSpots, SPOTS_QUERY_KEY } from './application/use-spots';
 export { useSpotDetail } from './application/use-spot-detail';
 export { useSpotReviews, SPOT_REVIEWS_QUERY_KEY } from './application/use-spot-reviews';
 export { useFilteredSpots, filterSpotsByKeyword } from './application/use-filtered-spots';
 export { useFavorites, useIsFavorite, FAVORITES_QUERY_KEY } from './application/use-favorites';
 export { useToggleFavorite } from './application/use-toggle-favorite';
+export { SpotViewRepositoryProvider } from './application/spot-view-repository-context';
+export { useRecordSpotView } from './ui/hooks/use-record-spot-view';
+export { createMockSpotViewRepository } from './infrastructure/api/mock-spot-views';
 export type { ToggleFavoriteVariables } from './application/use-toggle-favorite';
 export { useGenreFilterStore } from './store/use-genre-filter-store';
 export type { SelectedGenre } from './store/use-genre-filter-store';

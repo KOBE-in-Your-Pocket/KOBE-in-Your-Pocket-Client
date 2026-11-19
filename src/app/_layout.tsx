@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { useEvacuationDbBootstrap } from '@/features/evacuation';
 import { PrivacyConsentGate } from '@/features/legal';
 import { createApiMannerRepository, MannerRepositoryProvider } from '@/features/manner';
+import { createMockSpotViewRepository, SpotViewRepositoryProvider } from '@/features/tourism';
 import { createAuthTokenProvider, useRestoreSession, useSyncCurrentUser } from '@/features/user';
 import { warnIfApiBaseUrlMissing } from '@/shared/config';
 import { setAuthTokenProvider } from '@/shared/lib/api';
@@ -14,6 +15,8 @@ warnIfApiBaseUrlMissing();
 setAuthTokenProvider(createAuthTokenProvider());
 
 const mannerRepository = createApiMannerRepository();
+// backend の閲覧数 API（backend#240）ができるまではモック（#834）。実 API への切り替えは #837。
+const spotViewRepository = createMockSpotViewRepository();
 
 /**
  * プライバシーポリシーへの同意後にだけ実行する起動時の副作用をまとめる（#697）。
@@ -29,7 +32,9 @@ function AppBootstrap() {
 
   return (
     <MannerRepositoryProvider repository={mannerRepository}>
-      <Stack screenOptions={{ headerShown: false }} />
+      <SpotViewRepositoryProvider repository={spotViewRepository}>
+        <Stack screenOptions={{ headerShown: false }} />
+      </SpotViewRepositoryProvider>
     </MannerRepositoryProvider>
   );
 }
