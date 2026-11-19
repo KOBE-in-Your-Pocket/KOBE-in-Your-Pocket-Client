@@ -7,6 +7,7 @@ import { SpotList } from '../spot-list';
 const mockPush = jest.fn();
 const mockNavigate = jest.fn();
 const mockFavoritePress = jest.fn();
+const mockRecordSpotView = jest.fn();
 const mockCoords = jest.fn<{ latitude: number; longitude: number } | null, []>(() => null);
 
 jest.mock('react-i18next', () => ({
@@ -46,6 +47,11 @@ jest.mock('@/shared/lib/geo', () => ({
   useCurrentLocation: () => ({ coords: mockCoords() }),
   getDistanceKm: () => 1.2,
   formatDistanceKm: (km: number) => `${km}km`,
+}));
+
+// 閲覧の記録そのもの（投げっぱなし・失敗を無視）は use-record-spot-view.test.tsx で確認済み。
+jest.mock('../../hooks/use-record-spot-view', () => ({
+  useRecordSpotView: () => mockRecordSpotView,
 }));
 
 jest.mock('../genre-filter', () => ({
@@ -105,6 +111,7 @@ describe('SpotList', () => {
     mockPush.mockClear();
     mockNavigate.mockClear();
     mockFavoritePress.mockClear();
+    mockRecordSpotView.mockClear();
     mockCoords.mockReturnValue(null);
   });
 
@@ -122,6 +129,7 @@ describe('SpotList', () => {
 
     expect(mockFavoritePress).toHaveBeenCalledWith('spot-b');
     expect(mockPush).not.toHaveBeenCalled();
+    expect(mockRecordSpotView).not.toHaveBeenCalled();
   });
 
   it('行・お気に入り・経路を入れ子にせず、それぞれ独立したボタンとして置く', () => {
@@ -162,6 +170,21 @@ describe('SpotList', () => {
     });
   });
 
+  it('行を押して詳細へ移るときに、そのスポットの閲覧を 1 回数える（#835）', () => {
+    render(<SpotList />);
+
+    fireEvent.press(screen.getByLabelText('神戸ポートタワー'));
+
+    expect(mockRecordSpotView).toHaveBeenCalledTimes(1);
+    expect(mockRecordSpotView).toHaveBeenCalledWith('spot-a');
+  });
+
+  it('表示しただけでは閲覧を数えない', () => {
+    render(<SpotList />);
+
+    expect(mockRecordSpotView).not.toHaveBeenCalled();
+  });
+
   it('「経路」を押すとそのスポットを選んだ状態で地図へ移る', () => {
     render(<SpotList />);
 
@@ -172,5 +195,7 @@ describe('SpotList', () => {
       pathname: '/map',
       params: { spotId: 'spot-a', requestedAt: expect.any(String) },
     });
+    // 詳細へは移らないので閲覧は数えない。
+    expect(mockRecordSpotView).not.toHaveBeenCalled();
   });
 });
