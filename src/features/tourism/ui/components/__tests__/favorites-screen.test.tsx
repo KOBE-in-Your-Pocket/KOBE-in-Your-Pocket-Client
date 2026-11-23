@@ -14,6 +14,7 @@ const mockCanGoBack = jest.fn(() => true);
 const mockCurrentUser = jest.fn();
 const mockRefetch = jest.fn(() => Promise.resolve());
 const mockFavoriteSpots = jest.fn();
+const mockRecordSpotView = jest.fn();
 
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -55,6 +56,11 @@ jest.mock('@/features/user', () => ({
   useCurrentUser: () => mockCurrentUser(),
   SignInModal: ({ visible }: { visible: boolean; children?: ReactNode }) =>
     visible ? <MockText>sign-in-modal</MockText> : null,
+}));
+
+// 閲覧の記録そのものは use-record-spot-view.test.tsx で確認済み。
+jest.mock('../../hooks/use-record-spot-view', () => ({
+  useRecordSpotView: () => mockRecordSpotView,
 }));
 
 jest.mock('../../../application/use-favorite-spots', () => ({
@@ -118,6 +124,8 @@ describe('FavoritesScreen', () => {
     fireEvent.press(screen.getByLabelText('神戸ポートタワー'));
 
     expect(mockPush).toHaveBeenCalledWith({ pathname: '/tourism/[id]', params: { id: 'spot-a' } });
+    // お気に入り一覧の行も観光スポットのカードなので、閲覧を数える（#835）。
+    expect(mockRecordSpotView).toHaveBeenCalledWith('spot-a');
   });
 
   it('距離のバッジは出さない（この画面では現在地を取りに行かない）', () => {
