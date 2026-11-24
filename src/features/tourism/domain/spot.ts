@@ -31,4 +31,10 @@ export type Spot = {
    * 実評価はバックエンド導入後に付与する想定。
    */
   rating?: SpotRating;
+  /**
+   * 閲覧数（全期間の合計、#836）。backend は詳細 API（`GET /api/v1/tourism/spots/{id}`）でだけ返し、
+   * 一覧には含めない。取れていないとき（一覧のキャッシュを仮表示している間など）は `undefined` で、
+   * UI 側は表示しない。閲覧がまだ無いスポットは `0`。
+   */
+  viewCount?: number;
 };

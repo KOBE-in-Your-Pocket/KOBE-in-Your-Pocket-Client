@@ -147,7 +147,11 @@ jest.mock('../review-language-filter', () => ({
 }));
 
 jest.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string) => key }),
+  // count を渡したときだけ「キー:数」にして、渡した数を確かめられるようにする（閲覧数 #836）。
+  useTranslation: () => ({
+    t: (key: string, options?: { count?: number }) =>
+      options?.count === undefined ? key : `${key}:${options.count}`,
+  }),
 }));
 
 jest.mock('expo-image', () => ({
@@ -410,6 +414,27 @@ describe('SpotDetailContent', () => {
       const row = screen.getByTestId('spot-address-row');
       expect(row.props.accessibilityRole).toBe('button');
       expect(row.props.accessibilityLabel).toContain(mockSpot.address);
+    });
+  });
+
+  describe('閲覧数（#836）', () => {
+    it('閲覧数が取れたら「閲覧数 ○回」を表示する', () => {
+      render(<SpotDetailContent spot={{ ...mockSpot, viewCount: 12 }} />);
+
+      expect(screen.getByTestId('spot-view-count')).toBeTruthy();
+      expect(screen.getByText('tourism.spotDetail.viewCount:12')).toBeTruthy();
+    });
+
+    it('閲覧がまだ無い（0 回）ときも、取れた値なので表示する', () => {
+      render(<SpotDetailContent spot={{ ...mockSpot, viewCount: 0 }} />);
+
+      expect(screen.getByText('tourism.spotDetail.viewCount:0')).toBeTruthy();
+    });
+
+    it('閲覧数が取れていないとき（一覧のキャッシュを仮表示している間など）は何も表示しない', () => {
+      render(<SpotDetailContent spot={mockSpot} />);
+
+      expect(screen.queryByTestId('spot-view-count')).toBeNull();
     });
   });
 

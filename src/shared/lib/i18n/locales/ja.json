@@ -115,7 +115,8 @@
       "locationLabel": "位置情報",
       "notFound": "スポットが見つかりませんでした。",
       "loadError": "スポットの詳細を読み込めませんでした。",
-      "openDirectionsButton": "ナビを開始"
+      "openDirectionsButton": "ナビを開始",
+      "viewCount": "閲覧数 {{count}}回"
     },
     "reviewList": {
       "heading": "レビュー",
