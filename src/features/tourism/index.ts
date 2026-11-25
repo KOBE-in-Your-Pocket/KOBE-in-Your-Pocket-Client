@@ -10,7 +10,7 @@ export { useFavorites, useIsFavorite, FAVORITES_QUERY_KEY } from './application/
 export { useToggleFavorite } from './application/use-toggle-favorite';
 export { SpotViewRepositoryProvider } from './application/spot-view-repository-context';
 export { useRecordSpotView } from './ui/hooks/use-record-spot-view';
-export { createMockSpotViewRepository } from './infrastructure/api/mock-spot-views';
+export { createApiSpotViewRepository } from './infrastructure/api/api-spot-view-repository';
 export type { ToggleFavoriteVariables } from './application/use-toggle-favorite';
 export { useGenreFilterStore } from './store/use-genre-filter-store';
 export type { SelectedGenre } from './store/use-genre-filter-store';
