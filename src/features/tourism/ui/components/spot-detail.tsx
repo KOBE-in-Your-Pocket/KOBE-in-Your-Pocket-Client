@@ -559,6 +559,19 @@ export function SpotDetailContent({ spot }: { spot: Spot }) {
             </ThemedText>
           </View>
 
+          {typeof spot.viewCount === 'number' ? (
+            <View style={styles.hoursRow} testID="spot-view-count">
+              <SymbolView
+                tintColor={theme.textSecondary}
+                name={{ ios: 'eye', android: 'visibility', web: 'visibility' }}
+                size={14}
+              />
+              <ThemedText type="small" themeColor="textSecondary">
+                {t('tourism.spotDetail.viewCount', { count: spot.viewCount })}
+              </ThemedText>
+            </View>
+          ) : null}
+
           {spot.address.trim() !== '' && (
             <Pressable
               style={styles.addressRow}

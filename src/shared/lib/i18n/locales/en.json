@@ -115,7 +115,8 @@
       "locationLabel": "Location",
       "notFound": "Spot not found.",
       "loadError": "Could not load spot details.",
-      "openDirectionsButton": "Start navigation"
+      "openDirectionsButton": "Start navigation",
+      "viewCount": "Views: {{count}}"
     },
     "reviewList": {
       "heading": "Reviews",
